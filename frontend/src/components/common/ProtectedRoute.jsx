@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 
-export function ProtectedRoute({ children }) {
+export default function ProtectedRoute({ children, requiredRole }) {
   const token = localStorage.getItem("token");
   const userRole = localStorage.getItem("role");
   const location = useLocation();
@@ -9,9 +9,8 @@ export function ProtectedRoute({ children }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Prevent admin users from accessing customer routes
-  if (userRole === "ADMIN") {
-    return <Navigate to="/admin_dashboard" replace />;
+  if (requiredRole && userRole !== requiredRole) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
