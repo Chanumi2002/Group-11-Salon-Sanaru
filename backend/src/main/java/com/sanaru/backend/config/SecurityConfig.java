@@ -53,18 +53,10 @@ public class SecurityConfig {
         return new JwtRequestFilter();
     }
 
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
-    }
+    // Authentication provider and manager are intentionally left to Spring Boot's
+    // auto-configuration for this project to avoid version-specific constructor
+    ///runtime issues. The application uses the injected `CustomUserDetailsService`
+    // and `PasswordEncoder` directly where needed.
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -95,8 +87,7 @@ public class SecurityConfig {
                     .successHandler(oAuth2LoginSuccessHandler));
         }
 
-        http.authenticationProvider(authenticationProvider());
-
+        // rely on Spring Security auto-configured providers
         http.addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
