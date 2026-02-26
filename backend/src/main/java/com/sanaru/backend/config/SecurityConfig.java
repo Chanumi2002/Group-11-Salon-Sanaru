@@ -2,13 +2,11 @@ package com.sanaru.backend.config;
 
 import com.sanaru.backend.security.JwtAuthenticationEntryPoint;
 import com.sanaru.backend.security.JwtRequestFilter;
-import com.sanaru.backend.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -27,9 +25,6 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
 
     @Autowired(required = false)
     @Lazy
@@ -57,6 +52,10 @@ public class SecurityConfig {
     // auto-configuration for this project to avoid version-specific constructor
     ///runtime issues. The application uses the injected `CustomUserDetailsService`
     // and `PasswordEncoder` directly where needed.
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+            return authenticationConfiguration.getAuthenticationManager();
+        }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

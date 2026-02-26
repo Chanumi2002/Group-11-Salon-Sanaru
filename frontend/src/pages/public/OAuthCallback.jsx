@@ -20,8 +20,32 @@ export default function OAuthCallback() {
     }
     if (token) {
       localStorage.setItem("token", token);
-      toast.success("Signed in successfully!");
-      navigate("/customer_dashboard", { replace: true });
+      
+      // Get user role from backend
+      fetch('/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.role) {
+          localStorage.setItem('role', data.role);
+        }
+        if (data.gender) {
+          localStorage.setItem('gender', data.gender);
+        }
+        toast.success("Signed in successfully!");
+        // Redirect based on role
+        const redirectPath = data.role === 'ADMIN' ? '/admin_dashboard' : '/customer_dashboard';
+        navigate(redirectPath, { replace: true });
+      })
+      .catch(err => {
+        console.error('Error fetching profile:', err);
+        // Default to customer dashboard if profile fetch fails
+        toast.success("Signed in successfully!");
+        navigate("/customer_dashboard", { replace: true });
+      });
     } else {
       navigate("/login", { replace: true });
     }

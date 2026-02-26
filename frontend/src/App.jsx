@@ -24,6 +24,7 @@ import Homepage from './pages/customer/Homepage'
 import CustomerProfile from './pages/customer/Profile'
 
 // Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProfile from './pages/admin/AdminProfile'
 
 // Components
@@ -71,6 +72,14 @@ function App() {
         {/* Admin Routes */}
         <Route
           path="/admin_dashboard"
+          element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin_profile"
           element={
             <ProtectedRoute requiredRole="ADMIN">
               <AdminProfile />

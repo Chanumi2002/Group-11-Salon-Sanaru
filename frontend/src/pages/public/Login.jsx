@@ -27,6 +27,10 @@ export default function Login() {
     setError("");
 
     try {
+      // Clear any old tokens and roles before login
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('gender');
       const response = await authService.login({ email, password });
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
@@ -39,7 +43,6 @@ export default function Login() {
           localStorage.setItem('gender', response.data.gender);
         }
         toast.success(response.data.message || 'Login successful!');
-        
         // Redirect based on user role
         const redirectPath = userRole === 'ADMIN' ? '/admin_dashboard' : from;
         navigate(redirectPath, { replace: true });

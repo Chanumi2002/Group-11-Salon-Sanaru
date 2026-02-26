@@ -25,7 +25,58 @@ export default function AdminProfile() {
   const [passwordErrors, setPasswordErrors] = useState({});
 
   useEffect(() => {
-    fetchUserProfile();
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    
+    // If no token, redirect to login
+    if (!token) {
+      window.location.href = '/login';
+      return;
+    }
+    
+    // If role is not ADMIN, redirect to appropriate page
+    if (role && role !== 'ADMIN') {
+      // Redirect customer to customer dashboard
+      if (role === 'CUSTOMER') {
+        window.location.href = '/customer_dashboard';
+      } else {
+        window.location.href = '/not-found';
+      }
+      return;
+    }
+    
+    // If role is missing, fetch it from backend
+    if (!role) {
+      fetch('/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.role) {
+          localStorage.setItem('role', data.role);
+          if (data.role !== 'ADMIN') {
+            if (data.role === 'CUSTOMER') {
+              window.location.href = '/customer_dashboard';
+            } else {
+              window.location.href = '/not-found';
+            }
+            return;
+          }
+        }
+        if (data.gender) {
+          localStorage.setItem('gender', data.gender);
+        }
+        fetchUserProfile();
+      })
+      .catch(err => {
+        console.error('Error fetching profile:', err);
+        window.location.href = '/login';
+      });
+    } else {
+      fetchUserProfile();
+    }
   }, []);
 
   const fetchUserProfile = async () => {

@@ -28,6 +28,11 @@ export default function Profile() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const role = localStorage.getItem('role');
+    if (role !== 'CUSTOMER') {
+      navigate('/not-found');
+      return;
+    }
     fetchUserProfile();
   }, []);
 

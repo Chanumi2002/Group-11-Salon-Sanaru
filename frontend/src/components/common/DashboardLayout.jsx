@@ -14,7 +14,7 @@ import {
 const sidebarLinks = [
   { label: "Customer Dashboard", to: "/customer_dashboard", icon: LayoutDashboard },
   { label: "Homepage", to: "/customer_dashboard/homepage", icon: LayoutDashboard },
-  { label: "Profile", to: "/customer_dashboard/profile", icon: User },
+  { label: "Profile", to: "/customer_profile", icon: User },
   { label: "Book Appointment", to: "/customer_dashboard/book", icon: CalendarPlus },
   { label: "My Bookings", to: "/customer_dashboard/bookings", icon: CalendarCheck },
   { label: "Orders", to: "/customer_dashboard/orders", icon: ShoppingBag },
@@ -91,7 +91,7 @@ export function DashboardLayout({ children }) {
           </h2>
           <div className="flex items-center gap-3">
             <Link
-              to="/customer_dashboard/profile"
+              to="/customer_profile"
               className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
               title="My Account"
             >
