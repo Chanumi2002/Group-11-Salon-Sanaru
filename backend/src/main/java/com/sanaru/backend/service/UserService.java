@@ -136,7 +136,9 @@ public class UserService {
                     user.setRole(Role.CUSTOMER);
                     user.setPhone(null);
                     user.setGender(null);
-                    return userRepository.save(user);
+                    User saved = userRepository.save(user);
+                    emailService.sendWelcomeEmail(saved.getEmail(), saved.getFirstName());
+                    return saved;
                 });
     }
 }

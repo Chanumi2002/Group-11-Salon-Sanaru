@@ -6,7 +6,6 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,10 +20,6 @@ public class JwtUtil {
 
     @Value("${jwt.expiration:86400}")
     private Long expiration;
-
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -42,7 +37,7 @@ public class JwtUtil {
     private Claims extractAllClaims(String token) {
         try {
             return Jwts.parser()
-                    .verifyWith(getSigningKey())
+                    .verifyWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
@@ -61,13 +56,26 @@ public class JwtUtil {
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
-        return Jwts.builder()
-            .setClaims(claims)
-            .setSubject(subject)
-            .setIssuedAt(new Date(System.currentTimeMillis()))
-            .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000))
-            .signWith(getSigningKey())
-            .compact();
+        long now = System.currentTimeMillis();
+        long expiryTime = now + expiration * 1000;
+        
+        try {
+            var builder = Jwts.builder()
+                    .subject(subject)
+                    .issuedAt(new Date(now))
+                    .expiration(new Date(expiryTime))
+                    .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)));
+            
+            if (claims != null && !claims.isEmpty()) {
+                for (Map.Entry<String, Object> entry : claims.entrySet()) {
+                    builder.claim(entry.getKey(), entry.getValue());
+                }
+            }
+            
+            return builder.compact();
+        } catch (Exception e) {
+            throw new RuntimeException("JWT token generation failed", e);
+        }
     }
 
     public Boolean validateToken(String token, String username) {
