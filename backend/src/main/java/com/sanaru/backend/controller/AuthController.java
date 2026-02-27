@@ -3,10 +3,12 @@ package com.sanaru.backend.controller;
 import com.sanaru.backend.dto.AuthRequest;
 import com.sanaru.backend.dto.AuthResponse;
 import com.sanaru.backend.dto.ChangePasswordRequest;
+import com.sanaru.backend.dto.OAuth2TokenRequest;
 import com.sanaru.backend.dto.RegisterRequest;
 import com.sanaru.backend.dto.UserResponse;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.service.UserService;
+import com.sanaru.backend.service.OAuth2Service;
 import com.sanaru.backend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -32,6 +35,9 @@ public class AuthController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private OAuth2Service oAuth2Service;
 
     @Value("${admin.registration.secret:AdminSecretKey2026}")
     private String adminSecret;
@@ -143,4 +149,39 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new AuthResponse(null, e.getMessage()));
         }
     }
+
+    /**
+     * OAuth2: Verify Google token and create/login user
+     */
+    @PostMapping("/oauth2/google")
+    public ResponseEntity<AuthResponse> loginWithGoogle(@RequestBody OAuth2TokenRequest request) {
+        try {
+            // Verify the token with Google
+            Map<String, Object> userInfo = oAuth2Service.verifyGoogleToken(request.getToken());
+            String email = (String) userInfo.get("email");
+            String name = (String) userInfo.get("name");
+
+            // Find or create user
+            User user = userService.findOrCreateFromOAuth(email, name);
+            
+            // Generate JWT token
+            String token = jwtUtil.generateToken(user.getEmail());
+            
+            // Create response
+            AuthResponse response = new AuthResponse(token, "Google login successful");
+            if (user.getGender() != null) {
+                response.setGender(user.getGender().name());
+            }
+            if (user.getRole() != null) {
+                response.setRole(user.getRole().name());
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                .body(new AuthResponse(null, "Google authentication failed: " + e.getMessage()));
+        }
+    }
+
+
 }

@@ -25,8 +25,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     @Autowired
     private UserService userService;
 
-    @Value("${app.frontend-url:http://localhost:5173}")
-    private String frontendUrl;
+    @Value("${oauth2.frontend-uri:http://localhost:5173}")
+    private String frontendUri;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -38,41 +38,68 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String name = getName(attrs);
 
         if (email == null || email.isBlank()) {
-            String redirectUrl = frontendUrl + "/oauth/callback?error=email_required";
+            String redirectUrl = frontendUri + "/oauth/callback?error=email_required";
             getRedirectStrategy().sendRedirect(request, response, redirectUrl);
             return;
         }
 
-        User user = userService.findOrCreateFromOAuth(email, name);
-        String token = jwtUtil.generateToken(user.getEmail());
-
-        String redirectUrl = frontendUrl + "/oauth/callback?token=" + token;
-        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+        try {
+            User user = userService.findOrCreateFromOAuth(email, name);
+            String token = jwtUtil.generateToken(user.getEmail());
+            
+            String redirectUrl = frontendUri + "/oauth/callback?token=" + token + "&email=" + email;
+            if (user.getGender() != null) {
+                redirectUrl += "&gender=" + user.getGender();
+            }
+            if (user.getRole() != null) {
+                redirectUrl += "&role=" + user.getRole();
+            }
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+        } catch (Exception e) {
+            String redirectUrl = frontendUri + "/oauth/callback?error=" + e.getMessage();
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+        }
     }
 
     private String getEmail(Map<String, Object> attrs) {
+        // Most providers use "email" directly
         Object email = attrs.get("email");
-        if (email != null)
+        if (email != null && !email.toString().isBlank()) {
             return email.toString();
-        // Some providers use sub or other keys
-        Object sub = attrs.get("sub");
-        if (sub != null && attrs.get("email") == null) {
-            // Google sometimes has email in "email" - if not, we need email scope
-            return null;
         }
+        
+        // Some providers nest email in different places
+        // For Facebook, we need to ensure email scope is requested
+        Object emailObject = attrs.get("email");
+        if (emailObject != null) {
+            return emailObject.toString();
+        }
+        
         return null;
     }
 
     private String getName(Map<String, Object> attrs) {
+        // Try to get name directly (most providers)
         Object name = attrs.get("name");
-        if (name != null)
+        if (name != null && !name.toString().isBlank()) {
             return name.toString();
+        }
+        
+        // Try given_name and family_name (Google format)
         Object givenName = attrs.get("given_name");
         Object familyName = attrs.get("family_name");
         if (givenName != null || familyName != null) {
-            return (givenName != null ? givenName.toString() : "") + " "
-                    + (familyName != null ? familyName.toString() : "").trim();
+            String gname = givenName != null ? givenName.toString() : "";
+            String fname = familyName != null ? familyName.toString() : "";
+            return (gname + " " + fname).trim();
         }
+        
+        // Facebook uses "name" for full name
+        Object fbName = attrs.get("name");
+        if (fbName != null && !fbName.toString().isBlank()) {
+            return fbName.toString();
+        }
+        
         return "User";
     }
 }

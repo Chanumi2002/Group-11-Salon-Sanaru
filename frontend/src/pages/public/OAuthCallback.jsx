@@ -1,59 +1,50 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { oauth2Service } from "@/services/oauth2Service";
 
+/**
+ * OAuth Callback page - Handles redirects from backend OAuth2 login
+ * This is used when Spring Security handles the OAuth2 flow directly
+ */
 export default function OAuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get("token");
-  const error = searchParams.get("error");
 
   useEffect(() => {
-    if (error) {
-      if (error === "email_required") {
-        toast.error("Could not get email from provider. Please use email/password or ensure your Google/Facebook account has an email.");
-      } else {
-        toast.error("Login was cancelled or failed. Please try again.");
-      }
-      navigate("/login", { replace: true });
-      return;
-    }
-    if (token) {
-      localStorage.setItem("token", token);
+    const result = oauth2Service.handleOAuthCallback(searchParams);
+    
+    if (result.success) {
+      toast.success('OAuth login successful!');
+      const role = localStorage.getItem('role');
+      const redirectPath = role === 'ADMIN' ? '/admin_dashboard' : '/customer_dashboard';
       
-      // Get user role from backend
-      fetch('/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.role) {
-          localStorage.setItem('role', data.role);
-        }
-        if (data.gender) {
-          localStorage.setItem('gender', data.gender);
-        }
-        toast.success("Signed in successfully!");
-        // Redirect based on role
-        const redirectPath = data.role === 'ADMIN' ? '/admin_dashboard' : '/customer_dashboard';
+      // Redirect after a short delay to allow user to see the success message
+      setTimeout(() => {
         navigate(redirectPath, { replace: true });
-      })
-      .catch(err => {
-        console.error('Error fetching profile:', err);
-        // Default to customer dashboard if profile fetch fails
-        toast.success("Signed in successfully!");
-        navigate("/customer_dashboard", { replace: true });
-      });
+      }, 500);
     } else {
-      navigate("/login", { replace: true });
+      toast.error(result.error || 'Login was cancelled or failed. Please try again.');
+      
+      // Redirect to login after showing error
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 2000);
     }
-  }, [token, error, navigate]);
+  }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <p className="text-muted-foreground">Completing sign in...</p>
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-4">Processing OAuth Login...</h1>
+        <p className="text-muted-foreground">Please wait while we authenticate your account.</p>
+        
+        <div className="mt-8 flex justify-center">
+          <div className="animate-spin">
+            <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
