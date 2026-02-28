@@ -75,6 +75,12 @@ public class UserService {
             throw new RuntimeException("Invalid email or password");
         }
 
+        if (!user.getEnabled()) {
+            String name = user.getFirstName() + (user.getLastName() != null ? " " + user.getLastName() : "");
+            emailService.sendBlockedLoginAttemptEmail(user.getEmail(), name);
+            throw new RuntimeException("Your account has been blocked by admin. Attempting to login won't resolve this. Please contact support for assistance.");
+        }
+
         return user;
     }
 

@@ -4,6 +4,7 @@ import com.sanaru.backend.dto.UserResponse;
 import com.sanaru.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,17 +25,17 @@ public class AdminController {
     private UserService userService;
 
     @GetMapping("/customers")
-    public ResponseEntity<List<UserResponse>> getAllCustomers() {
+    public ResponseEntity<List<UserResponse>> getAllCustomers(Authentication authentication) {
         return ResponseEntity.ok(userService.getAllCustomers());
     }
 
     @GetMapping("/customers/count")
-    public ResponseEntity<Map<String, Long>> getCustomerCount() {
+    public ResponseEntity<Map<String, Long>> getCustomerCount(Authentication authentication) {
         return ResponseEntity.ok(Map.of("count", userService.getCustomerCount()));
     }
 
     @PutMapping("/customers/{id}/block")
-    public ResponseEntity<?> blockCustomer(@PathVariable("id") Long customerId) {
+    public ResponseEntity<?> blockCustomer(@PathVariable("id") Long customerId, Authentication authentication) {
         try {
             return ResponseEntity.ok(userService.blockCustomer(customerId));
         } catch (Exception e) {
@@ -43,7 +44,7 @@ public class AdminController {
     }
 
     @PutMapping("/customers/{id}/unblock")
-    public ResponseEntity<?> unblockCustomer(@PathVariable("id") Long customerId) {
+    public ResponseEntity<?> unblockCustomer(@PathVariable("id") Long customerId, Authentication authentication) {
         try {
             return ResponseEntity.ok(userService.unblockCustomer(customerId));
         } catch (Exception e) {
@@ -52,7 +53,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/customers/{id}")
-    public ResponseEntity<?> deleteCustomer(@PathVariable("id") Long customerId) {
+    public ResponseEntity<?> deleteCustomer(@PathVariable("id") Long customerId, Authentication authentication) {
         try {
             userService.deleteCustomer(customerId);
             return ResponseEntity.ok(Map.of("message", "Customer deleted successfully"));

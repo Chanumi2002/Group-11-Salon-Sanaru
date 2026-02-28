@@ -8,6 +8,7 @@ public interface EmailService {
     void sendAccountDeletedEmail(String email, String name);
     void sendAccountBlockedEmail(String email, String name);
     void sendAccountUnblockedEmail(String email, String name);
+    void sendBlockedLoginAttemptEmail(String email, String name);
 
     // Appointment Emails
     void sendAppointmentConfirmationEmail(String toEmail, String customerName, String serviceName,

@@ -62,9 +62,14 @@ npm run dev
 - Admin Dashboard with statistics
 - Customer Management (view, block, delete)
 - Email notification system
+  - Welcome email on registration
+  - Account blocked notification with support contact
+  - Account unblocked notification with login link
+  - **Blocked login attempt reminder** - When blocked customers try to login, they receive an email reminder that their account is blocked
 - Admin profile management
 - Customer profile management
 - Role-based access control (ADMIN/CUSTOMER)
+- Account blocking enforcement - Blocked customers cannot login and receive clear error message with email notification
 
 ---
 
@@ -156,6 +161,25 @@ Password: qazxsw
 
 ---
 
+##  Email Notifications
+
+**Automatically Sent Emails:**
+- ✅ **Welcome Email** - Sent when user registers
+- ✅ **Account Blocked Email** - Sent when admin blocks customer
+- ✅ **Account Unblocked Email** - Sent when admin unblocks customer
+- ✅ **Blocked Login Attempt Email** - Sent when blocked customer attempts to login with notice: *"Your account is currently blocked. Attempting to login won't resolve this. Please contact support for assistance."*
+- ✅ **Password Changed Email** - Confirmation when password is updated
+- ✅ **Account Deleted Email** - Notification when account is deleted
+
+**Blocked Login Feature:**
+When an admin blocks a customer account:
+1. Customer receives account blocked notification email
+2. If customer tries to login, they see error: *"Your account has been blocked by admin. Attempting to login won't resolve this. Please contact support for assistance."*
+3. A reminder email is sent to blocked customer informing them of the login attempt
+4. Login is prevented until admin unblocks the account
+
+---
+
 ##  Security Features
 
 ✅ Spring Security Framework
@@ -164,6 +188,8 @@ Password: qazxsw
 ✅ Role-Based Access Control (RBAC)
 ✅ Secure CORS Configuration
 ✅ HttpOnly Cookies (ready)
+✅ Account Blocking & Login Prevention
+✅ Email-Based Security Notifications
 
 ---
 

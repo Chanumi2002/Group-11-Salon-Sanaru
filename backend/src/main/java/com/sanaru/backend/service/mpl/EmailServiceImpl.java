@@ -108,6 +108,19 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendBlockedLoginAttemptEmail(String email, String name) {
+        try {
+            String subject = "Login Attempt on Your Blocked Account - Salon Sanaru";
+            String htmlContent = buildBlockedLoginAttemptEmailHtml(name);
+            sendHtmlEmail(email, subject, htmlContent);
+            logger.info("Blocked login attempt reminder email sent successfully to: " + email);
+        } catch (Exception e) {
+            logger.error("Failed to send blocked login attempt email to " + email, e);
+            throw new RuntimeException("Failed to send blocked login attempt email", e);
+        }
+    }
+
+    @Override
     public void sendAppointmentConfirmationEmail(String toEmail, String customerName, String serviceName,
             String appointmentDate, String appointmentTime, String staffName) {
         try {
@@ -269,6 +282,22 @@ public class EmailServiceImpl implements EmailService {
                 + "<p style=\"text-align: center; margin: 30px 0;\">"
                 + "<a href=\"http://localhost:3000/login\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Log In Now</a>"
                 + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildBlockedLoginAttemptEmailHtml(String name) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #d946a6;\">🔒 Login Attempt on Blocked Account</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hi " + name + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">We noticed that someone tried to log into your Salon Sanaru account, but your account is currently blocked.</p>"
+                + "<div style=\"background-color: #fef2f2; border-left: 4px solid #d946a6; padding: 15px; margin: 20px 0; border-radius: 5px;\">"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\"><strong>⚠️ Your account is blocked</strong></p>"
+                + "<p style=\"font-size: 14px; line-height: 1.6; margin: 10px 0 0 0;\">If you didn't attempt this login or believe this is a mistake, please contact our support team.</p>"
+                + "</div>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">For assistance or to appeal the account restriction, please contact us at <a href=\"mailto:" + supportEmail + "\" style=\"color: #d946a6; text-decoration: none;\">" + supportEmail + "</a></p>"
+                + "<p style=\"font-size: 14px; color: #666; margin-top: 30px;\"><strong>Support Email:</strong> " + supportEmail + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
