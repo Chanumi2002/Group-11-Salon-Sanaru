@@ -2,7 +2,7 @@
 
 A comprehensive web-based beauty salon management system enabling customers to book appointments, purchase products, and receive personalized beauty recommendations while providing administrators with complete business control.
 
-**Group:** Group 11 | **Live Version:** Development (Sprint 1 Complete ✅)
+**Group:** Group 11 | **Live Version:** Development (Sprint 1 In Review ⏳)
 
 ---
 
@@ -55,7 +55,7 @@ npm run dev
 
 ---
 
-## 📊 Features Overview (Sprint 1 Complete)
+## 📊 Features Overview (Sprint 1 - In Review)
 
 ### ✅ Implemented
 - User Registration & Login with JWT
@@ -205,7 +205,6 @@ DELETE /api/admin/customers/{id}
 
 **GitHub Issues:** Report bugs and request features
 **Project Manager:** Contact sprint lead
-**Documentation:** See README_DETAILED.md
 
 ---
 
@@ -216,6 +215,6 @@ All Rights Reserved © 2026
 
 ---
 
-**Status:** Sprint 1 COMPLETE ✅
+**Status:** Sprint 1 IN REVIEW ⏳
 **Last Updated:** February 28, 2026
 **Version:** 1.0.0 (Beta)
