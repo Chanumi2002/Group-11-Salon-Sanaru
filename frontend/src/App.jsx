@@ -19,9 +19,12 @@ import Profile from "./pages/customer/Profile";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProfile from "./pages/admin/AdminProfile";
+import AdminUsers from "./pages/admin/AdminUsers";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
+import { AdminProtectedRoute } from "@/components/common/AdminProtectedRoute";
 
 const App = () => (
   <GoogleOAuthProvider clientId="741049795663-ie03ksnfv4jfu5aesvod0fj1c41uopqr.apps.googleusercontent.com">
@@ -67,6 +70,24 @@ const App = () => (
                 <ProtectedRoute requiredRole="ADMIN">
                   <AdminDashboard />
                 </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/admin_dashboard/profile"
+              element={
+                <AdminProtectedRoute>
+                  <AdminProfile />
+                </AdminProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/admin_dashboard/users"
+              element={
+                <AdminProtectedRoute>
+                  <AdminUsers />
+                </AdminProtectedRoute>
               }
             />
             

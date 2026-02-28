@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 const sidebarLinks = [
   { label: "Customer Dashboard", to: "/customer_dashboard", icon: LayoutDashboard },
-  { label: "Homepage", to: "/customer_dashboard/homepage", icon: LayoutDashboard },
+  { label: "Homepage", to: "/homepage", icon: LayoutDashboard },
   { label: "Profile", to: "/customer_profile", icon: User },
   { label: "Book Appointment", to: "/customer_dashboard/book", icon: CalendarPlus },
   { label: "My Bookings", to: "/customer_dashboard/bookings", icon: CalendarCheck },

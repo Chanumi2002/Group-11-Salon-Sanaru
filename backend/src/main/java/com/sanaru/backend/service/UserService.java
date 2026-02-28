@@ -1,14 +1,14 @@
 package com.sanaru.backend.service;
 
 import com.sanaru.backend.dto.RegisterRequest;
+import com.sanaru.backend.dto.UserResponse;
 import com.sanaru.backend.model.Role;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
 import java.util.UUID;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -142,5 +142,50 @@ public class UserService {
                     emailService.sendWelcomeEmail(saved.getEmail(), saved.getFirstName());
                     return saved;
                 });
+    }
+
+    public List<UserResponse> getAllCustomers() {
+        return userRepository.findByRole(Role.CUSTOMER).stream()
+                .map(UserResponse::from)
+                .toList();
+    }
+
+    public Long getCustomerCount() {
+        return userRepository.countByRole(Role.CUSTOMER);
+    }
+
+    public UserResponse blockCustomer(Long customerId) {
+        User user = userRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
+        if (!user.getRole().equals(Role.CUSTOMER)) {
+            throw new RuntimeException("Only customers can be blocked");
+        }
+        user.setEnabled(false);
+        User blocked = userRepository.save(user);
+        String name = blocked.getFirstName() + (blocked.getLastName() != null ? " " + blocked.getLastName() : "");
+        emailService.sendAccountBlockedEmail(blocked.getEmail(), name);
+        return UserResponse.from(blocked);
+    }
+
+    public UserResponse unblockCustomer(Long customerId) {
+        User user = userRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
+        if (!user.getRole().equals(Role.CUSTOMER)) {
+            throw new RuntimeException("Only customers can be unblocked");
+        }
+        user.setEnabled(true);
+        User unblocked = userRepository.save(user);
+        String name = unblocked.getFirstName() + (unblocked.getLastName() != null ? " " + unblocked.getLastName() : "");
+        emailService.sendAccountUnblockedEmail(unblocked.getEmail(), name);
+        return UserResponse.from(unblocked);
+    }
+
+    public void deleteCustomer(Long customerId) {
+        User user = userRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
+        if (!user.getRole().equals(Role.CUSTOMER)) {
+            throw new RuntimeException("Only customers can be deleted");
+        }
+        userRepository.delete(user);
     }
 }

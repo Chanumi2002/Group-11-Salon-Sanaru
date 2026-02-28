@@ -60,4 +60,31 @@ export const authService = {
   },
 };
 
+export const adminService = {
+  // Get all customers
+  getCustomers: async () => {
+    return await api.get('/admin/customers');
+  },
+
+  // Get customer count
+  getCustomerCount: async () => {
+    return await api.get('/admin/customers/count');
+  },
+
+  // Block a customer
+  blockCustomer: async (customerId) => {
+    return await api.put(`/admin/customers/${customerId}/block`);
+  },
+
+  // Unblock a customer
+  unblockCustomer: async (customerId) => {
+    return await api.put(`/admin/customers/${customerId}/unblock`);
+  },
+
+  // Delete a customer
+  deleteCustomer: async (customerId) => {
+    return await api.delete(`/admin/customers/${customerId}`);
+  },
+};
+
 export default api;

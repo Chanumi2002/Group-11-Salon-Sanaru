@@ -82,6 +82,32 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendAccountBlockedEmail(String email, String name) {
+        try {
+            String subject = "Your Salon Sanaru Account Has Been Blocked";
+            String htmlContent = buildAccountBlockedEmailHtml(name);
+            sendHtmlEmail(email, subject, htmlContent);
+            logger.info("Account blocked email sent successfully to: " + email);
+        } catch (Exception e) {
+            logger.error("Failed to send account blocked email to " + email, e);
+            throw new RuntimeException("Failed to send account blocked email", e);
+        }
+    }
+
+    @Override
+    public void sendAccountUnblockedEmail(String email, String name) {
+        try {
+            String subject = "Your Salon Sanaru Account Has Been Unblocked";
+            String htmlContent = buildAccountUnblockedEmailHtml(name);
+            sendHtmlEmail(email, subject, htmlContent);
+            logger.info("Account unblocked email sent successfully to: " + email);
+        } catch (Exception e) {
+            logger.error("Failed to send account unblocked email to " + email, e);
+            throw new RuntimeException("Failed to send account unblocked email", e);
+        }
+    }
+
+    @Override
     public void sendAppointmentConfirmationEmail(String toEmail, String customerName, String serviceName,
             String appointmentDate, String appointmentTime, String staffName) {
         try {
@@ -216,6 +242,32 @@ public class EmailServiceImpl implements EmailService {
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">We'll miss you! If you change your mind, you can always create a new account.</p>"
                 + "<p style=\"font-size: 16px; line-height: 1.6; text-align: center;\">"
                 + "<a href=\"http://localhost:3000/register\" style=\"color: #d946a6; text-decoration: none; font-weight: bold;\">Create New Account</a>"
+                + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildAccountBlockedEmailHtml(String name) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #d946a6;\">Account Blocked</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hi " + name + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Your Salon Sanaru account has been temporarily blocked by our administration team.</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">If you believe this is a mistake, please contact us at <a href=\"mailto:" + supportEmail + "\">" + supportEmail + "</a> to appeal.</p>"
+                + "<p style=\"font-size: 14px; color: #666;\">" + supportEmail + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildAccountUnblockedEmailHtml(String name) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #d946a6;\">Account Unblocked</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hi " + name + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Good news! Your Salon Sanaru account has been unblocked and is now active again.</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">You can now log in and continue booking your favorite services.</p>"
+                + "<p style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"http://localhost:3000/login\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Log In Now</a>"
                 + "</p>"
                 + "</div>"
                 + "</body></html>";
