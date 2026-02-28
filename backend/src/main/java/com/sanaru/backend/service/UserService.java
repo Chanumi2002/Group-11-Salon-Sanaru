@@ -21,8 +21,6 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
 
     @Autowired
     private EmailService emailService;
@@ -70,11 +68,14 @@ public class UserService {
     }
 
     public User authenticateUser(String email, String password) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, password));
-
-        return userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid email or password");
+        }
+
+        return user;
     }
 
     public User getUserByEmail(String email) {
@@ -137,6 +138,7 @@ public class UserService {
                     user.setPhone(null);
                     user.setGender(null);
                     User saved = userRepository.save(user);
+                    // Send welcome email to new OAuth users
                     emailService.sendWelcomeEmail(saved.getEmail(), saved.getFirstName());
                     return saved;
                 });
