@@ -24,6 +24,11 @@ public class AdminController {
     @Autowired
     private UserService userService;
 
+    @GetMapping("/users")
+    public ResponseEntity<List<UserResponse>> getAllUsers(Authentication authentication) {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+
     @GetMapping("/customers")
     public ResponseEntity<List<UserResponse>> getAllCustomers(Authentication authentication) {
         return ResponseEntity.ok(userService.getAllCustomers());

@@ -150,6 +150,12 @@ public class UserService {
                 });
     }
 
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(UserResponse::from)
+                .toList();
+    }
+
     public List<UserResponse> getAllCustomers() {
         return userRepository.findByRole(Role.CUSTOMER).stream()
                 .map(UserResponse::from)
