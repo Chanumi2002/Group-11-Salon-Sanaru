@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     @Autowired(required = false)
@@ -36,6 +38,11 @@ public class SecurityConfig {
     @Bean
     public JwtAuthenticationEntryPoint unauthorizedHandler() {
         return new JwtAuthenticationEntryPoint();
+    }
+
+    @Bean
+    public com.sanaru.backend.security.JwtAccessDeniedHandler accessDeniedHandler() {
+        return new com.sanaru.backend.security.JwtAccessDeniedHandler();
     }
 
     @Bean
@@ -77,9 +84,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/error",
                                 "/oauth2/**", "/login/oauth2/**")
                         .permitAll()
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
                         .anyRequest().authenticated())
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler()))
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(unauthorizedHandler())
+                        .accessDeniedHandler(accessDeniedHandler()))
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         if (clientRegistrationRepository != null && oAuth2LoginSuccessHandler != null) {
             http.oauth2Login(oauth2 -> oauth2

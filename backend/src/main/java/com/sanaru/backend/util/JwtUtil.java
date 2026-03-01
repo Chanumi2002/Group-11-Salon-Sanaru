@@ -3,6 +3,7 @@ package com.sanaru.backend.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.JwtException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -41,8 +42,18 @@ public class JwtUtil {
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            throw new io.jsonwebtoken.JwtException("Invalid JWT signature");
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            throw new io.jsonwebtoken.JwtException("JWT token is expired");
+        } catch (io.jsonwebtoken.UnsupportedJwtException e) {
+            throw new io.jsonwebtoken.JwtException("Unsupported JWT token");
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            throw new io.jsonwebtoken.JwtException("Invalid JWT token format");
+        } catch (IllegalArgumentException e) {
+            throw new io.jsonwebtoken.JwtException("JWT token is empty or invalid");
         } catch (Exception e) {
-            throw new RuntimeException("JWT Token validation failed", e);
+            throw new io.jsonwebtoken.JwtException("JWT token validation failed");
         }
     }
 
@@ -79,7 +90,13 @@ public class JwtUtil {
     }
 
     public Boolean validateToken(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username) && !isTokenExpired(token));
+        try {
+            final String extractedUsername = extractUsername(token);
+            return (extractedUsername.equals(username) && !isTokenExpired(token));
+        } catch (JwtException e) {
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

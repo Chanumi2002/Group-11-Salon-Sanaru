@@ -10,6 +10,7 @@ import com.sanaru.backend.model.User;
 import com.sanaru.backend.service.UserService;
 import com.sanaru.backend.service.OAuth2Service;
 import com.sanaru.backend.util.JwtUtil;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -44,7 +45,7 @@ public class AuthController {
     private String adminSecret;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         try {
             User user = userService.registerUser(request);
             String token = jwtUtil.generateToken(user.getEmail());
@@ -62,7 +63,7 @@ public class AuthController {
     }
 
     @PostMapping("/register-admin")
-    public ResponseEntity<AuthResponse> registerAdmin(@RequestBody RegisterRequest request,
+    public ResponseEntity<AuthResponse> registerAdmin(@Valid @RequestBody RegisterRequest request,
             @RequestParam String secret) {
         try {
             // Verify admin secret
@@ -87,7 +88,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
         try {
             User user = userService.authenticateUser(request.getEmail(), request.getPassword());
             String token = jwtUtil.generateToken(user.getEmail());
@@ -117,7 +118,7 @@ public class AuthController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<UserResponse> updateProfile(@RequestBody RegisterRequest request,
+    public ResponseEntity<UserResponse> updateProfile(@Valid @RequestBody RegisterRequest request,
             Authentication authentication) {
         try {
             String email = authentication.getName();
@@ -129,7 +130,7 @@ public class AuthController {
     }
 
     @PutMapping("/change-password")
-    public ResponseEntity<AuthResponse> changePassword(@RequestBody ChangePasswordRequest request,
+    public ResponseEntity<AuthResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request,
             Authentication authentication) {
         try {
             String email = authentication.getName();
@@ -155,7 +156,7 @@ public class AuthController {
      * OAuth2: Verify Google token and create/login user
      */
     @PostMapping("/oauth2/google")
-    public ResponseEntity<AuthResponse> loginWithGoogle(@RequestBody OAuth2TokenRequest request) {
+    public ResponseEntity<AuthResponse> loginWithGoogle(@Valid @RequestBody OAuth2TokenRequest request) {
         try {
             // Verify the token with Google
             Map<String, Object> userInfo = oAuth2Service.verifyGoogleToken(request.getToken());

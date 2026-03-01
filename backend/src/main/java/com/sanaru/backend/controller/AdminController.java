@@ -4,6 +4,7 @@ import com.sanaru.backend.dto.UserResponse;
 import com.sanaru.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,21 +26,25 @@ public class AdminController {
     private UserService userService;
 
     @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponse>> getAllUsers(Authentication authentication) {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @GetMapping("/customers")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponse>> getAllCustomers(Authentication authentication) {
         return ResponseEntity.ok(userService.getAllCustomers());
     }
 
     @GetMapping("/customers/count")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Long>> getCustomerCount(Authentication authentication) {
         return ResponseEntity.ok(Map.of("count", userService.getCustomerCount()));
     }
 
     @PutMapping("/customers/{id}/block")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> blockCustomer(@PathVariable("id") Long customerId, Authentication authentication) {
         try {
             return ResponseEntity.ok(userService.blockCustomer(customerId));
@@ -49,6 +54,7 @@ public class AdminController {
     }
 
     @PutMapping("/customers/{id}/unblock")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> unblockCustomer(@PathVariable("id") Long customerId, Authentication authentication) {
         try {
             return ResponseEntity.ok(userService.unblockCustomer(customerId));
@@ -58,6 +64,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/customers/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteCustomer(@PathVariable("id") Long customerId, Authentication authentication) {
         try {
             userService.deleteCustomer(customerId);

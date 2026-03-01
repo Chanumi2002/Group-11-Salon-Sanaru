@@ -2,6 +2,7 @@ package com.sanaru.backend.controller;
 
 import com.sanaru.backend.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -25,6 +26,10 @@ public class UserController {
      */
     @GetMapping("/email-health")
     public ResponseEntity<String> emailHealthCheck(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: JWT token required");
+        }
         return ResponseEntity.ok("Email service is available");
     }
 
@@ -37,6 +42,10 @@ public class UserController {
             @RequestParam String email,
             @RequestParam String name,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: JWT token required");
+        }
         try {
             emailService.sendWelcomeEmail(email, name);
             return ResponseEntity.ok("Welcome email sent to: " + email);
@@ -54,6 +63,10 @@ public class UserController {
             @RequestParam String email,
             @RequestParam String name,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: JWT token required");
+        }
         try {
             emailService.sendPasswordChangedEmail(email, name);
             return ResponseEntity.ok("Password changed email sent to: " + email);
@@ -71,6 +84,10 @@ public class UserController {
             @RequestParam String email,
             @RequestParam String name,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: JWT token required");
+        }
         try {
             emailService.sendAccountDeletedEmail(email, name);
             return ResponseEntity.ok("Account deleted email sent to: " + email);
@@ -92,6 +109,10 @@ public class UserController {
             @RequestParam String appointmentTime,
             @RequestParam(required = false) String staffName,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: JWT token required");
+        }
         try {
             emailService.sendAppointmentConfirmationEmail(email, customerName, serviceName,
                     appointmentDate, appointmentTime, staffName);
@@ -113,6 +134,10 @@ public class UserController {
             @RequestParam String appointmentDate,
             @RequestParam String appointmentTime,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: JWT token required");
+        }
         try {
             emailService.sendAppointmentReminderEmail(email, customerName, serviceName,
                     appointmentDate, appointmentTime);
@@ -134,6 +159,10 @@ public class UserController {
             @RequestParam String appointmentDate,
             @RequestParam String cancellationReason,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: JWT token required");
+        }
         try {
             emailService.sendAppointmentCancellationEmail(email, customerName, serviceName,
                     appointmentDate, cancellationReason);
@@ -156,6 +185,10 @@ public class UserController {
             @RequestParam double totalPrice,
             @RequestParam String orderId,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: JWT token required");
+        }
         try {
             emailService.sendBookingConfirmationEmail(email, customerName, productName,
                     quantity, totalPrice, orderId);
@@ -174,6 +207,10 @@ public class UserController {
             @RequestParam String email,
             @RequestParam String resetToken,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: JWT token required");
+        }
         try {
             emailService.sendPasswordResetEmail(email, resetToken);
             return ResponseEntity.ok("Password reset email sent to: " + email);
