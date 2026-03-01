@@ -42,7 +42,8 @@ public class UserService {
         user.setGender(request.getGender());
 
         User saved = userRepository.save(user);
-        emailService.sendWelcomeEmail(saved.getEmail(), saved.getFirstName());
+        // Send welcome email asynchronously - failure won't affect this operation
+        emailService.sendWelcomeEmailAsync(saved.getEmail(), saved.getFirstName());
         return saved;
     }
 
@@ -63,7 +64,8 @@ public class UserService {
         user.setGender(request.getGender());
 
         User saved = userRepository.save(user);
-        emailService.sendWelcomeEmail(saved.getEmail(), saved.getFirstName());
+        // Send welcome email asynchronously - failure won't affect this operation
+        emailService.sendWelcomeEmailAsync(saved.getEmail(), saved.getFirstName());
         return saved;
     }
 
@@ -111,7 +113,8 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         String name = user.getFirstName() + (user.getLastName() != null ? " " + user.getLastName() : "");
-        emailService.sendPasswordChangedEmail(user.getEmail(), name);
+        // Send email asynchronously - failure won't affect this operation
+        emailService.sendPasswordChangedEmailAsync(user.getEmail(), name);
     }
 
     public void deleteUserByEmail(String email) {
@@ -120,7 +123,8 @@ public class UserService {
         String userEmail = user.getEmail();
         String name = user.getFirstName() + (user.getLastName() != null ? " " + user.getLastName() : "");
         userRepository.delete(user);
-        emailService.sendAccountDeletedEmail(userEmail, name);
+        // Send email asynchronously - failure won't affect this operation
+        emailService.sendAccountDeletedEmailAsync(userEmail, name);
     }
 
     /**
@@ -144,8 +148,8 @@ public class UserService {
                     user.setPhone(null);
                     user.setGender(null);
                     User saved = userRepository.save(user);
-                    // Send welcome email to new OAuth users
-                    emailService.sendWelcomeEmail(saved.getEmail(), saved.getFirstName());
+                    // Send welcome email to new OAuth users asynchronously
+                    emailService.sendWelcomeEmailAsync(saved.getEmail(), saved.getFirstName());
                     return saved;
                 });
     }

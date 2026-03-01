@@ -8,9 +8,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Async;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -380,5 +382,56 @@ public class EmailServiceImpl implements EmailService {
                 + "</p>"
                 + "</div>"
                 + "</body></html>";
+    }
+
+    /**
+     * Async method to send password changed email without blocking the main thread
+     * Failures are logged but do not affect the main operation
+     */
+    @Override
+    @Async
+    public CompletableFuture<Void> sendPasswordChangedEmailAsync(String email, String name) {
+        try {
+            sendPasswordChangedEmail(email, name);
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            logger.error("Failed to send password changed email to " + email + ", but password change succeeded", e);
+            // Complete normally even if email fails - the main operation succeeded
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    /**
+     * Async method to send account deleted email without blocking the main thread
+     * Failures are logged but do not affect the main operation
+     */
+    @Override
+    @Async
+    public CompletableFuture<Void> sendAccountDeletedEmailAsync(String email, String name) {
+        try {
+            sendAccountDeletedEmail(email, name);
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            logger.error("Failed to send account deleted email to " + email + ", but account deletion succeeded", e);
+            // Complete normally even if email fails - the main operation succeeded
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    /**
+     * Async method to send welcome email without blocking the main thread
+     * Failures are logged but do not affect the main operation
+     */
+    @Override
+    @Async
+    public CompletableFuture<Void> sendWelcomeEmailAsync(String email, String firstName) {
+        try {
+            sendWelcomeEmail(email, firstName);
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            logger.error("Failed to send welcome email to " + email + ", but registration succeeded", e);
+            // Complete normally even if email fails - the main operation succeeded
+            return CompletableFuture.completedFuture(null);
+        }
     }
 }

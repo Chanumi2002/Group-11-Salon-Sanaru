@@ -58,7 +58,15 @@ public class JwtUtil {
     }
 
     private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        try {
+            Date expiration = extractExpiration(token);
+            if (expiration == null) {
+                return true;  // Consider token expired if no expiration is set
+            }
+            return expiration.before(new Date());
+        } catch (JwtException e) {
+            return true;  // Consider token expired on any JWT error
+        }
     }
 
     public String generateToken(String username) {

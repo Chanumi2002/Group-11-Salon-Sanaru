@@ -35,15 +35,22 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         String username = null;
         String jwtToken = null;
+        boolean hasBearer = false;
+        JwtException jwtError = null;
 
         try {
             if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
+                hasBearer = true;
                 jwtToken = requestTokenHeader.substring(7);
+                
                 try {
                     username = jwtUtil.extractUsername(jwtToken);
                 } catch (JwtException e) {
                     // Log without exposing details
                     logger.debug("JWT token extraction failed: Invalid or tampered token");
+                    jwtError = e;
+                    // Store the error to fail authentication
+                    username = null;
                 }
             }
 
@@ -56,13 +63,33 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                                 userDetails, null, userDetails.getAuthorities());
                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authToken);
+                    } else {
+                        // Token validation failed (expired, invalid signature, etc.)
+                        logger.debug("JWT token validation failed");
+                        jwtError = new JwtException("Token validation failed");
                     }
                 } catch (UsernameNotFoundException e) {
                     logger.debug("User not found for token");
+                    jwtError = new JwtException("User not found");
                 } catch (JwtException e) {
-                    logger.debug("JWT token validation failed");
+                    logger.debug("JWT token validation error: " + e.getMessage());
+                    jwtError = e;
+                }
+            } else if (hasBearer && jwtError == null) {
+                // Bearer token was present but could not be processed
+                jwtError = new JwtException("Invalid JWT token");
+            }
+
+            // If there was a Bearer token but authentication failed, we need to fail the request
+            if (hasBearer && SecurityContextHolder.getContext().getAuthentication() == null) {
+                // Instead of letting it pass, we should ensure Spring Security rejects it
+                // by not setting authentication. The 401 will be handled by JwtAuthenticationEntryPoint
+                // for protected resources
+                if (jwtError != null) {
+                    logger.debug("Bearer token present but invalid: " + jwtError.getMessage());
                 }
             }
+
         } catch (Exception e) {
             logger.debug("Error in JWT filter: Invalid token");
         }
@@ -70,3 +97,4 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 }
+

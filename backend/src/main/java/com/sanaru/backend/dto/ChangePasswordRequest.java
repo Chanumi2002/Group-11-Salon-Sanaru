@@ -2,7 +2,13 @@ package com.sanaru.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import com.sanaru.backend.validation.PasswordsMatch;
 
+@PasswordsMatch(
+    message = "New password and confirmation password must match",
+    passwordField = "newPassword",
+    confirmPasswordField = "confirmPassword"
+)
 public class ChangePasswordRequest {
     
     @NotBlank(message = "Current password is required")
@@ -11,6 +17,9 @@ public class ChangePasswordRequest {
     @NotBlank(message = "New password is required")
     @Size(min = 6, message = "New password must be at least 6 characters long")
     private String newPassword;
+
+    @NotBlank(message = "Password confirmation is required")
+    private String confirmPassword;
 
     public String getCurrentPassword() {
         return currentPassword;
@@ -26,5 +35,13 @@ public class ChangePasswordRequest {
 
     public void setNewPassword(String newPassword) {
         this.newPassword = newPassword;
+    }
+
+    public String getConfirmPassword() {
+        return confirmPassword;
+    }
+
+    public void setConfirmPassword(String confirmPassword) {
+        this.confirmPassword = confirmPassword;
     }
 }

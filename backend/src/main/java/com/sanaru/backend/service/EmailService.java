@@ -1,5 +1,7 @@
 package com.sanaru.backend.service;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface EmailService {
     // User Account Emails
     void sendWelcomeEmail(String email, String firstName);
@@ -21,4 +23,9 @@ public interface EmailService {
     // Product/Booking Emails
     void sendBookingConfirmationEmail(String toEmail, String customerName, String productName,
             int quantity, double totalPrice, String orderId);
+
+    // Async methods for notifications (non-blocking)
+    CompletableFuture<Void> sendPasswordChangedEmailAsync(String email, String name);
+    CompletableFuture<Void> sendAccountDeletedEmailAsync(String email, String name);
+    CompletableFuture<Void> sendWelcomeEmailAsync(String email, String firstName);
 }

@@ -81,9 +81,11 @@ public class SecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/auth/**", "/error",
+                        .requestMatchers("/api/auth/register", "/api/auth/register-admin", "/api/auth/login", 
+                                "/api/auth/oauth2/google", "/error",
                                 "/oauth2/**", "/login/oauth2/**")
                         .permitAll()
+                        .requestMatchers("/api/auth/profile", "/api/auth/change-password").authenticated()
                         .requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
                         .anyRequest().authenticated())
