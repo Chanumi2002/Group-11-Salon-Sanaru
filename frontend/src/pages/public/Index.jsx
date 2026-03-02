@@ -4,6 +4,7 @@ import { Footer } from "@/components/common/Footer";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Heart, Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import salonHero from "@/assets/salon-hero.jpg";
 
 const services = [
   { icon: Sparkles, title: "Hair Styling", desc: "Trendy cuts, coloring, and treatments" },
@@ -17,13 +18,25 @@ const Index = () => {
       <Navbar />
 
       {/* Hero */}
-      <section className="relative overflow-hidden gradient-soft">
-        <div className="container py-28 md:py-40 text-center">
+      <section 
+        className="relative overflow-hidden min-h-screen flex items-center justify-center"
+        style={{
+          backgroundImage: `url(${salonHero})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/25"></div>
+        
+        {/* Content */}
+        <div className="relative container py-20 text-center z-10">
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="font-display text-4xl md:text-6xl font-bold text-foreground mb-4"
+            className="font-display text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg"
           >
             Welcome to Salon Sanaru
           </motion.h1>
@@ -31,7 +44,7 @@ const Index = () => {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.15 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-8"
+            className="text-lg md:text-xl text-white/95 max-w-xl mx-auto mb-8 drop-shadow-md"
           >
             Where style meets elegance. Book your appointment and experience
             luxury self-care.
