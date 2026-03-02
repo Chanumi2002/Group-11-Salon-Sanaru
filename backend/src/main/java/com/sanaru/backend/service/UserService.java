@@ -218,4 +218,8 @@ public class UserService {
         }
         userRepository.delete(user);
     }
+
+    public void sendBlockedLoginAttemptEmail(String email, String name) {
+        emailService.sendBlockedLoginAttemptEmail(email, name);
+    }
 }

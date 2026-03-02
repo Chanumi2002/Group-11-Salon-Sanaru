@@ -171,6 +171,14 @@ public class AuthController {
             // Find or create user
             User user = userService.findOrCreateFromOAuth(email, name);
             
+            // Check if user is blocked
+            if (!user.getEnabled()) {
+                String userName = user.getFirstName() + (user.getLastName() != null ? " " + user.getLastName() : "");
+                userService.sendBlockedLoginAttemptEmail(user.getEmail(), userName);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new AuthResponse(null, "Your account has been blocked by admin. Please contact support for assistance."));
+            }
+            
             // Generate JWT token
             String token = jwtUtil.generateToken(user.getEmail());
             
