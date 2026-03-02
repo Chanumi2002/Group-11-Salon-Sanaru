@@ -2,7 +2,7 @@
 
 A comprehensive web-based beauty salon management system enabling customers to book appointments, purchase products, and receive personalized beauty recommendations while providing administrators with complete business control.
 
-**Group:** Group 11 | **Live Version:** Development (Sprint 1 In Review ⏳)
+**Group:** Group 11 | **Status:** Sprint 1 Complete ✅ | **Version:** 1.0.2
 
 ---
 
@@ -19,15 +19,15 @@ A comprehensive web-based beauty salon management system enabling customers to b
 
 ---
 
-## � Sprint Status
+## 📋 Sprint Status
 
 | Sprint | Goal | Status | Duration |
 |--------|------|--------|----------|
-| 1 | User Management & Admin System | ⏳ IN REVIEW | Week 1-2 |
+| 1 | User Management, Email Validation, Homepage Hero | ✅ COMPLETE | Week 1-2 |
 
 ---
 
-## �🚀 Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 16+ & npm
@@ -41,7 +41,7 @@ A comprehensive web-based beauty salon management system enabling customers to b
 ```bash
 cd backend
 mvn clean install -DskipTests
-java -jar target/backend-0.0.1-SNAPSHOT.jar
+mvn spring-boot:run
 # Runs on http://localhost:8080
 ```
 
@@ -55,44 +55,80 @@ npm run dev
 
 ---
 
-## 📊 Features Overview (Sprint 1 - In Review)
+## 📊 Features Overview (Sprint 1 - Complete ✅)
 
-### ✅ Implemented
-- User Registration & Login with JWT
-- Admin Dashboard with statistics
-- Customer Management (view, block, delete)
-- Email notification system
-  - Welcome email on registration
-  - Account blocked notification with support contact
-  - Account unblocked notification with login link
-  - **Blocked login attempt reminder** - When blocked customers try to login, they receive an email reminder that their account is blocked
-- Admin profile management
-- Customer profile management
+### ✅ User Management & Authentication
+- User Registration & Login with JWT token
+- **Email Format Validation** - Regex pattern validation
+- **Domain MX Records Validation** - Ensures email domain can receive emails
+- **Throwaway Domain Detection** - Blocks 30+ temp email services
+- Email normalization (case-insensitive matching)
+- Google OAuth 2.0 integration with blocked user prevention
 - Role-based access control (ADMIN/CUSTOMER)
-- Account blocking enforcement - Blocked customers cannot login and receive clear error message with email notification
+- JWT token blacklist on logout
+
+### ✅ Admin Features
+- Dashboard with customer statistics
+- Customer Management (view, block, delete)
+- Admin profile management with password change
+- Account blocking enforcement
+- Role-based access control
+
+### ✅ Customer Features
+- User registration with email validation
+- Login and profile management
+- Password change functionality
+- Dashboard with personal information
+- Profile update capability
+
+### ✅ Email Notification System
+- Welcome email on registration
+- Account blocked notification with support contact
+- Account unblocked notification
+- Blocked login attempt reminder email
+- Password changed confirmation email
+- Account deleted notification email
+- Appointment confirmation and reminders
+- Booking confirmation emails
+
+### ✅ Homepage Features
+- **Full-Screen Hero Section** with salon interior image (`salon-hero.jpg`)
+- Responsive design on all devices
+- Smooth animations with Framer Motion
+- Service preview cards
+- About section
+- Call-to-action buttons
+
+### ✅ UI/UX Enhancements
+- Dark/Light theme toggle
+- Tailwind CSS styling
+- Form validation (client + server)
+- User-friendly error messages
+- Protected routes with role-based access
+- Toast notifications with Sonner
+- Accessible form inputs
 
 ---
 
 ## 👥 User Roles
 
 ### Admin Access
-- View dashboard statistics
-- Manage customer accounts
-- Block/Unblock customers
-- Delete customers
-- View own profile
-- Change password
+- Dashboard with customer statistics
+- Customer management (view, block, delete)
+- Block/Unblock customers with notifications
+- Profile and password management
+- Admin dashboard access
 
 ### Customer Access
-- Register and login
-- Manage profile
-- View dashboard
+- Register with email validation
+- Login and profile management
+- View customer dashboard
 - Browse homepage
-- Change password
+- Secure password change
 
 ### Guest Access
-- View public pages
-- Read system information
+- View public homepage
+- Access registration/login pages
 
 ---
 
@@ -100,11 +136,12 @@ npm run dev
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React 18, Vite, Tailwind CSS |
-| **Backend** | Spring Boot 3, Spring Security |
+| **Frontend** | React 18, Vite 5.x, Tailwind CSS, Framer Motion |
+| **Backend** | Spring Boot 3.x, Spring Security, JPA/Hibernate |
 | **Database** | MySQL 8.0 |
-| **Authentication** | JWT + BCrypt |
+| **Authentication** | JWT + BCrypt + Token Blacklist |
 | **Email** | Spring Mail + Gmail SMTP |
+| **Validation** | Jakarta, Email Validator (MX Records) |
 | **Build** | Maven & npm |
 
 ---
@@ -113,14 +150,30 @@ npm run dev
 
 ```
 Group-11-Salon-Sanaru/
-├── backend/                    # Spring Boot Application
-│   ├── src/main/java/...
+├── backend/
+│   ├── src/main/java/com/sanaru/backend/
+│   │   ├── controller/        # API endpoints
+│   │   ├── service/           # Business logic
+│   │   ├── model/             # JPA entities
+│   │   ├── dto/               # Data transfer objects
+│   │   ├── security/          # JWT & security
+│   │   ├── util/              # EmailValidator utility
+│   │   ├── exception/         # Custom exceptions
+│   │   └── repository/        # Database access
 │   ├── pom.xml
 │   └── application.properties
-├── frontend/                   # React Application
+├── frontend/
 │   ├── src/
+│   │   ├── pages/            # Page components
+│   │   ├── components/       # Reusable components
+│   │   ├── services/         # API integration
+│   │   ├── context/          # React context
+│   │   ├── assets/           # Images & static
+│   │   │   └── salon-hero.jpg # Homepage hero image ✨
+│   │   └── styles/           # CSS
 │   ├── package.json
 │   └── vite.config.js
+└── README.md
 ```
 
 ---
@@ -137,82 +190,73 @@ Password: qazxsw
 ## 📱 Key Pages
 
 ### Admin
-- `/admin_dashboard` - Main dashboard
-- `/admin_dashboard/users` - User management
+- `/admin_dashboard` - Dashboard with stats
+- `/admin_dashboard/users` - Customer management
 - `/admin_dashboard/profile` - Admin profile
 
 ### Customer
 - `/customer_dashboard` - Dashboard
-- `/homepage` - Customer homepage
-- `/customer_profile` - Profile management
+- `/homepage` - Homepage
+- `/customer_profile` - Profile
 
 ### Public
-- `/` - Home
+- `/` - Homepage with hero image
 - `/login` - Login
-- `/register` - Register
+- `/register` - Registration
 
 ---
 
-## 🐛 Current Build Status
+## ✉️ Email Validation System (NEW)
 
-⏳ **Frontend:** Builds successfully - Under Code Review
-⏳ **Backend:** Compiles successfully - Under Code Review
-⏳ **Integration Testing:** In Progress - Checking runtime functionality
+### 3-Layer Validation
 
----
+**1. Format Check**
+- Pattern: `^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`
+- Validates email structure
 
-##  Email Notifications
+**2. Domain MX Records**
+- Queries DNS for MX records
+- Ensures domain can receive emails
+- Error: "Email domain does not exist or cannot receive emails"
 
-**Automatically Sent Emails:**
-- ✅ **Welcome Email** - Sent when user registers
-- ✅ **Account Blocked Email** - Sent when admin blocks customer
-- ✅ **Account Unblocked Email** - Sent when admin unblocks customer
-- ✅ **Blocked Login Attempt Email** - Sent when blocked customer attempts to login with notice: *"Your account is currently blocked. Attempting to login won't resolve this. Please contact support for assistance."*
-- ✅ **Password Changed Email** - Confirmation when password is updated
-- ✅ **Account Deleted Email** - Notification when account is deleted
+**3. Throwaway Domain Detection**
+- Blocks 30+ temporary email services:
+  - tempmail.com, mailinator.com, 10minutemail.com
+  - yopmail.com, temp-mail.io, etc.
+- Error: "Throwaway/temporary email addresses are not allowed"
 
-**Blocked Login Feature:**
-When an admin blocks a customer account:
-1. Customer receives account blocked notification email
-2. If customer tries to login, they see error: *"Your account has been blocked by admin. Attempting to login won't resolve this. Please contact support for assistance."*
-3. A reminder email is sent to blocked customer informing them of the login attempt
-4. Login is prevented until admin unblocks the account
+### Applied Locations
+- User registration (registerUser, registerAdminUser)
+- Email updates
+- Authentication flows
 
----
-
-##  Security Features
-
-✅ Spring Security Framework
-✅ JWT Token Authentication
-✅ BCrypt Password Encryption
-✅ Role-Based Access Control (RBAC)
-✅ Secure CORS Configuration
-✅ HttpOnly Cookies (ready)
-✅ Account Blocking & Login Prevention
-✅ Email-Based Security Notifications
+**Classes:**
+- `EmailValidator.java` - Validation utility
+- `InvalidEmailException.java` - Custom exception
+- `GlobalExceptionHandler.java` - Exception handler
 
 ---
 
-##  API Endpoints
+## 🔐 Security Features
 
-### Auth
-```
-POST   /api/auth/register
-POST   /api/auth/login
-GET    /api/auth/profile
-PUT    /api/auth/profile
-PUT    /api/auth/change-password
-DELETE /api/auth/profile
-```
+✅ **JWT Authentication** - Token-based, stateless
+✅ **Token Blacklist** - O(1) logout invalidation
+✅ **Password Hashing** - BCrypt with salt
+✅ **Email Validation** - Format, domain, throwaway checks
+✅ **Blocked User Prevention** - Works on email/password AND OAuth
+✅ **CORS Protection** - Configured for frontend
+✅ **Protected Routes** - Role-based access control
+✅ **Form Validation** - Server-side validation
+✅ **Email Normalization** - Case-insensitive matching
 
-### Admin
-```
-GET    /api/admin/customers
-GET    /api/admin/customers/count
-PUT    /api/admin/customers/{id}/block
-PUT    /api/admin/customers/{id}/unblock
-DELETE /api/admin/customers/{id}
-```
+---
+
+## 📊 Build Status
+
+✅ **Frontend:** No errors, ready to run
+✅ **Backend:** BUILD SUCCESS - 38 files (8-9s)
+✅ **Server:** Running on port 8080
+✅ **Integration:** Ready for testing
 
 ---
 
@@ -220,27 +264,23 @@ DELETE /api/admin/customers/{id}
 
 | Issue | Solution |
 |-------|----------|
-| Port 8080 in use | Change port in `application.properties` |
-| DB connection fails | Verify MySQL is running with correct credentials |
-| Email not working | Check Gmail app password configuration |
-| CORS errors | Ensure backend is running and CORS is configured |
-
----
-
-## 📞 Support
-
-**GitHub Issues:** Report bugs and request features
-**Project Manager:** Contact sprint lead
+| Port 8080 in use | Kill process or change port in `application.properties` |
+| DB connection fails | Verify MySQL credentials |
+| Email not working | Check Gmail app password |
+| CORS errors | Ensure backend is running |
+| Hero image missing | Clear cache (Ctrl+Shift+R) |
 
 ---
 
 ## 📄 License
 
-Proprietary Software - Salon Sanaru Management System
+Proprietary - Salon Sanaru Management System
 All Rights Reserved © 2026
 
 ---
 
-**Status:** Sprint 1 IN REVIEW ⏳
-**Last Updated:** February 28, 2026
-**Version:** 1.0.0 (Beta)
+**Status:** ✅ Sprint 1 Complete
+**Last Updated:** March 2, 2026
+**Version:** 1.0.5
+**Next:** Sprint 2 - Appointments & Booking
+
