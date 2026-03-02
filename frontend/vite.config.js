@@ -5,7 +5,7 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig({
   server: {
-    host: "::",
+    host: "localhost",
     port: 5173,
     hmr: {
       overlay: false,
@@ -15,6 +15,9 @@ export default defineConfig({
         target: "http://localhost:8080",
         changeOrigin: true,
       },
+    },
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
     },
   },
   plugins: [react()],

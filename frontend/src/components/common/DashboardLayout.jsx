@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { authService } from "@/services/api";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 import {
   LayoutDashboard,
   User,
@@ -90,6 +91,7 @@ export function DashboardLayout({ children }) {
             Customer Portal
           </h2>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link
               to="/customer_profile"
               className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"

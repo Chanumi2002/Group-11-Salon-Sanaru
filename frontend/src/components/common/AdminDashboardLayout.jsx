@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 import {
   LayoutDashboard,
   Users,
@@ -123,13 +124,16 @@ export function AdminDashboardLayout({ children }) {
               Admin Dashboard
             </h1>
           </div>
-          <Link
-            to="/admin_dashboard/profile"
-            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
-            title="My Account"
-          >
-            <User className="h-5 w-5 text-muted-foreground" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link
+              to="/admin_dashboard/profile"
+              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
+              title="My Account"
+            >
+              <User className="h-5 w-5 text-muted-foreground" />
+            </Link>
+          </div>
         </header>
 
         {/* Content Area */}

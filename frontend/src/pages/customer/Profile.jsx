@@ -92,7 +92,7 @@ export default function Profile() {
     if (!validatePasswordForm()) return;
     try {
       setChangingPassword(true);
-      await authService.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      await authService.changePassword(passwordForm.currentPassword, passwordForm.newPassword, passwordForm.confirmPassword);
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setPasswordErrors({});
       toast.success("Password updated successfully. A confirmation email has been sent.");
@@ -202,6 +202,7 @@ export default function Profile() {
                   onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                   placeholder="••••••••"
                   className="pr-10"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -225,6 +226,7 @@ export default function Profile() {
                   onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                   placeholder="••••••••"
                   className="pr-10"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -248,6 +250,7 @@ export default function Profile() {
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
                   placeholder="••••••••"
                   className="pr-10"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"

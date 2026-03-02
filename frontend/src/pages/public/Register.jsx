@@ -148,6 +148,7 @@ export default function Register() {
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="jane@example.com"
+                autoComplete="email"
               />
               {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
             </div>

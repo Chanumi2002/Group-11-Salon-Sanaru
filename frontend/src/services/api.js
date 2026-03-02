@@ -38,8 +38,8 @@ export const authService = {
   },
 
   // Change password
-  changePassword: async (currentPassword, newPassword) => {
-    return await api.put('/auth/change-password', { currentPassword, newPassword });
+  changePassword: async (currentPassword, newPassword, confirmPassword) => {
+    return await api.put('/auth/change-password', { currentPassword, newPassword, confirmPassword });
   },
 
   // Delete account
