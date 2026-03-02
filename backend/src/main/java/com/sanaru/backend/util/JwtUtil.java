@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.JwtException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,9 @@ public class JwtUtil {
 
     @Value("${jwt.expiration:86400}")
     private Long expiration;
+
+    @Autowired(required = false)
+    private com.sanaru.backend.service.TokenBlacklistService tokenBlacklistService;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -99,12 +103,35 @@ public class JwtUtil {
 
     public Boolean validateToken(String token, String username) {
         try {
+            // Check if token is blacklisted first
+            if (tokenBlacklistService != null && tokenBlacklistService.isTokenBlacklisted(token)) {
+                return false;
+            }
+            
             final String extractedUsername = extractUsername(token);
             return (extractedUsername.equals(username) && !isTokenExpired(token));
         } catch (JwtException e) {
             return false;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /**
+     * Get the expiration time of a token for blacklisting purposes.
+     * 
+     * @param token The JWT token
+     * @return The expiration time in milliseconds, or null if not available
+     */
+    public Long getTokenExpirationTime(String token) {
+        try {
+            Date expiration = extractExpiration(token);
+            if (expiration != null) {
+                return expiration.getTime();
+            }
+            return null;
+        } catch (JwtException e) {
+            return null;
         }
     }
 }

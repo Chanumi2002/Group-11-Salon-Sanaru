@@ -9,6 +9,7 @@ import com.sanaru.backend.dto.UserResponse;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.service.UserService;
 import com.sanaru.backend.service.OAuth2Service;
+import com.sanaru.backend.service.TokenBlacklistService;
 import com.sanaru.backend.util.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,9 @@ public class AuthController {
 
     @Autowired
     private OAuth2Service oAuth2Service;
+
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
 
     @Value("${admin.registration.secret:AdminSecretKey2026}")
     private String adminSecret;
@@ -182,6 +186,53 @@ public class AuthController {
             e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body(new AuthResponse(null, "Google authentication failed: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Logout: Invalidate the JWT token by adding it to the blacklist.
+     * The token remains valid until its expiration time, but users cannot use it
+     * after logout. Future requests with this token will be rejected.
+     * 
+     * @param request The HTTP request containing the Authorization header with the JWT token
+     * @param authentication The authenticated user's information
+     * @return Response indicating successful logout
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<AuthResponse> logout(
+            org.springframework.web.context.request.RequestAttributes request,
+            Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return ResponseEntity.badRequest()
+                        .body(new AuthResponse(null, "No user is currently logged in"));
+            }
+
+            // Get token from Authorization header
+            org.springframework.web.context.request.ServletRequestAttributes servletAttributes =
+                    (org.springframework.web.context.request.ServletRequestAttributes) request;
+            String authHeader = servletAttributes.getRequest().getHeader("Authorization");
+
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                
+                // Add token to blacklist with its expiration time
+                Long expirationTime = jwtUtil.getTokenExpirationTime(token);
+                if (expirationTime != null) {
+                    tokenBlacklistService.blacklistToken(token, expirationTime);
+                    return ResponseEntity.ok(new AuthResponse(null, "Logout successful. Token has been revoked."));
+                } else {
+                    return ResponseEntity.badRequest()
+                            .body(new AuthResponse(null, "Could not determine token expiration time"));
+                }
+            }
+
+            return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, "Token not found in Authorization header"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new AuthResponse(null, "Logout failed: " + e.getMessage()));
         }
     }
 
