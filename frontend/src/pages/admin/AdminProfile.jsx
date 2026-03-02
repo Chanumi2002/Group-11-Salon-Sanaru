@@ -135,7 +135,7 @@ export default function AdminProfile() {
     if (!validatePasswordForm()) return;
     try {
       setChangingPassword(true);
-      await authService.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      await authService.changePassword(passwordForm.currentPassword, passwordForm.newPassword, passwordForm.confirmPassword);
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setPasswordErrors({});
       toast.success("Password updated successfully. A confirmation email has been sent.");
@@ -326,7 +326,15 @@ export default function AdminProfile() {
             Change Password
           </h3>
 
-          <div className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleChangePassword(); }} className="space-y-4">
+            <Input
+              type="email"
+              value={user?.email || ""}
+              readOnly
+              className="hidden"
+              autoComplete="username"
+              aria-hidden="true"
+            />
             <div>
               <Label htmlFor="currentPassword" className="font-semibold">
                 Current Password
@@ -338,6 +346,7 @@ export default function AdminProfile() {
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                   className={`pr-10 ${passwordErrors.currentPassword ? "border-destructive" : ""}`}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -367,6 +376,7 @@ export default function AdminProfile() {
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                   className={`pr-10 ${passwordErrors.newPassword ? "border-destructive" : ""}`}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -396,6 +406,7 @@ export default function AdminProfile() {
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
                   className={`pr-10 ${passwordErrors.confirmPassword ? "border-destructive" : ""}`}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -414,10 +425,10 @@ export default function AdminProfile() {
               )}
             </div>
 
-            <Button onClick={handleChangePassword} disabled={changingPassword} className="w-full">
+            <Button type="submit" disabled={changingPassword} className="w-full">
               {changingPassword ? "Updating..." : "Update Password"}
             </Button>
-          </div>
+          </form>
         </motion.div>
       </div>
     </AdminDashboardLayout>

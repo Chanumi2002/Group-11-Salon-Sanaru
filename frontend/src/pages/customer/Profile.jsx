@@ -191,7 +191,15 @@ export default function Profile() {
             <KeyRound className="h-5 w-5 text-primary" />
             Change Password
           </h2>
-          <div className="space-y-4 max-w-md">
+          <form onSubmit={(e) => { e.preventDefault(); handleChangePassword(); }} className="space-y-4 max-w-md">
+            <Input
+              type="email"
+              value={user?.email || ""}
+              readOnly
+              className="hidden"
+              autoComplete="username"
+              aria-hidden="true"
+            />
             <div>
               <Label htmlFor="currentPassword">Current Password</Label>
               <div className="relative">
@@ -265,12 +273,12 @@ export default function Profile() {
               )}
             </div>
             <Button
-              onClick={handleChangePassword}
+              type="submit"
               disabled={changingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
             >
               {changingPassword ? "Changing..." : "Change Password"}
             </Button>
-          </div>
+          </form>
         </div>
       </div>
 

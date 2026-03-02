@@ -5,6 +5,7 @@ import com.sanaru.backend.dto.AuthResponse;
 import com.sanaru.backend.dto.ChangePasswordRequest;
 import com.sanaru.backend.dto.OAuth2TokenRequest;
 import com.sanaru.backend.dto.RegisterRequest;
+import com.sanaru.backend.dto.UpdateProfileRequest;
 import com.sanaru.backend.dto.UserResponse;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.service.UserService;
@@ -122,7 +123,7 @@ public class AuthController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<UserResponse> updateProfile(@Valid @RequestBody RegisterRequest request,
+    public ResponseEntity<UserResponse> updateProfile(@Valid @RequestBody UpdateProfileRequest request,
             Authentication authentication) {
         try {
             String email = authentication.getName();

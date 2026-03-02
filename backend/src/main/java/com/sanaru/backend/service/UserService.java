@@ -1,6 +1,7 @@
 package com.sanaru.backend.service;
 
 import com.sanaru.backend.dto.RegisterRequest;
+import com.sanaru.backend.dto.UpdateProfileRequest;
 import com.sanaru.backend.dto.UserResponse;
 import com.sanaru.backend.model.Role;
 import com.sanaru.backend.model.User;
@@ -92,6 +93,19 @@ public class UserService {
     }
 
     public User updateUser(String email, RegisterRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        // Update user fields
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhone(request.getPhone());
+        user.setGender(request.getGender());
+
+        return userRepository.save(user);
+    }
+
+    public User updateUser(String email, UpdateProfileRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
