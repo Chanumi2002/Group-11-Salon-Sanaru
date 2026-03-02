@@ -93,6 +93,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InvalidEmailException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidEmailException(
+            InvalidEmailException ex,
+            WebRequest request) {
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", "Invalid Email");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", System.currentTimeMillis());
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGlobalException(
             Exception ex,

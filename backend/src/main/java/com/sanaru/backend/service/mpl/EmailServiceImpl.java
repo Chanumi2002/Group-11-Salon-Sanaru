@@ -222,6 +222,26 @@ public class EmailServiceImpl implements EmailService {
                 + "</body></html>";
     }
 
+    private String buildEmailVerificationEmailHtml(String firstName, String verificationToken, String verificationUrl) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<div style=\"text-align: center; margin-bottom: 30px;\">"
+                + "<h1 style=\"color: #d946a6; margin: 0;\">Verify Your Email ✉️</h1>"
+                + "</div>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hi " + firstName + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Thank you for registering with Salon Sanaru! To complete your account setup and start booking appointments, please verify your email address.</p>"
+                + "<div style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"" + verificationUrl + "\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Verify Email</a>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; line-height: 1.6;\">Or copy this link: <br/><span style=\"color: #999; word-break: break-all;\">" + verificationUrl + "</span></p>"
+                + "<p style=\"font-size: 14px; color: #666;\">This verification link will expire in 24 hours for security purposes.</p>"
+                + "<p style=\"font-size: 14px; color: #666;\">If you didn't create this account, please ignore this email.</p>"
+                + "<hr style=\"border: none; border-top: 1px solid #ddd; margin: 20px 0;\">"
+                + "<p style=\"font-size: 12px; color: #999; text-align: center;\">Salon Sanaru | Beauty & Wellness</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
     private String buildPasswordResetEmailHtml(String resetToken) {
         return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
                 + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"

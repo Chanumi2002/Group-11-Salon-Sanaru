@@ -6,6 +6,8 @@ import com.sanaru.backend.dto.UserResponse;
 import com.sanaru.backend.model.Role;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.UserRepository;
+import com.sanaru.backend.exception.InvalidEmailException;
+import com.sanaru.backend.util.EmailValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -27,16 +29,24 @@ public class UserService {
     private EmailService emailService;
 
     public User registerUser(RegisterRequest request) {
+        // Normalize email
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+        
+        // Validate email is real/actual
+        if (!EmailValidator.isValidEmail(normalizedEmail)) {
+            throw new InvalidEmailException(EmailValidator.getValidationErrorMessage(normalizedEmail));
+        }
+        
         // Check if user already exists
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("User with email " + request.getEmail() + " already exists");
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new RuntimeException("User with email " + normalizedEmail + " already exists");
         }
 
         // Create new user
         User user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail());
+        user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhone(request.getPhone());
         user.setRole(request.getRole() != null ? request.getRole() : Role.CUSTOMER);
@@ -49,16 +59,24 @@ public class UserService {
     }
 
     public User registerAdminUser(RegisterRequest request) {
+        // Normalize email
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+        
+        // Validate email is real/actual
+        if (!EmailValidator.isValidEmail(normalizedEmail)) {
+            throw new InvalidEmailException(EmailValidator.getValidationErrorMessage(normalizedEmail));
+        }
+        
         // Check if user already exists
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("User with email " + request.getEmail() + " already exists");
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new RuntimeException("User with email " + normalizedEmail + " already exists");
         }
 
         // Create new admin user
         User user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail());
+        user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhone(request.getPhone());
         user.setRole(Role.ADMIN);
@@ -71,8 +89,10 @@ public class UserService {
     }
 
     public User authenticateUser(String email, String password) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        // Normalize email for consistent lookup
+        String normalizedEmail = email.trim().toLowerCase();
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + normalizedEmail));
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid email or password");
@@ -88,13 +108,15 @@ public class UserService {
     }
 
     public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        String normalizedEmail = email.trim().toLowerCase();
+        return userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + normalizedEmail));
     }
 
     public User updateUser(String email, RegisterRequest request) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        String normalizedEmail = email.trim().toLowerCase();
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + normalizedEmail));
 
         // Update user fields
         user.setFirstName(request.getFirstName());
@@ -106,8 +128,9 @@ public class UserService {
     }
 
     public User updateUser(String email, UpdateProfileRequest request) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        String normalizedEmail = email.trim().toLowerCase();
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + normalizedEmail));
 
         // Update user fields
         user.setFirstName(request.getFirstName());
@@ -119,8 +142,9 @@ public class UserService {
     }
 
     public void changePassword(String email, String currentPassword, String newPassword) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        String normalizedEmail = email.trim().toLowerCase();
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + normalizedEmail));
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new RuntimeException("Current password is incorrect");
         }
