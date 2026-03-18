@@ -1,7 +1,6 @@
 package com.sanaru.backend.model;
 
 import jakarta.persistence.*;
-
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
@@ -9,6 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -26,11 +26,20 @@ public class Product {
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "price",nullable = false, precision = 10, scale = 2)
+    @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
     @Column(name = "image_path", nullable = false, length = 500)
     private String imagePath;
+
+    // Many-to-Many with Category
+    @ManyToMany
+    @JoinTable(
+            name = "product_categories",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private List<Category> categories;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -39,6 +48,4 @@ public class Product {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-
 }
