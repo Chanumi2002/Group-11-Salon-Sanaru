@@ -22,7 +22,7 @@ public class ProductController {
 
     private final ProductService productService;
 
-    // ================= CREATE PRODUCT =================
+    // CREATE PRODUCT
     @PostMapping(value = "/admin/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> createProduct(
             @RequestParam("name") String name,
@@ -47,19 +47,19 @@ public class ProductController {
                 ));
     }
 
-    // ================= GET ALL PRODUCTS =================
+    // GET ALL PRODUCTS
     @GetMapping("/products")
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
-    // ================= GET PRODUCT BY ID =================
+    // GET PRODUCT BY ID
     @GetMapping("/products/{id}")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
-    // ================= UPDATE PRODUCT =================
+    // UPDATE PRODUCT
     @PutMapping(value = "/admin/products/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> updateProduct(
             @PathVariable Long id,
@@ -84,7 +84,7 @@ public class ProductController {
         ));
     }
 
-    // ================= DELETE PRODUCT =================
+    //  DELETE PRODUCT
     @DeleteMapping("/admin/products/{id}")
     public ResponseEntity<Map<String, String>> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
