@@ -1,6 +1,6 @@
 package com.sanaru.backend.dto;
 
-import com.sanaru.backend.model.Gender;
+import com.sanaru.backend.enums.Gender;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

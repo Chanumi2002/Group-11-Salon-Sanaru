@@ -1,4 +1,4 @@
-package com.sanaru.backend.model;
+package com.sanaru.backend.enums;
 
 public enum Role {
     CUSTOMER,

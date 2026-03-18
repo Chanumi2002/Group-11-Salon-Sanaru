@@ -1,7 +1,7 @@
 package com.sanaru.backend.dto;
 
-import com.sanaru.backend.model.Gender;
-import com.sanaru.backend.model.Role;
+import com.sanaru.backend.enums.Gender;
+import com.sanaru.backend.enums.Role;
 import com.sanaru.backend.model.User;
 
 public class UserResponse {

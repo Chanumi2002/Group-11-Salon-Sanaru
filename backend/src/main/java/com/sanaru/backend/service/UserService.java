@@ -3,7 +3,7 @@ package com.sanaru.backend.service;
 import com.sanaru.backend.dto.RegisterRequest;
 import com.sanaru.backend.dto.UpdateProfileRequest;
 import com.sanaru.backend.dto.UserResponse;
-import com.sanaru.backend.model.Role;
+import com.sanaru.backend.enums.Role;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.exception.InvalidEmailException;

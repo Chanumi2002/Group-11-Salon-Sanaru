@@ -1,6 +1,8 @@
 package com.sanaru.backend.model;
 
 import com.sanaru.backend.dto.UserResponse;
+import com.sanaru.backend.enums.Gender;
+import com.sanaru.backend.enums.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

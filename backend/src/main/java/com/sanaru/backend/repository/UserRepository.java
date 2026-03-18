@@ -1,6 +1,6 @@
 package com.sanaru.backend.repository;
 
-import com.sanaru.backend.model.Role;
+import com.sanaru.backend.enums.Role;
 import com.sanaru.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

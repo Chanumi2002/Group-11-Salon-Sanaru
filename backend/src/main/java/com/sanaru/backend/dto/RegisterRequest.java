@@ -1,7 +1,7 @@
 package com.sanaru.backend.dto;
 
-import com.sanaru.backend.model.Role;
-import com.sanaru.backend.model.Gender;
+import com.sanaru.backend.enums.Role;
+import com.sanaru.backend.enums.Gender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

@@ -1,6 +1,7 @@
 package com.sanaru.backend.config;
 
 import com.sanaru.backend.dto.RegisterRequest;
+import com.sanaru.backend.enums.Gender;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,7 @@ public class DataSeeder implements CommandLineRunner {
             req.setPassword("qazxsw");
             req.setFirstName("Salon");
             req.setLastName("Sanaru");
-            req.setGender(com.sanaru.backend.model.Gender.FEMALE);
+            req.setGender(Gender.FEMALE);
             req.setPhone(null);
 
             userService.registerAdminUser(req);
