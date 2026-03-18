@@ -35,7 +35,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = new Category();
         category.setName(request.getName());
 
-        // ✅ handle image upload
+        // handle image upload
         if (imageFile != null && !imageFile.isEmpty()) {
             Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
             if (!Files.exists(uploadPath)) {
@@ -72,7 +72,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(() -> new RuntimeException("Category not found"));
         category.setName(request.getName());
 
-        // ✅ handle updating image
+        // handle updating image
         if (imageFile != null && !imageFile.isEmpty()) {
             Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
             if (!Files.exists(uploadPath)) {
