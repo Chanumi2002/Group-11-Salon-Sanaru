@@ -23,14 +23,16 @@ public class Category {
     @Column(name = "image_path", length = 500)
     private String imagePath;
 
-    // Many-to-Many with Product
+
+    // Many-to-Many relation Product
     @ManyToMany(mappedBy = "categories")
     private List<Product> products;
 
+    
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
-    
+
 }
