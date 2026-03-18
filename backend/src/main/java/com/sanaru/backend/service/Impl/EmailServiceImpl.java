@@ -1,4 +1,4 @@
-package com.sanaru.backend.service.mpl;
+package com.sanaru.backend.service.Impl;
 
 import com.sanaru.backend.service.EmailService;
 import jakarta.mail.MessagingException;
