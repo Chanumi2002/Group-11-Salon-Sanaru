@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -96,6 +97,14 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
         productRepository.delete(product);
+    }
+
+    @Override
+    public List<ProductResponse> getProductsFiltered(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice) {
+        return productRepository.findByFilters(categoryId, minPrice, maxPrice)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     private ProductResponse mapToResponse(Product product) {

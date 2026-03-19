@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +22,9 @@ import java.util.Map;
 public class ProductController {
 
     private final ProductService productService;
+
+
+    // ADMIN ENDPOINTS
 
     // CREATE PRODUCT
     @PostMapping(value = "/admin/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -35,7 +39,7 @@ public class ProductController {
         ProductRequest productRequest = new ProductRequest();
         productRequest.setName(name);
         productRequest.setDescription(description);
-        productRequest.setPrice(new java.math.BigDecimal(price));
+        productRequest.setPrice(new BigDecimal(price));
         productRequest.setCategoryIds(categoryIds);
 
         ProductResponse createdProduct = productService.createProduct(productRequest, imageFile);
@@ -45,18 +49,6 @@ public class ProductController {
                         "message", "Product created successfully",
                         "product", createdProduct
                 ));
-    }
-
-    // GET ALL PRODUCTS
-    @GetMapping("/products")
-    public ResponseEntity<List<ProductResponse>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
-    }
-
-    // GET PRODUCT BY ID
-    @GetMapping("/products/{id}")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getProductById(id));
     }
 
     // UPDATE PRODUCT
@@ -73,7 +65,7 @@ public class ProductController {
         ProductRequest productRequest = new ProductRequest();
         productRequest.setName(name);
         productRequest.setDescription(description);
-        productRequest.setPrice(new java.math.BigDecimal(price));
+        productRequest.setPrice(new BigDecimal(price));
         productRequest.setCategoryIds(categoryIds);
 
         ProductResponse updatedProduct = productService.updateProduct(id, productRequest, imageFile);
@@ -84,10 +76,34 @@ public class ProductController {
         ));
     }
 
-    //  DELETE PRODUCT
+    // DELETE PRODUCT
     @DeleteMapping("/admin/products/{id}")
     public ResponseEntity<Map<String, String>> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok(Map.of("message", "Product deleted successfully"));
+    }
+
+
+    // PUBLIC ENDPOINTS (GUEST/CUSTOMER)
+    // GET ALL PRODUCTS
+    @GetMapping("/products")
+    public ResponseEntity<List<ProductResponse>> getAllProducts(
+            @RequestParam(required = false) Long category,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice) {
+
+        if (category != null || minPrice != null || maxPrice != null) {
+            return ResponseEntity.ok(
+                    productService.getProductsFiltered(category, minPrice, maxPrice)
+            );
+        }
+
+        return ResponseEntity.ok(productService.getAllProducts());
+    }
+
+    // GET PRODUCT BY ID
+    @GetMapping("/products/{id}")
+    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.getProductById(id));
     }
 }
