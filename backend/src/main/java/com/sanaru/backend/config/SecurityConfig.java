@@ -55,14 +55,10 @@ public class SecurityConfig {
         return new JwtRequestFilter();
     }
 
-    // Authentication provider and manager are intentionally left to Spring Boot's
-    // auto-configuration for this project to avoid version-specific constructor
-    ///runtime issues. The application uses the injected `CustomUserDetailsService`
-    // and `PasswordEncoder` directly where needed.
-        @Bean
-        public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-            return authenticationConfiguration.getAuthenticationManager();
-        }
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -81,25 +77,28 @@ public class SecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/auth/register", "/api/auth/register-admin", "/api/auth/login", 
+                        // Public auth endpoints
+                        .requestMatchers("/api/auth/register", "/api/auth/register-admin", "/api/auth/login",
                                 "/api/auth/oauth2/google", "/error",
-                                "/oauth2/**", "/login/oauth2/**")
-                        .permitAll()
+                                "/oauth2/**", "/login/oauth2/**").permitAll()
+                        // Public endpoints for customers / guests
+                        .requestMatchers("/api/products/**", "/api/categories/**").permitAll()
+                        // Authenticated endpoints
                         .requestMatchers("/api/auth/profile", "/api/auth/change-password").authenticated()
-                        .requestMatchers("/api/admin/**")
-                        .hasRole("ADMIN")
-                        .anyRequest().authenticated())
+                        // Admin endpoints
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Any other request must be authenticated
+                        .anyRequest().authenticated()
+                )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(unauthorizedHandler())
                         .accessDeniedHandler(accessDeniedHandler()))
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         if (clientRegistrationRepository != null && oAuth2LoginSuccessHandler != null) {
-            http.oauth2Login(oauth2 -> oauth2
-                    .successHandler(oAuth2LoginSuccessHandler));
+            http.oauth2Login(oauth2 -> oauth2.successHandler(oAuth2LoginSuccessHandler));
         }
 
-        // rely on Spring Security auto-configured providers
         http.addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -20,9 +20,7 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    // =========================
     // PUBLIC ENDPOINTS (GUEST/CUSTOMER)
-    // =========================
 
     // Get all categories
     @GetMapping("/categories")
@@ -36,9 +34,8 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getCategoryById(id));
     }
 
-    // =========================
     // ADMIN ENDPOINTS
-    // =========================
+
 
     // Create category
     @PostMapping(value = "/admin/categories", consumes = {"multipart/form-data"})
