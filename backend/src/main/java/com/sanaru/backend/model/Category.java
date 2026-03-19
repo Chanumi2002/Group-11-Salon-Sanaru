@@ -1,5 +1,6 @@
 package com.sanaru.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +27,7 @@ public class Category {
 
     // Many-to-Many relation Product
     @ManyToMany(mappedBy = "categories")
+    @JsonIgnore
     private List<Product> products;
 
 
