@@ -85,6 +85,70 @@ export const adminService = {
   deleteCustomer: async (customerId) => {
     return await api.delete(`/admin/customers/${customerId}`);
   },
+
+  // ==================== CATEGORY OPERATIONS ====================
+
+  // Get all categories
+  getCategories: async () => {
+    return await api.get('/categories');
+  },
+
+  // Get category by ID
+  getCategoryById: async (categoryId) => {
+    return await api.get(`/categories/${categoryId}`);
+  },
+
+  // Create new category with image
+  createCategory: async (formData) => {
+    return await api.post('/admin/categories', formData, {
+    });
+  },
+
+  // Update category with image
+  updateCategory: async (categoryId, formData) => {
+    return await api.put(`/admin/categories/${categoryId}`, formData, {
+    });
+  },
+
+  // Delete category
+  deleteCategory: async (categoryId) => {
+    return await api.delete(`/admin/categories/${categoryId}`);
+  },
+
+  // ==================== PRODUCT OPERATIONS ====================
+
+  // Get all products
+  getProducts: async () => {
+    return await api.get('/products');
+  },
+
+  // Get product by ID
+  getProductById: async (productId) => {
+    return await api.get(`/products/${productId}`);
+  },
+
+  // Create new product with image
+  createProduct: async (formData) => {
+    return await api.post('/admin/products', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Update product with image
+  updateProduct: async (productId, formData) => {
+    return await api.put(`/admin/products/${productId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Delete product
+  deleteProduct: async (productId) => {
+    return await api.delete(`/admin/products/${productId}`);
+  },
 };
 
 export default api;

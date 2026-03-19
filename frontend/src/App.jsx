@@ -21,6 +21,8 @@ import Profile from "./pages/customer/Profile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProfile from "./pages/admin/AdminProfile";
 import AdminUsers from "./pages/admin/AdminUsers";
+import CategoryPage from "./pages/admin/CategoryPage";
+import ProductPage from "./pages/admin/ProductPage";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -87,6 +89,24 @@ const App = () => (
               element={
                 <AdminProtectedRoute>
                   <AdminUsers />
+                </AdminProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/admin_dashboard/categories"
+              element={
+                <AdminProtectedRoute>
+                  <CategoryPage />
+                </AdminProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/admin_dashboard/products"
+              element={
+                <AdminProtectedRoute>
+                  <ProductPage />
                 </AdminProtectedRoute>
               }
             />
