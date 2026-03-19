@@ -13,13 +13,15 @@ import {
   Menu,
   X,
   User,
+  Folder,
 } from "lucide-react";
 
 const adminSidebarLinks = [
   { label: "Dashboard", to: "/admin_dashboard", icon: LayoutDashboard },
   { label: "Manage Users", to: "/admin_dashboard/users", icon: Users },
-  { label: "Manage Services", to: "/admin_dashboard/services", icon: Briefcase },
+  { label: "Manage Categories", to: "/admin_dashboard/categories", icon: Folder },
   { label: "Manage Products", to: "/admin_dashboard/products", icon: ShoppingCart },
+  { label: "Manage Services", to: "/admin_dashboard/services", icon: Briefcase },
   { label: "Manage Orders", to: "/admin_dashboard/orders", icon: Package },
   { label: "Manage Payments", to: "/admin_dashboard/payments", icon: DollarSign },
   { label: "Reviews & Ratings", to: "/admin_dashboard/reviews", icon: Star },
