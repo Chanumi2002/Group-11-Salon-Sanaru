@@ -395,7 +395,12 @@ export default function ProductPage() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <p className="font-medium text-foreground">{product.name}</p>
+                        <div>
+                          <p className="font-medium text-foreground">{product.name}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-1">
+                            {product.description}
+                          </p>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-foreground">
                         {getCategoryName(product)}

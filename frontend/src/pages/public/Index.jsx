@@ -53,9 +53,18 @@ const Index = () => {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3 }}
+            className="flex flex-col items-center justify-center gap-3 sm:flex-row"
           >
             <Button size="lg" asChild className="text-base px-8">
               <Link to="/register">Get Started</Link>
+            </Button>
+            <Button
+              size="lg"
+              asChild
+              variant="secondary"
+              className="text-base px-8"
+            >
+              <Link to="/shop">Shop Products</Link>
             </Button>
           </motion.div>
         </div>

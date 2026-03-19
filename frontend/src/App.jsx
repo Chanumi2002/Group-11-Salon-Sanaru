@@ -11,6 +11,9 @@ import Login from "./pages/public/Login";
 import Register from "./pages/public/Register";
 import OAuthCallback from "./pages/public/OAuthCallback";
 import NotFound from "./pages/public/NotFound";
+import Shop from "./pages/public/Shop";
+import ProductsByCategory from "./pages/public/ProductsByCategory";
+import ShopProductDetails from "./pages/public/ShopProductDetails";
 
 // Customer pages
 import CustomerDashboard from "./pages/customer/CustomerDashboard";
@@ -40,6 +43,11 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/oauth/callback" element={<OAuthCallback />} />
+            <Route path="/products" element={<Shop />} />
+            <Route path="/products/category/:categoryId" element={<ProductsByCategory />} />
+            <Route path="/products/category/:categoryId/product/:id" element={<ShopProductDetails />} />
+            <Route path="/shop" element={<Navigate to="/products" replace />} />
+            <Route path="/shop/products/:id" element={<ShopProductDetails />} />
             
             <Route
               path="/customer_dashboard"

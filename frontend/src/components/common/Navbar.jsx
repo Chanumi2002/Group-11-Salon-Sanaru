@@ -7,8 +7,20 @@ import { Button } from "@/components/ui/button";
 const navLinks = [
   { label: "Home", to: "/" },
   { label: "Services", to: "/#services" },
-  { label: "Products", to: "/#products" },
+  { label: "Products", to: "/products" },
 ];
+
+const isLinkActive = (location, to) => {
+  if (to === "/") {
+    return location.pathname === "/";
+  }
+
+  if (to.startsWith("/#")) {
+    return location.pathname === "/" && location.hash === to.slice(1);
+  }
+
+  return location.pathname === to;
+};
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -30,7 +42,7 @@ export function Navbar() {
             <Link
               key={link.to}
               to={link.to}
-              className={`text-sm font-medium transition-colors hover:text-primary ${location.pathname === link.to
+              className={`text-sm font-medium transition-colors hover:text-primary ${isLinkActive(location, link.to)
                   ? "text-primary"
                   : "text-muted-foreground"
                 }`}
