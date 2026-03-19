@@ -3,11 +3,14 @@ package com.sanaru.backend.service.impl;
 import com.sanaru.backend.dto.CategoryRequest;
 import com.sanaru.backend.dto.CategoryResponse;
 import com.sanaru.backend.model.Category;
+import com.sanaru.backend.model.Product;
 import com.sanaru.backend.repository.CategoryRepository;
+import com.sanaru.backend.repository.ProductRepository;
 import com.sanaru.backend.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
     @Value("${app.upload.dir:uploads/categories}")
     private String uploadDir;
@@ -44,7 +48,7 @@ public class CategoryServiceImpl implements CategoryService {
             String fileName = System.currentTimeMillis() + "_" + imageFile.getOriginalFilename().replaceAll("\\s+", "_");
             Path filePath = uploadPath.resolve(fileName).normalize();
             imageFile.transferTo(filePath.toFile());
-            category.setImagePath(filePath.toString());
+            category.setImagePath("uploads/categories/" + fileName);
         }
 
         Category saved = categoryRepository.save(category);
@@ -81,7 +85,7 @@ public class CategoryServiceImpl implements CategoryService {
             String fileName = System.currentTimeMillis() + "_" + imageFile.getOriginalFilename().replaceAll("\\s+", "_");
             Path filePath = uploadPath.resolve(fileName).normalize();
             imageFile.transferTo(filePath.toFile());
-            category.setImagePath(filePath.toString());
+            category.setImagePath("uploads/categories/" + fileName);
         }
 
         Category updated = categoryRepository.save(category);
@@ -89,8 +93,21 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public void deleteCategory(Long id) {
-        categoryRepository.deleteById(id);
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        // Remove category links from products first to avoid join-table FK violations.
+        List<Product> products = productRepository.findAll();
+        for (Product product : products) {
+            if (product.getCategories() != null &&
+                    product.getCategories().removeIf(c -> c.getId().equals(id))) {
+                productRepository.save(product);
+            }
+        }
+
+        categoryRepository.delete(category);
     }
 
     private CategoryResponse mapToResponse(Category category) {
