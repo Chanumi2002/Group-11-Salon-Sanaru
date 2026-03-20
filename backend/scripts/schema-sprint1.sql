@@ -42,7 +42,9 @@ CREATE TABLE IF NOT EXISTS services (
   name        VARCHAR(120) NOT NULL,
   description VARCHAR(1000) NOT NULL,
   price       DECIMAL(10,2) NOT NULL,
-  image_path  VARCHAR(500) NOT NULL,
+  image_path  VARCHAR(500),
+  image_data  LONGBLOB,
+  image_content_type VARCHAR(120),
   created_at  DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
   updated_at  DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
 );
