@@ -82,7 +82,7 @@ public class SecurityConfig {
                                 "/api/auth/oauth2/google", "/error",
                                 "/oauth2/**", "/login/oauth2/**").permitAll()
                         // Public endpoints for customers / guests
-                    .requestMatchers("/api/products/**", "/api/categories/**", "/uploads/**").permitAll()
+                    .requestMatchers("/api/products/**", "/api/categories/**", "/api/services/**", "/uploads/**").permitAll()
                         // Authenticated endpoints
                         .requestMatchers("/api/auth/profile", "/api/auth/change-password").authenticated()
                         // Admin endpoints
