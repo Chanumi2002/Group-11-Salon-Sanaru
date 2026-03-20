@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import ProductDetails from '@/components/ProductDetails';
+import { Navbar } from '@/components/common/Navbar';
+import { Footer } from '@/components/common/Footer';
 import { shopService } from '@/services/shopApi';
 
 export default function ShopProductDetails() {
@@ -39,23 +40,19 @@ export default function ShopProductDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="relative overflow-hidden border-b border-border bg-card/80 backdrop-blur-sm">
-        <div className="absolute inset-0 gradient-soft opacity-60" />
-        <div className="container relative mx-auto flex items-center justify-between px-4 py-4 md:px-6">
-          <Link to="/shop" className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Salon Sanaru Shop
-          </Link>
-          <Link to="/shop" className="rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground">
-            Browse all
-          </Link>
-        </div>
-      </header>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        background: 'linear-gradient(130deg, #2A2323 0%, #3B2A2A 45%, #6B2A2A 100%)',
+      }}
+    >
+      <Navbar />
 
-      <main className="container mx-auto px-4 py-8 md:px-6">
+      <main className="mx-auto w-full max-w-[1380px] flex-1 px-4 py-8 md:px-6 lg:px-10">
         <ProductDetails product={product} isLoading={isLoading} onBack={handleBack} />
       </main>
+
+      <Footer />
     </div>
   );
 }

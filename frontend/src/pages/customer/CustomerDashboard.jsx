@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/common/DashboardLayout";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 
 const cards = [
   {

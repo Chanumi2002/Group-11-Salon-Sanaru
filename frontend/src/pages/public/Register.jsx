@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { Navbar } from "@/components/common/Navbar";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, User, Mail, Phone, Lock, CircleUserRound } from "lucide-react";
 import { motion } from "framer-motion";
 import { authService } from "@/services/api";
 import { oauth2Service } from "@/services/oauth2Service";
 import { toast } from "sonner";
+import logoImage from "@/assets/logo.jpeg";
 
 export default function Register() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "", gender: "" });
@@ -114,69 +115,85 @@ export default function Register() {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-[#f3efe8] text-[#2b2522] [--background:42_28%_93%] [--foreground:20_14%_16%] [--card:0_0%_100%] [--card-foreground:20_14%_16%] [--muted:42_18%_89%] [--muted-foreground:22_10%_36%] [--border:39_34%_72%] [--input:0_0%_100%]">
       <Navbar />
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="relative isolate flex-1 flex items-center justify-center p-4 sm:p-8 md:p-10 lg:p-14 xl:p-16 bg-[radial-gradient(1200px_600px_at_10%_8%,rgba(181,33,54,0.10),transparent_58%),radial-gradient(900px_540px_at_88%_15%,rgba(189,146,78,0.14),transparent_60%),linear-gradient(180deg,#faf7f3_0%,#f3eee7_100%)]">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(165,137,102,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(165,137,102,0.08)_1px,transparent_1px)] bg-[size:48px_48px]" />
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md bg-card rounded-xl shadow-salon p-8"
+          initial={{ opacity: 0, y: 18, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          className="relative w-full max-w-xl rounded-[28px] border border-[#e2d0b1]/85 bg-white/68 backdrop-blur-xl shadow-[0_24px_70px_-36px_rgba(63,37,30,0.45)] p-7 sm:p-9"
         >
+          <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-[linear-gradient(135deg,rgba(255,255,255,0.48),rgba(255,255,255,0.16))]" />
           <div className="text-center mb-6">
-            <img src="/logo.jpeg" alt="Salon Sanaru Logo" className="h-16 w-16 object-contain mx-auto mb-3 rounded-full" />
-            <h1 className="font-display text-2xl font-bold">Create Account</h1>
-            <p className="text-sm text-muted-foreground">Join Salon Sanaru today</p>
+            <img src={logoImage} alt="Salon Sanaru Logo" className="h-16 w-16 object-contain mx-auto mb-4 rounded-full ring-1 ring-[#d5b78b]/70 bg-white/85" />
+            <p className="text-[11px] sm:text-xs tracking-[0.22em] uppercase text-black font-medium">Salon Sanaru</p>
+            <h1 className="font-display text-3xl sm:text-[2.05rem] font-semibold tracking-tight text-black mt-2">Create Account</h1>
+            <p className="text-sm text-black mt-1">Begin your luxury beauty journey</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="relative z-10 space-y-4">
             <div>
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Jane Doe"
-              />
+              <Label htmlFor="name" className="text-[#574638] font-medium">Full Name</Label>
+              <div className="relative mt-1.5">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9e8466]" />
+                <Input
+                  id="name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Jane Doe"
+                  className="h-12 rounded-xl border border-[#d9be95] bg-white/86 text-[#2b211b] placeholder:text-[#9f8f80] pl-10 transition-all duration-200 hover:border-[#c8a979] focus-visible:ring-2 focus-visible:ring-[#b99767]/35 focus-visible:border-[#b99767]"
+                />
+              </div>
               {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
             </div>
             <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="jane@example.com"
-                autoComplete="email"
-              />
+              <Label htmlFor="email" className="text-[#574638] font-medium">Email</Label>
+              <div className="relative mt-1.5">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9e8466]" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="jane@example.com"
+                  autoComplete="email"
+                  className="h-12 rounded-xl border border-[#d9be95] bg-white/86 text-[#2b211b] placeholder:text-[#9f8f80] pl-10 transition-all duration-200 hover:border-[#c8a979] focus-visible:ring-2 focus-visible:ring-[#b99767]/35 focus-visible:border-[#b99767]"
+                />
+              </div>
               {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
             </div>
             <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="+94 77 123 4567"
-              />
+              <Label htmlFor="phone" className="text-[#574638] font-medium">Phone Number</Label>
+              <div className="relative mt-1.5">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9e8466]" />
+                <Input
+                  id="phone"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="+94 77 123 4567"
+                  className="h-12 rounded-xl border border-[#d9be95] bg-white/86 text-[#2b211b] placeholder:text-[#9f8f80] pl-10 transition-all duration-200 hover:border-[#c8a979] focus-visible:ring-2 focus-visible:ring-[#b99767]/35 focus-visible:border-[#b99767]"
+                />
+              </div>
               {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-[#574638] font-medium">Password</Label>
               <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9e8466]" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="••••••••"
-                  className="pr-10"
+                  className="mt-1.5 h-12 rounded-xl border border-[#d9be95] bg-white/86 text-[#2b211b] placeholder:text-[#9f8f80] pl-10 pr-10 transition-all duration-200 hover:border-[#c8a979] focus-visible:ring-2 focus-visible:ring-[#b99767]/35 focus-visible:border-[#b99767]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8a7360] hover:text-[#2c211a]"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -185,20 +202,21 @@ export default function Register() {
               {errors.password && <p className="text-xs text-destructive mt-1">{errors.password}</p>}
             </div>
             <div>
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-[#574638] font-medium">Confirm Password</Label>
               <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9e8466]" />
                 <Input
                   id="confirmPassword"
                   type={showPassword ? "text" : "password"}
                   value={form.confirmPassword}
                   onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
                   placeholder="••••••••"
-                  className="pr-10"
+                  className="mt-1.5 h-12 rounded-xl border border-[#d9be95] bg-white/86 text-[#2b211b] placeholder:text-[#9f8f80] pl-10 pr-10 transition-all duration-200 hover:border-[#c8a979] focus-visible:ring-2 focus-visible:ring-[#b99767]/35 focus-visible:border-[#b99767]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8a7360] hover:text-[#2c211a]"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -207,35 +225,42 @@ export default function Register() {
               {errors.confirmPassword && <p className="text-xs text-destructive mt-1">{errors.confirmPassword}</p>}
             </div>
             <div>
-              <Label htmlFor="gender">Gender</Label>
-              <Select value={form.gender} onValueChange={(value) => setForm({ ...form, gender: value })}>
-                <SelectTrigger>
+              <Label htmlFor="gender" className="text-[#574638] font-medium">Gender</Label>
+              <div className="relative mt-1.5">
+                <CircleUserRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9e8466] z-10 pointer-events-none" />
+                <Select value={form.gender} onValueChange={(value) => setForm({ ...form, gender: value })}>
+                  <SelectTrigger className="h-12 rounded-xl border border-[#d9be95] bg-white/86 text-[#2b211b] pl-10 transition-all duration-200 hover:border-[#c8a979] focus-visible:ring-2 focus-visible:ring-[#b99767]/35 focus-visible:border-[#b99767]">
                   <SelectValue placeholder="Select your gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MALE">Male</SelectItem>
-                  <SelectItem value="FEMALE">Female</SelectItem>
-                  <SelectItem value="OTHER">Other</SelectItem>
-                  <SelectItem value="PREFER_NOT_TO_SAY">Prefer not to say</SelectItem>
-                </SelectContent>
-              </Select>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">Male</SelectItem>
+                    <SelectItem value="FEMALE">Female</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                    <SelectItem value="PREFER_NOT_TO_SAY">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               {errors.gender && <p className="text-xs text-destructive mt-1">{errors.gender}</p>}
             </div>
 
             {errors.general && (
-              <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg mb-4">
+              <div className="bg-[#fff0f2] border border-[#e8b3bb] text-[#8f1d2c] text-sm p-3 rounded-xl mb-4">
                 {errors.general}
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating Account...' : 'Register'}
+            <Button
+              type="submit"
+              className="w-full h-12 rounded-xl border-0 text-white font-semibold bg-gradient-to-r from-[#6f0d1e] via-[#8b1127] to-[#a31531] shadow-[0_14px_26px_-18px_rgba(111,13,30,0.9)] hover:from-[#5c0a19] hover:via-[#770f21] hover:to-[#93112a] transition-all duration-300 hover:shadow-[0_18px_30px_-18px_rgba(111,13,30,0.95)]"
+              disabled={loading}
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
 
             <div className="flex items-center gap-3 my-4">
-              <span className="flex-1 border-t border-border" />
-              <span className="text-xs uppercase text-muted-foreground whitespace-nowrap">or sign up with</span>
-              <span className="flex-1 border-t border-border" />
+              <span className="flex-1 border-t border-[#d7c6af]" />
+              <span className="text-xs uppercase text-[#8a7661] whitespace-nowrap tracking-[0.08em]">or sign up with</span>
+              <span className="flex-1 border-t border-[#d7c6af]" />
             </div>
 
             <div className="flex justify-center">
@@ -250,9 +275,9 @@ export default function Register() {
             </div>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground mt-6">
+          <p className="relative z-10 text-center text-sm text-[#6e5d4d] mt-6">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary font-medium hover:underline">
+            <Link to="/login" className="text-[#8b1127] font-semibold hover:underline">
               Login
             </Link>
           </p>

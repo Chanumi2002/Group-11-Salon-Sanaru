@@ -1,44 +1,16 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 
 const ThemeContext = createContext(undefined);
 
 export function ThemeProvider({ children }) {
-  const [theme, setThemeState] = useState(() => {
-    // Check localStorage first
-    const stored = localStorage.getItem('theme');
-    if (stored === 'dark' || stored === 'light') {
-      return stored;
-    }
-    // Check system preference
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    return 'light';
-  });
-
   useEffect(() => {
-    // Update localStorage
-    localStorage.setItem('theme', theme);
-
-    // Update DOM
+    // Enforce a single dark theme across the entire app.
     const html = document.documentElement;
-    if (theme === 'dark') {
-      html.classList.add('dark');
-    } else {
-      html.classList.remove('dark');
-    }
-  }, [theme]);
-
-  const setTheme = (newTheme) => {
-    if (newTheme === 'dark' || newTheme === 'light') {
-      setThemeState(newTheme);
-    } else if (typeof newTheme === 'function') {
-      setThemeState(prev => newTheme(prev));
-    }
-  };
+    html.classList.add('dark');
+  }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme: 'dark', setTheme: () => {} }}>
       {children}
     </ThemeContext.Provider>
   );
