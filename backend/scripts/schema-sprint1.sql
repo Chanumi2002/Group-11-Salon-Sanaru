@@ -35,3 +35,14 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_verification_token ON users(verification_token);
+
+-- 3. Service table for admin-managed salon services with pricing and photo.
+CREATE TABLE IF NOT EXISTS services (
+  id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(120) NOT NULL,
+  description VARCHAR(1000) NOT NULL,
+  price       DECIMAL(10,2) NOT NULL,
+  image_path  VARCHAR(500) NOT NULL,
+  created_at  DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at  DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
+);
