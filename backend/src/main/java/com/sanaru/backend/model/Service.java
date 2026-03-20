@@ -1,10 +1,12 @@
 package com.sanaru.backend.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,8 +35,16 @@ public class Service {
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "image_path", nullable = false, length = 500)
+    @Column(name = "image_path", length = 500)
     private String imagePath;
+
+    @Lob
+    @jakarta.persistence.Basic(fetch = FetchType.LAZY)
+    @Column(name = "image_data", columnDefinition = "LONGBLOB")
+    private byte[] imageData;
+
+    @Column(name = "image_content_type", length = 120)
+    private String imageContentType;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
