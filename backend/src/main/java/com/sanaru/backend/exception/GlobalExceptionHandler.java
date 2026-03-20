@@ -1,6 +1,7 @@
 package com.sanaru.backend.exception;
 
 import io.jsonwebtoken.JwtException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -118,6 +119,29 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("error", "Invalid Input");
         response.put("message", "Service photo is too large. Maximum size is 10MB.");
+        response.put("timestamp", System.currentTimeMillis());
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolationException(
+            DataIntegrityViolationException ex,
+            WebRequest request) {
+
+        String rawMessage = ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage()
+                : ex.getMessage();
+
+        String message = "Failed to save data. Please try again.";
+        if (rawMessage != null && rawMessage.toLowerCase().contains("max_allowed_packet")) {
+            message = "Service photo is too large for current database settings. Reduce photo size or increase MySQL max_allowed_packet.";
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", "Invalid Input");
+        response.put("message", message);
         response.put("timestamp", System.currentTimeMillis());
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
