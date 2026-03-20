@@ -87,6 +87,22 @@ public class ServiceController {
         return ResponseEntity.ok(salonServiceService.getServiceById(id));
     }
 
+    @GetMapping(value = "/services/{id}/image")
+    public ResponseEntity<byte[]> getServiceImage(@PathVariable Long id) {
+        SalonServiceService.ServiceImageData imageData = salonServiceService.getServiceImage(id);
+
+        MediaType mediaType;
+        try {
+            mediaType = MediaType.parseMediaType(imageData.contentType());
+        } catch (Exception ex) {
+            mediaType = MediaType.IMAGE_JPEG;
+        }
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .body(imageData.data());
+    }
+
     private BigDecimal parsePrice(String price) {
         try {
             return new BigDecimal(price);
