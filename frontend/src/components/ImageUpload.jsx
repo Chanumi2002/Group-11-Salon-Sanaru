@@ -6,21 +6,19 @@ export default function ImageUpload({
   previewUrl,
   onRemove,
   isLoading = false,
-  maxSize = 2, // in MB
-  acceptedTypes = ['image/jpeg', 'image/png']
+  maxSize = 2,
+  acceptedTypes = ['image/jpeg', 'image/png'],
 }) {
   const fileInputRef = useRef(null);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState('');
 
   const validateFile = (file) => {
-    // Check file type
     if (!acceptedTypes.includes(file.type)) {
-      setError(`Invalid file type. Only ${acceptedTypes.map(t => t.split('/')[1]).join(', ')} allowed.`);
+      setError(`Invalid file type. Only ${acceptedTypes.map((t) => t.split('/')[1]).join(', ')} allowed.`);
       return false;
     }
 
-    // Check file size
     const fileSizeInMB = file.size / (1024 * 1024);
     if (fileSizeInMB > maxSize) {
       setError(`File size must be less than ${maxSize}MB.`);
@@ -32,42 +30,44 @@ export default function ImageUpload({
   };
 
   const handleFile = (file) => {
-    if (validateFile(file)) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        onFileSelect(file, e.target.result);
-      };
-      reader.readAsDataURL(file);
+    if (!validateFile(file)) {
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      onFileSelect(file, event.target.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleClick = () => {
     fileInputRef.current?.click();
   };
 
-  const handleChange = (e) => {
-    const file = e.target.files?.[0];
+  const handleChange = (event) => {
+    const file = event.target.files?.[0];
     if (file) {
       handleFile(file);
     }
   };
 
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+  const handleDrag = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.type === 'dragenter' || event.type === 'dragover') {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (event.type === 'dragleave') {
       setDragActive(false);
     }
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
     setDragActive(false);
 
-    const file = e.dataTransfer.files?.[0];
+    const file = event.dataTransfer.files?.[0];
     if (file) {
       handleFile(file);
     }
@@ -85,8 +85,8 @@ export default function ImageUpload({
           dragActive
             ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
             : error
-            ? 'border-red-300 bg-red-50 dark:bg-red-950'
-            : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 hover:border-gray-400'
+              ? 'border-red-300 bg-red-50 dark:bg-red-950'
+              : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 hover:border-gray-400'
         }`}
       >
         <input
@@ -109,8 +109,8 @@ export default function ImageUpload({
               />
               {!isLoading && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={(event) => {
+                    event.stopPropagation();
                     onRemove?.();
                   }}
                   type="button"
@@ -139,7 +139,7 @@ export default function ImageUpload({
                   Click or drag image here
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {acceptedTypes.map(t => t.split('/')[1]).join(', ').toUpperCase()} • Max {maxSize}MB
+                  {acceptedTypes.map((t) => t.split('/')[1]).join(', ').toUpperCase()} - Max {maxSize}MB
                 </p>
               </>
             )}
@@ -149,7 +149,7 @@ export default function ImageUpload({
 
       {error && (
         <div className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
-          <span>⚠️</span>
+          <span>Warning:</span>
           {error}
         </div>
       )}
