@@ -107,7 +107,7 @@ const Index = () => {
                   variant="outline"
                   className="h-12 rounded-full border-[#8E1616]/40 bg-transparent px-9 text-base font-medium text-[#8E1616] transition-all duration-300 hover:border-[#8E1616] hover:bg-white/55"
                 >
-                  <Link to="/shop">Explore Services</Link>
+                  <Link to="/services">Explore Services</Link>
                 </Button>
                 <Button
                   size="lg"
