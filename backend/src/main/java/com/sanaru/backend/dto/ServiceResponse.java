@@ -14,6 +14,7 @@ public class ServiceResponse {
     private String description;
     private BigDecimal price;
     private String imagePath;
+    private String imageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
