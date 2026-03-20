@@ -1,21 +1,23 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { authService } from "@/services/api";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 import {
   LayoutDashboard,
   User,
   CalendarPlus,
   CalendarCheck,
   ShoppingBag,
+  Briefcase,
   LogOut,
   Menu,
   X,
 } from "lucide-react";
+import logoImage from "@/assets/logo.jpeg";
 const sidebarLinks = [
   { label: "Customer Dashboard", to: "/customer_dashboard", icon: LayoutDashboard },
-  { label: "Homepage", to: "/homepage", icon: LayoutDashboard },
   { label: "Profile", to: "/customer_profile", icon: User },
+  { label: "Products", to: "/products", icon: ShoppingBag },
+  { label: "Services", to: "/#services", icon: Briefcase },
   { label: "Book Appointment", to: "/customer_dashboard/book", icon: CalendarPlus },
   { label: "My Bookings", to: "/customer_dashboard/bookings", icon: CalendarCheck },
   { label: "Orders", to: "/customer_dashboard/orders", icon: ShoppingBag },
@@ -27,7 +29,7 @@ export function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-[#f4f2ef] text-slate-900 [--background:36_22%_94%] [--foreground:222_47%_11%] [--card:0_0%_100%] [--card-foreground:222_47%_11%] [--muted:36_24%_91%] [--muted-foreground:215_16%_36%] [--accent:0_0%_97%] [--accent-foreground:222_47%_11%] [--border:30_14%_84%]">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -38,11 +40,11 @@ export function DashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }`}
       >
         <div className="flex items-center gap-2 px-6 h-16 border-b border-border">
-          <img src="/logo.jpeg" alt="Salon Sanaru Logo" className="h-8 w-8 object-contain rounded-full" />
+          <img src={logoImage} alt="Salon Sanaru Logo" className="h-9 w-9 object-cover rounded-full" />
           <span className="font-display text-lg font-bold text-foreground">
             Salon Sanaru
           </span>
@@ -80,7 +82,7 @@ export function DashboardLayout({ children }) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-border bg-card flex items-center px-4 lg:px-8 gap-4">
+        <header className="h-16 border-b border-border bg-white flex items-center px-4 lg:px-8 gap-4">
           <button
             className="lg:hidden text-foreground"
             onClick={() => setSidebarOpen(true)}
@@ -91,7 +93,6 @@ export function DashboardLayout({ children }) {
             Customer Portal
           </h2>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <Link
               to="/customer_profile"
               className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"

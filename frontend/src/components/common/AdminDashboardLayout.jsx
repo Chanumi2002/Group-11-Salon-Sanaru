@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 import {
   LayoutDashboard,
   Users,
@@ -15,6 +14,7 @@ import {
   User,
   Folder,
 } from "lucide-react";
+import logoImage from "@/assets/logo.jpeg";
 
 const adminSidebarLinks = [
   { label: "Dashboard", to: "/admin_dashboard", icon: LayoutDashboard },
@@ -40,7 +40,7 @@ export function AdminDashboardLayout({ children }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-[#f4f2ef] text-slate-900 [--background:36_22%_94%] [--foreground:222_47%_11%] [--card:0_0%_100%] [--card-foreground:222_47%_11%] [--muted:36_24%_91%] [--muted-foreground:215_16%_36%] [--accent:0_0%_97%] [--accent-foreground:222_47%_11%] [--border:30_14%_84%]">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -51,13 +51,13 @@ export function AdminDashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border flex flex-col transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         {/* Header */}
         <div className="flex items-center gap-2 px-6 h-16 border-b border-border">
-          <img src="/logo.jpeg" alt="Salon Sanaru Logo" className="h-8 w-8 object-contain rounded-full" />
+          <img src={logoImage} alt="Salon Sanaru Logo" className="h-9 w-9 object-cover rounded-full" />
           <span className="font-display text-lg font-bold text-foreground">
             Salon Sanaru
           </span>
@@ -114,7 +114,7 @@ export function AdminDashboardLayout({ children }) {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Top Bar */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 lg:px-8">
+        <header className="h-16 border-b border-border bg-white flex items-center justify-between px-6 lg:px-8">
           <div className="flex items-center">
             <button
               className="lg:hidden text-muted-foreground"
@@ -127,7 +127,6 @@ export function AdminDashboardLayout({ children }) {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <Link
               to="/admin_dashboard/profile"
               className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
