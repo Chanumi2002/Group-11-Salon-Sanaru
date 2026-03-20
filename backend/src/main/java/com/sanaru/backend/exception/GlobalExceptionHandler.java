@@ -7,9 +7,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -88,6 +90,34 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("error", "Invalid Input");
         response.put("message", ex.getMessage());
+        response.put("timestamp", System.currentTimeMillis());
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFoundException(
+            NoSuchElementException ex,
+            WebRequest request) {
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.NOT_FOUND.value());
+        response.put("error", "Not Found");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", System.currentTimeMillis());
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex,
+            WebRequest request) {
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", "Invalid Input");
+        response.put("message", "Service photo is too large. Maximum size is 10MB.");
         response.put("timestamp", System.currentTimeMillis());
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
