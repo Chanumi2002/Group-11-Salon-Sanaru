@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Search, Sparkles } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Search } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import CategoryBar from '@/components/CategoryBar';
 import ProductList from '@/components/ProductList';
+import { Navbar } from '@/components/common/Navbar';
+import { Footer } from '@/components/common/Footer';
 import { shopService } from '@/services/shopApi';
 
 const productMatchesCategory = (product, selectedCategoryId) => {
@@ -110,54 +113,59 @@ export default function Shop() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="relative overflow-hidden border-b border-border bg-card/80 backdrop-blur-sm">
-        <div className="absolute inset-0 gradient-soft opacity-60" />
-        <div className="container relative mx-auto flex items-center justify-between px-4 py-4 md:px-6">
-          <Link to="/" className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Salon Sanaru Shop
-          </Link>
-          <nav className="flex items-center gap-2 text-sm">
-            <Link to="/" className="rounded-lg px-3 py-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground">
-              Home
-            </Link>
-            <Link to="/login" className="rounded-lg px-3 py-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground">
-              Login
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#EBEBEB] flex flex-col">
+      <Navbar />
 
-      <main className="container mx-auto grid gap-6 px-4 py-8 md:grid-cols-[280px_1fr] md:px-6">
-        <CategoryBar
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-          onSelectCategory={handleSelectCategory}
-          isLoading={categoriesLoading}
-        />
+      <motion.main
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        className="mx-auto grid w-full max-w-[1380px] flex-1 gap-6 px-4 py-8 md:grid-cols-[280px_1fr] md:px-6 lg:px-10"
+      >
+        <motion.div
+          initial={{ opacity: 0, x: -18 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.08, ease: 'easeOut' }}
+        >
+          <CategoryBar
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategory={handleSelectCategory}
+            isLoading={categoriesLoading}
+          />
+        </motion.div>
 
-        <section className="space-y-5">
-          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-salon md:p-5">
+        <motion.section
+          initial={{ opacity: 0, x: 18 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.12, ease: 'easeOut' }}
+          className="space-y-5"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.2, ease: 'easeOut' }}
+            className="rounded-[16px] border border-[#DED6D2] bg-[#FDFDFD] p-4 shadow-[0_12px_24px_-20px_rgba(73,61,61,0.28)] md:p-5"
+          >
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-foreground md:text-3xl">Beauty Products</h1>
-                <p className="text-sm text-muted-foreground">
+                <h1 className="text-2xl font-medium text-[#1A1717] md:text-3xl">Beauty Products</h1>
+                <p className="text-sm text-[#7D746F]">
                   {selectedCategoryId ? `Showing ${selectedCategoryName}` : 'Showing all categories'}
                 </p>
               </div>
               <div className="relative w-full md:max-w-xs">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8D8681]" />
                 <input
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search products"
-                  className="w-full rounded-xl border border-input bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none ring-ring transition focus:ring-2"
+                  className="w-full rounded-xl border border-[#DDD4CF] bg-[#F8F5F3] py-2.5 pl-9 pr-3 text-sm text-[#1A1717] outline-none transition focus:border-[#A31A11]"
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
 
           <ProductList
             products={visibleProducts}
@@ -165,8 +173,10 @@ export default function Shop() {
             selectedCategoryId={selectedCategoryId}
             selectedCategoryName={selectedCategoryName}
           />
-        </section>
-      </main>
+        </motion.section>
+      </motion.main>
+
+      <Footer />
     </div>
   );
 }

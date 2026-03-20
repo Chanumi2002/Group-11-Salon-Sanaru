@@ -14,6 +14,7 @@ import NotFound from "./pages/public/NotFound";
 import Shop from "./pages/public/Shop";
 import ProductsByCategory from "./pages/public/ProductsByCategory";
 import ShopProductDetails from "./pages/public/ShopProductDetails";
+import About from "./pages/public/About";
 
 // Customer pages
 import CustomerDashboard from "./pages/customer/CustomerDashboard";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/oauth/callback" element={<OAuthCallback />} />
             <Route path="/products" element={<Shop />} />
+            <Route path="/about-us" element={<About />} />
             <Route path="/products/category/:categoryId" element={<ProductsByCategory />} />
             <Route path="/products/category/:categoryId/product/:id" element={<ShopProductDetails />} />
             <Route path="/shop" element={<Navigate to="/products" replace />} />

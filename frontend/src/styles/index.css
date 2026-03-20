@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@500;600;700;800&display=swap');
 
 html, body {
   width: 100%;
@@ -13,58 +13,6 @@ html, body {
 
 @layer base {
   :root {
-    --background: 0 20% 98%;
-    --foreground: 0 0% 8%;
-
-    --card: 0 30% 98%;
-    --card-foreground: 0 0% 8%;
-
-    --popover: 0 20% 99%;
-    --popover-foreground: 0 0% 8%;
-
-    --primary: 0 90% 45%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 40% 93%;
-    --secondary-foreground: 0 0% 10%;
-
-    --muted: 0 30% 94%;
-    --muted-foreground: 0 10% 38%;
-
-    --accent: 0 90% 40%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 25% 85%;
-    --input: 0 20% 82%;
-    --ring: 0 90% 45%;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 0 85% 42%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 0 85% 42%;
-    --sidebar-accent: 0 80% 38%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 70% 35%;
-    --sidebar-ring: 0 0% 100%;
-
-    /* Custom salon tokens */
-    --salon-pink: 0 90% 45%;
-    --salon-pink-light: 0 60% 92%;
-    --salon-beige: 0 35% 93%;
-    --salon-gold: 0 80% 38%;
-    --salon-rose: 0 75% 55%;
-    --gradient-hero: linear-gradient(135deg, hsl(0 90% 50%), hsl(0 85% 40%), hsl(0 80% 25%));
-    --gradient-soft: linear-gradient(135deg, hsl(0 30% 97%), hsl(0 50% 94%));
-    --shadow-card: 0 4px 24px -4px hsl(0 80% 45% / 0.15);
-    --shadow-hover: 0 8px 32px -4px hsl(0 90% 45% / 0.3);
-  }
-
-  .dark {
     --background: 0 10% 6%;
     --foreground: 0 0% 95%;
 
@@ -93,6 +41,8 @@ html, body {
     --input: 0 15% 22%;
     --ring: 0 80% 52%;
 
+    --radius: 0.75rem;
+
     --sidebar-background: 0 75% 30%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
@@ -102,6 +52,7 @@ html, body {
     --sidebar-border: 0 55% 22%;
     --sidebar-ring: 0 0% 100%;
 
+    /* Custom salon tokens */
     --salon-pink: 0 80% 52%;
     --salon-pink-light: 0 40% 18%;
     --salon-beige: 0 20% 14%;
@@ -133,6 +84,18 @@ html, body {
 }
 
 @layer utilities {
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 18px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
   .gradient-hero {
     background: var(--gradient-hero);
   }
@@ -162,5 +125,19 @@ html, body {
 
   .category-pill {
     box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.03);
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.75s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  }
+
+  .animate-fade-up-delayed {
+    animation: fade-up 0.75s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+    animation-delay: 0.14s;
+  }
+
+  .animate-fade-up-late {
+    animation: fade-up 0.8s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+    animation-delay: 0.24s;
   }
 }
