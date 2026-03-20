@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface SalonServiceService {
 
+    record ServiceImageData(byte[] data, String contentType) {}
+
     ServiceResponse createService(ServiceRequest request, MultipartFile imageFile) throws IOException;
 
     ServiceResponse updateService(Long id, ServiceRequest request, MultipartFile imageFile) throws IOException;
@@ -16,6 +18,8 @@ public interface SalonServiceService {
     List<ServiceResponse> getAllServices();
 
     ServiceResponse getServiceById(Long id);
+
+    ServiceImageData getServiceImage(Long id);
 
     void deleteService(Long id);
 }
