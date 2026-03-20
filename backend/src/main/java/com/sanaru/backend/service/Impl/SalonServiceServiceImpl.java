@@ -10,29 +10,24 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @org.springframework.stereotype.Service
 public class SalonServiceServiceImpl implements SalonServiceService {
 
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png");
+    private static final String DEFAULT_IMAGE_CONTENT_TYPE = "image/jpeg";
+    private static final String DB_IMAGE_PLACEHOLDER = "db://image";
 
     private final ServiceRepository serviceRepository;
-
-    @Value("${app.service.upload.dir:uploads/services}")
-    private String uploadDir;
 
     @Value("${app.service.image.max-size-bytes:10485760}")
     private long maxImageSizeBytes;
@@ -50,7 +45,9 @@ public class SalonServiceServiceImpl implements SalonServiceService {
         service.setName(request.getName().trim());
         service.setDescription(request.getDescription().trim());
         service.setPrice(request.getPrice());
-        service.setImagePath(saveImageFile(imageFile));
+        service.setImageData(imageFile.getBytes());
+        service.setImageContentType(normalizeContentType(imageFile.getContentType()));
+        service.setImagePath(DB_IMAGE_PLACEHOLDER);
 
         return mapToResponse(serviceRepository.save(service));
     }
@@ -68,10 +65,9 @@ public class SalonServiceServiceImpl implements SalonServiceService {
 
         if (imageFile != null && !imageFile.isEmpty()) {
             validateImageFile(imageFile, false);
-            String oldImagePath = existing.getImagePath();
-            String newImagePath = saveImageFile(imageFile);
-            existing.setImagePath(newImagePath);
-            deleteImageIfExists(oldImagePath);
+            existing.setImageData(imageFile.getBytes());
+            existing.setImageContentType(normalizeContentType(imageFile.getContentType()));
+            existing.setImagePath(DB_IMAGE_PLACEHOLDER);
         }
 
         return mapToResponse(serviceRepository.save(existing));
@@ -93,10 +89,31 @@ public class SalonServiceServiceImpl implements SalonServiceService {
     }
 
     @Override
+    public ServiceImageData getServiceImage(Long id) {
+        Service service = serviceRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Service not found with id " + id));
+
+        if (service.getImageData() != null && service.getImageData().length > 0) {
+            return new ServiceImageData(service.getImageData(), normalizeContentType(service.getImageContentType()));
+        }
+
+        Path fallbackPath = resolveLegacyImagePath(service.getImagePath());
+        if (fallbackPath != null && Files.exists(fallbackPath)) {
+            try {
+                String detectedType = Files.probeContentType(fallbackPath);
+                return new ServiceImageData(Files.readAllBytes(fallbackPath), normalizeContentType(detectedType));
+            } catch (IOException ex) {
+                throw new IllegalStateException("Failed to load service photo for service id " + id);
+            }
+        }
+
+        throw new NoSuchElementException("Service photo not found for service id " + id);
+    }
+
+    @Override
     public void deleteService(Long id) {
         Service service = serviceRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Service not found with id " + id));
-        deleteImageIfExists(service.getImagePath());
         serviceRepository.delete(service);
     }
 
@@ -151,54 +168,25 @@ public class SalonServiceServiceImpl implements SalonServiceService {
         }
     }
 
-    private String saveImageFile(MultipartFile imageFile) throws IOException {
-        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-        Files.createDirectories(uploadPath);
-
-        String originalName = StringUtils.cleanPath(
-                imageFile.getOriginalFilename() == null ? "service-image" : imageFile.getOriginalFilename()
-        );
-        String extension = extractExtension(originalName, imageFile.getContentType());
-        String fileName = System.currentTimeMillis() + "_" + UUID.randomUUID().toString().replace("-", "") + extension;
-        Path filePath = uploadPath.resolve(fileName).normalize();
-
-        try (InputStream inputStream = imageFile.getInputStream()) {
-            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+    private String normalizeContentType(String rawContentType) {
+        if ("image/png".equalsIgnoreCase(rawContentType)) {
+            return "image/png";
         }
-
-        return "uploads/services/" + fileName;
+        return DEFAULT_IMAGE_CONTENT_TYPE;
     }
 
-    private String extractExtension(String originalName, String contentType) {
-        int extensionIndex = originalName.lastIndexOf('.');
-        if (extensionIndex > -1 && extensionIndex < originalName.length() - 1) {
-            String ext = originalName.substring(extensionIndex).toLowerCase();
-            if (".jpg".equals(ext) || ".jpeg".equals(ext) || ".png".equals(ext)) {
-                return ext;
-            }
-        }
-
-        if ("image/png".equalsIgnoreCase(contentType)) {
-            return ".png";
-        }
-        return ".jpg";
-    }
-
-    private void deleteImageIfExists(String imagePath) {
+    private Path resolveLegacyImagePath(String imagePath) {
         if (!StringUtils.hasText(imagePath)) {
-            return;
+            return null;
+        }
+        if (imagePath.startsWith("db://")) {
+            return null;
         }
 
         String normalized = imagePath.replace("\\", "/");
         int uploadsIndex = normalized.toLowerCase().indexOf("uploads/");
         String relativePath = uploadsIndex >= 0 ? normalized.substring(uploadsIndex) : normalized;
-        Path filePath = Paths.get(relativePath).toAbsolutePath().normalize();
-
-        try {
-            Files.deleteIfExists(filePath);
-        } catch (IOException ignored) {
-            // Keep DB operations resilient even if old file cleanup fails.
-        }
+        return Paths.get(relativePath).toAbsolutePath().normalize();
     }
 
     private ServiceResponse mapToResponse(Service service) {
@@ -207,7 +195,12 @@ public class SalonServiceServiceImpl implements SalonServiceService {
         response.setName(service.getName());
         response.setDescription(service.getDescription());
         response.setPrice(service.getPrice());
-        response.setImagePath(service.getImagePath());
+        if (StringUtils.hasText(service.getImagePath()) && !service.getImagePath().startsWith("db://")) {
+            response.setImagePath(service.getImagePath());
+        }
+        if (StringUtils.hasText(service.getImageContentType()) || StringUtils.hasText(service.getImagePath())) {
+            response.setImageUrl("/api/services/" + service.getId() + "/image");
+        }
         response.setCreatedAt(service.getCreatedAt());
         response.setUpdatedAt(service.getUpdatedAt());
         return response;
