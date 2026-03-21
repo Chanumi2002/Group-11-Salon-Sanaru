@@ -19,6 +19,8 @@ export default function ServicePage() {
     name: '',
     description: '',
     price: '',
+    durationMinutes: '',
+    active: true,
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
@@ -51,10 +53,10 @@ export default function ServicePage() {
   };
 
   const handleInputChange = (event) => {
-    const { name, value } = event.target;
+    const { name, value, type, checked } = event.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -76,6 +78,12 @@ export default function ServicePage() {
       return;
     }
 
+    const durationValue = Number(formData.durationMinutes);
+    if (!formData.durationMinutes || !Number.isInteger(durationValue) || durationValue <= 0) {
+      toast.error('Valid service duration is required');
+      return;
+    }
+
     if (!selectedFile && !editingId) {
       toast.error('Service photo is required');
       return;
@@ -88,6 +96,8 @@ export default function ServicePage() {
       payload.append('name', formData.name.trim());
       payload.append('description', formData.description.trim());
       payload.append('price', Number(formData.price).toFixed(2));
+      payload.append('durationMinutes', String(durationValue));
+      payload.append('active', String(Boolean(formData.active)));
       if (selectedFile) {
         payload.append('image', selectedFile);
       }
@@ -116,6 +126,8 @@ export default function ServicePage() {
       name: service.name || '',
       description: service.description || '',
       price: service.price || '',
+      durationMinutes: service.durationMinutes || '',
+      active: service.active !== false,
     });
     setPreviewUrl(resolveImageUrl(service.imageUrl || service.image || service.imagePath || ''));
     setSelectedFile(null);
@@ -145,6 +157,8 @@ export default function ServicePage() {
       name: '',
       description: '',
       price: '',
+      durationMinutes: '',
+      active: true,
     });
     setSelectedFile(null);
     setPreviewUrl('');
@@ -229,6 +243,42 @@ export default function ServicePage() {
                 </div>
 
                 <div>
+                  <label htmlFor="durationMinutes" className="block text-sm font-medium text-foreground mb-2">
+                    Duration (minutes)
+                  </label>
+                  <input
+                    id="durationMinutes"
+                    type="number"
+                    name="durationMinutes"
+                    value={formData.durationMinutes}
+                    onChange={handleInputChange}
+                    placeholder="30"
+                    step="1"
+                    min="1"
+                    disabled={isSubmitting}
+                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg border border-input bg-background px-3 py-2">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Service Status</p>
+                    <p className="text-xs text-muted-foreground">Inactive services are hidden from customers.</p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 text-sm text-foreground">
+                    <input
+                      type="checkbox"
+                      name="active"
+                      checked={Boolean(formData.active)}
+                      onChange={handleInputChange}
+                      disabled={isSubmitting}
+                      className="h-4 w-4 accent-blue-600"
+                    />
+                    Active
+                  </label>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Service Photo
                   </label>
@@ -293,6 +343,12 @@ export default function ServicePage() {
                       Price
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-foreground">
+                      Duration
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-foreground">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-foreground">
                       Actions
                     </th>
                   </tr>
@@ -323,6 +379,20 @@ export default function ServicePage() {
                       </td>
                       <td className="px-6 py-4 text-foreground font-medium">
                         Rs. {Number(service.price || 0).toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 text-foreground">
+                        {service.durationMinutes || 30} min
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                            service.active === false
+                              ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                              : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                          }`}
+                        >
+                          {service.active === false ? 'INACTIVE' : 'ACTIVE'}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
