@@ -26,6 +26,7 @@ public class SalonServiceServiceImpl implements SalonServiceService {
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png");
     private static final String DEFAULT_IMAGE_CONTENT_TYPE = "image/jpeg";
     private static final String DB_IMAGE_PLACEHOLDER = "db://image";
+    private static final int DEFAULT_DURATION_MINUTES = 30;
 
     private final ServiceRepository serviceRepository;
 
@@ -45,6 +46,8 @@ public class SalonServiceServiceImpl implements SalonServiceService {
         service.setName(request.getName().trim());
         service.setDescription(request.getDescription().trim());
         service.setPrice(request.getPrice());
+        service.setDurationMinutes(request.getDurationMinutes());
+        service.setActive(request.getActive());
         service.setImageData(imageFile.getBytes());
         service.setImageContentType(normalizeContentType(imageFile.getContentType()));
         service.setImagePath(DB_IMAGE_PLACEHOLDER);
@@ -62,6 +65,8 @@ public class SalonServiceServiceImpl implements SalonServiceService {
         existing.setName(request.getName().trim());
         existing.setDescription(request.getDescription().trim());
         existing.setPrice(request.getPrice());
+        existing.setDurationMinutes(request.getDurationMinutes());
+        existing.setActive(request.getActive());
 
         if (imageFile != null && !imageFile.isEmpty()) {
             validateImageFile(imageFile, false);
@@ -82,9 +87,30 @@ public class SalonServiceServiceImpl implements SalonServiceService {
     }
 
     @Override
+    public List<ServiceResponse> getActiveServices() {
+        return serviceRepository.findAllByOrderByUpdatedAtDesc()
+                .stream()
+                .filter(service -> !Boolean.FALSE.equals(service.getActive()))
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public ServiceResponse getServiceById(Long id) {
         Service service = serviceRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Service not found with id " + id));
+        return mapToResponse(service);
+    }
+
+    @Override
+    public ServiceResponse getActiveServiceById(Long id) {
+        Service service = serviceRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Service not found with id " + id));
+
+        if (Boolean.FALSE.equals(service.getActive())) {
+            throw new NoSuchElementException("Service not found with id " + id);
+        }
+
         return mapToResponse(service);
     }
 
@@ -146,6 +172,18 @@ public class SalonServiceServiceImpl implements SalonServiceService {
             throw new IllegalArgumentException("Service price must be greater than 0");
         }
         request.setPrice(price.setScale(2, RoundingMode.HALF_UP));
+
+        Integer durationMinutes = request.getDurationMinutes();
+        if (durationMinutes == null) {
+            throw new IllegalArgumentException("Service duration is required");
+        }
+        if (durationMinutes <= 0 || durationMinutes > 720) {
+            throw new IllegalArgumentException("Service duration must be between 1 and 720 minutes");
+        }
+
+        if (request.getActive() == null) {
+            request.setActive(true);
+        }
     }
 
     private void validateImageFile(MultipartFile imageFile, boolean required) {
@@ -195,6 +233,10 @@ public class SalonServiceServiceImpl implements SalonServiceService {
         response.setName(service.getName());
         response.setDescription(service.getDescription());
         response.setPrice(service.getPrice());
+        response.setDurationMinutes(
+                service.getDurationMinutes() == null ? DEFAULT_DURATION_MINUTES : service.getDurationMinutes()
+        );
+        response.setActive(!Boolean.FALSE.equals(service.getActive()));
         if (StringUtils.hasText(service.getImagePath()) && !service.getImagePath().startsWith("db://")) {
             response.setImagePath(service.getImagePath());
         }
