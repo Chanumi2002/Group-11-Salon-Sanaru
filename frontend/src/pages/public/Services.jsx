@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
 import { shopService } from '@/services/shopApi';
@@ -9,6 +10,7 @@ import { resolveImageUrl } from '@/utils/resolveImageUrl';
 export default function Services() {
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -29,6 +31,19 @@ export default function Services() {
 
     fetchServices();
   }, []);
+
+  const handleBookNow = (serviceId) => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+
+    if (!token || role !== 'CUSTOMER') {
+      navigate('/login', { state: { from: { pathname: '/services' } } });
+      return;
+    }
+
+    const query = serviceId ? `?serviceId=${encodeURIComponent(serviceId)}` : '';
+    navigate(`/customer_dashboard/book${query}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#EBEBEB] flex flex-col">
@@ -93,6 +108,13 @@ export default function Services() {
                         {service.durationMinutes || 30} min
                       </p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => handleBookNow(service.id)}
+                      className="mt-1 inline-flex w-full items-center justify-center rounded-[10px] bg-[#8E1616] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#741212]"
+                    >
+                      Book Now
+                    </button>
                   </div>
                 </motion.article>
               );
