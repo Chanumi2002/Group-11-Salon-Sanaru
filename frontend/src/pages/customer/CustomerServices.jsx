@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { shopService } from '@/services/shopApi';
@@ -120,6 +121,12 @@ export default function CustomerServices() {
                       {service.durationMinutes} min
                     </p>
                   </div>
+                  <Link
+                    to={`/customer_dashboard/book?serviceId=${encodeURIComponent(service.id)}`}
+                    className="inline-flex w-full items-center justify-center rounded-md bg-[#8E1616] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#741212]"
+                  >
+                    Book Now
+                  </Link>
                 </div>
               </article>
             ))}
