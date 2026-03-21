@@ -35,6 +35,12 @@ public class Service {
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "duration_minutes", nullable = false, columnDefinition = "INT NOT NULL DEFAULT 30")
+    private Integer durationMinutes;
+
+    @Column(name = "active", nullable = false, columnDefinition = "TINYINT(1) NOT NULL DEFAULT 1")
+    private Boolean active = true;
+
     @Column(name = "image_path", length = 500)
     private String imagePath;
 
