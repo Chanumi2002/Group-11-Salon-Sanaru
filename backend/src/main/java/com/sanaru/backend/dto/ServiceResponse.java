@@ -13,6 +13,8 @@ public class ServiceResponse {
     private String name;
     private String description;
     private BigDecimal price;
+    private Integer durationMinutes;
+    private Boolean active;
     private String imagePath;
     private String imageUrl;
     private LocalDateTime createdAt;
