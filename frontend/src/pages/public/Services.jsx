@@ -15,7 +15,10 @@ export default function Services() {
       try {
         setIsLoading(true);
         const data = await shopService.getServices();
-        setServices(Array.isArray(data) ? data : []);
+        const normalizedServices = Array.isArray(data)
+          ? data.filter((service) => service?.active !== false)
+          : [];
+        setServices(normalizedServices);
       } catch (error) {
         console.error('Failed to fetch services:', error);
         toast.error('Failed to load services');
@@ -53,38 +56,47 @@ export default function Services() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {services.map((service, index) => (
-              <motion.article
-                key={service.id}
-                initial={{ opacity: 0, y: 18, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.35), ease: 'easeOut' }}
-                className="overflow-hidden rounded-[16px] border border-[#E4D8D2] bg-[#FDFDFD] shadow-[0_10px_22px_-18px_rgba(75,58,58,0.35)]"
-              >
-                <div className="h-[220px] overflow-hidden bg-[#F2ECE8]">
-                  {service.imagePath ? (
-                    <img
-                      src={resolveImageUrl(service.imagePath)}
-                      alt={service.name}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm text-[#7B706B]">
-                      No image available
-                    </div>
-                  )}
-                </div>
+            {services.map((service, index) => {
+              const imageSource = service.imageUrl || service.image || service.imagePath;
 
-                <div className="space-y-2 p-4">
-                  <h2 className="text-[1.05rem] font-medium text-[#1A1717]">{service.name}</h2>
-                  <p className="text-sm text-[#6E6662] line-clamp-2">{service.description}</p>
-                  <p className="text-[1.1rem] font-semibold text-[#A31A11]">
-                    Rs. {Number(service.price || 0).toFixed(2)}
-                  </p>
-                </div>
-              </motion.article>
-            ))}
+              return (
+                <motion.article
+                  key={service.id}
+                  initial={{ opacity: 0, y: 18, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.35), ease: 'easeOut' }}
+                  className="overflow-hidden rounded-[16px] border border-[#E4D8D2] bg-[#FDFDFD] shadow-[0_10px_22px_-18px_rgba(75,58,58,0.35)]"
+                >
+                  <div className="h-[220px] overflow-hidden bg-[#F2ECE8]">
+                    {imageSource ? (
+                      <img
+                        src={resolveImageUrl(imageSource)}
+                        alt={service.name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm text-[#7B706B]">
+                        No image available
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 p-4">
+                    <h2 className="text-[1.05rem] font-medium text-[#1A1717]">{service.name}</h2>
+                    <p className="text-sm text-[#6E6662] line-clamp-2">{service.description}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[1.1rem] font-semibold text-[#A31A11]">
+                        Rs. {Number(service.price || 0).toFixed(2)}
+                      </p>
+                      <p className="text-sm font-medium text-[#5E5753]">
+                        {service.durationMinutes || 30} min
+                      </p>
+                    </div>
+                  </div>
+                </motion.article>
+              );
+            })}
           </div>
         )}
       </main>
