@@ -22,6 +22,7 @@ import CustomerDashboard from "./pages/customer/CustomerDashboard";
 import Homepage from "./pages/customer/Homepage";
 import Profile from "./pages/customer/Profile";
 import CustomerServices from "./pages/customer/CustomerServices";
+import BookAppointment from "./pages/customer/BookAppointment";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -84,6 +85,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="CUSTOMER">
                   <CustomerServices />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customer_dashboard/book"
+              element={
+                <ProtectedRoute requiredRole="CUSTOMER">
+                  <BookAppointment />
                 </ProtectedRoute>
               }
             />
