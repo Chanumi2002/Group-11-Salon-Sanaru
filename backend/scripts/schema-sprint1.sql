@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS services (
   name        VARCHAR(120) NOT NULL,
   description VARCHAR(1000) NOT NULL,
   price       DECIMAL(10,2) NOT NULL,
+  duration_minutes INT NOT NULL DEFAULT 30,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
   image_path  VARCHAR(500),
   image_data  LONGBLOB,
   image_content_type VARCHAR(120),
