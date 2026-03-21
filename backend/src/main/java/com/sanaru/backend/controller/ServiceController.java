@@ -36,12 +36,16 @@ public class ServiceController {
             @RequestParam("name") String name,
             @RequestParam("description") String description,
             @RequestParam("price") String price,
+            @RequestParam("durationMinutes") String durationMinutes,
+            @RequestParam(value = "active", defaultValue = "true") String active,
             @RequestParam("image") MultipartFile imageFile
     ) throws IOException {
         ServiceRequest request = new ServiceRequest();
         request.setName(name);
         request.setDescription(description);
         request.setPrice(parsePrice(price));
+        request.setDurationMinutes(parseDuration(durationMinutes));
+        request.setActive(parseActive(active));
 
         ServiceResponse created = salonServiceService.createService(request, imageFile);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -57,18 +61,32 @@ public class ServiceController {
             @RequestParam("name") String name,
             @RequestParam("description") String description,
             @RequestParam("price") String price,
+            @RequestParam("durationMinutes") String durationMinutes,
+            @RequestParam(value = "active", defaultValue = "true") String active,
             @RequestParam(value = "image", required = false) MultipartFile imageFile
     ) throws IOException {
         ServiceRequest request = new ServiceRequest();
         request.setName(name);
         request.setDescription(description);
         request.setPrice(parsePrice(price));
+        request.setDurationMinutes(parseDuration(durationMinutes));
+        request.setActive(parseActive(active));
 
         ServiceResponse updated = salonServiceService.updateService(id, request, imageFile);
         return ResponseEntity.ok(Map.of(
                 "message", "Service updated successfully",
                 "service", updated
         ));
+    }
+
+    @GetMapping("/admin/services")
+    public ResponseEntity<List<ServiceResponse>> getAllServicesForAdmin() {
+        return ResponseEntity.ok(salonServiceService.getAllServices());
+    }
+
+    @GetMapping("/admin/services/{id}")
+    public ResponseEntity<ServiceResponse> getServiceByIdForAdmin(@PathVariable Long id) {
+        return ResponseEntity.ok(salonServiceService.getServiceById(id));
     }
 
     @DeleteMapping("/admin/services/{id}")
@@ -79,12 +97,12 @@ public class ServiceController {
 
     @GetMapping("/services")
     public ResponseEntity<List<ServiceResponse>> getAllServices() {
-        return ResponseEntity.ok(salonServiceService.getAllServices());
+        return ResponseEntity.ok(salonServiceService.getActiveServices());
     }
 
     @GetMapping("/services/{id}")
     public ResponseEntity<ServiceResponse> getServiceById(@PathVariable Long id) {
-        return ResponseEntity.ok(salonServiceService.getServiceById(id));
+        return ResponseEntity.ok(salonServiceService.getActiveServiceById(id));
     }
 
     @GetMapping(value = "/services/{id}/image")
@@ -109,5 +127,23 @@ public class ServiceController {
         } catch (NumberFormatException ex) {
             throw new IllegalArgumentException("Service price must be a valid number");
         }
+    }
+
+    private Integer parseDuration(String durationMinutes) {
+        try {
+            return Integer.parseInt(durationMinutes);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Service duration must be a valid whole number");
+        }
+    }
+
+    private Boolean parseActive(String active) {
+        if ("true".equalsIgnoreCase(active)) {
+            return true;
+        }
+        if ("false".equalsIgnoreCase(active)) {
+            return false;
+        }
+        throw new IllegalArgumentException("Service active status must be true or false");
     }
 }
