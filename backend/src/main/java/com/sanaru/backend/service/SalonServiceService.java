@@ -17,7 +17,11 @@ public interface SalonServiceService {
 
     List<ServiceResponse> getAllServices();
 
+    List<ServiceResponse> getActiveServices();
+
     ServiceResponse getServiceById(Long id);
+
+    ServiceResponse getActiveServiceById(Long id);
 
     ServiceImageData getServiceImage(Long id);
 
