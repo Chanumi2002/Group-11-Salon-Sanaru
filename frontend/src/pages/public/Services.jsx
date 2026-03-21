@@ -35,14 +35,15 @@ export default function Services() {
   const handleBookNow = (serviceId) => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
+    const query = serviceId ? `?serviceId=${encodeURIComponent(serviceId)}` : '';
+    const bookingPath = '/customer_dashboard/book';
 
     if (!token || role !== 'CUSTOMER') {
-      navigate('/login', { state: { from: { pathname: '/services' } } });
+      navigate('/login', { state: { from: { pathname: bookingPath, search: query } } });
       return;
     }
 
-    const query = serviceId ? `?serviceId=${encodeURIComponent(serviceId)}` : '';
-    navigate(`/customer_dashboard/book${query}`);
+    navigate(`${bookingPath}${query}`);
   };
 
   return (
