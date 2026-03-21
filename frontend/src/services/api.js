@@ -154,12 +154,12 @@ export const adminService = {
 
   // Get all services
   getServices: async () => {
-    return await api.get('/services');
+    return await api.get('/admin/services');
   },
 
   // Get service by ID
   getServiceById: async (serviceId) => {
-    return await api.get(`/services/${serviceId}`);
+    return await api.get(`/admin/services/${serviceId}`);
   },
 
   // Create new service with image
