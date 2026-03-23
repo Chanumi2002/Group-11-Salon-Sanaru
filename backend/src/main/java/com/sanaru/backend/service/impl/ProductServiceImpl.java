@@ -33,11 +33,18 @@ public class ProductServiceImpl implements ProductService {
         this.categoryRepository = categoryRepository;
     }
 
+    // CREATE
     @Override
     public ProductResponse createProduct(ProductRequest dto, MultipartFile imageFile) throws IOException {
+
+        // Price validation
+        validatePrice(dto.getPrice());
+
+        // Image validation
         if (imageFile == null || imageFile.isEmpty()) {
-            throw new RuntimeException("Image file is missing");
+            throw new IllegalArgumentException("Image file is missing");
         }
+        validateImageFile(imageFile);
 
         String imagePath = saveImageFile(imageFile);
 
@@ -55,16 +62,25 @@ public class ProductServiceImpl implements ProductService {
         return mapToResponse(productRepository.save(product));
     }
 
+    // UPDATE
     @Override
     public ProductResponse updateProduct(Long id, ProductRequest dto, MultipartFile imageFile) throws IOException {
+
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id " + id));
+
+        // Price validation
+        validatePrice(dto.getPrice());
 
         product.setName(dto.getName());
         product.setDescription(dto.getDescription());
         product.setPrice(dto.getPrice());
 
         if (imageFile != null && !imageFile.isEmpty()) {
+
+            // Image validation
+            validateImageFile(imageFile);
+
             String imagePath = saveImageFile(imageFile);
             product.setImagePath(imagePath);
         }
@@ -77,6 +93,7 @@ public class ProductServiceImpl implements ProductService {
         return mapToResponse(productRepository.save(product));
     }
 
+    //  GET ALL
     @Override
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAll()
@@ -85,20 +102,23 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toList());
     }
 
+    // GET BY ID
     @Override
     public ProductResponse getProductById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id " + id));
         return mapToResponse(product);
     }
 
+    // DELETE
     @Override
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id " + id));
         productRepository.delete(product);
     }
 
+    //  FILTER
     @Override
     public List<ProductResponse> getProductsFiltered(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice) {
         return productRepository.findByFilters(categoryId, minPrice, maxPrice)
@@ -107,6 +127,35 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toList());
     }
 
+    // VALIDATIONS
+    private void validatePrice(BigDecimal price) {
+        if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Price must be a positive value");
+        }
+    }
+
+    private void validateImageFile(MultipartFile file) {
+        String contentType = file.getContentType();
+        String fileName = file.getOriginalFilename();
+
+        boolean validType = contentType != null &&
+                (contentType.equals("image/jpeg") ||
+                        contentType.equals("image/png") ||
+                        contentType.equals("image/jpg") ||
+                        contentType.equals("image/webp"));
+
+        boolean validExtension = fileName != null &&
+                (fileName.toLowerCase().endsWith(".jpg") ||
+                        fileName.toLowerCase().endsWith(".jpeg") ||
+                        fileName.toLowerCase().endsWith(".png") ||
+                        fileName.toLowerCase().endsWith(".webp"));
+
+        if (!validType || !validExtension) {
+            throw new IllegalArgumentException("Only image files (JPG, JPEG, PNG, WEBP) are allowed");
+        }
+    }
+
+    //  MAPPER
     private ProductResponse mapToResponse(Product product) {
         ProductResponse response = new ProductResponse();
         response.setId(product.getId());
@@ -120,15 +169,21 @@ public class ProductServiceImpl implements ProductService {
         return response;
     }
 
+    // FILE SAVE
     private String saveImageFile(MultipartFile imageFile) throws IOException {
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
         String originalName = imageFile.getOriginalFilename();
-        if (originalName == null || originalName.isBlank()) originalName = "image";
+        if (originalName == null || originalName.isBlank()) {
+            originalName = "image";
+        }
+
         String fileName = System.currentTimeMillis() + "_" + originalName.replaceAll("\\s+", "_");
+
         Path filePath = uploadPath.resolve(fileName).normalize();
         imageFile.transferTo(filePath.toFile());
 
