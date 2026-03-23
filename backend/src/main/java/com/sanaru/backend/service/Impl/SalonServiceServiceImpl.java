@@ -24,13 +24,14 @@ import java.util.stream.Collectors;
 public class SalonServiceServiceImpl implements SalonServiceService {
 
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png");
+    private static final Set<Integer> ALLOWED_DURATIONS = Set.of(15, 30, 45, 60, 90, 120);
     private static final String DEFAULT_IMAGE_CONTENT_TYPE = "image/jpeg";
     private static final String DB_IMAGE_PLACEHOLDER = "db://image";
     private static final int DEFAULT_DURATION_MINUTES = 30;
 
     private final ServiceRepository serviceRepository;
 
-    @Value("${app.service.image.max-size-bytes:10485760}")
+    @Value("${app.service.image.max-size-bytes:1048576}")
     private long maxImageSizeBytes;
 
     public SalonServiceServiceImpl(ServiceRepository serviceRepository) {
@@ -177,8 +178,8 @@ public class SalonServiceServiceImpl implements SalonServiceService {
         if (durationMinutes == null) {
             throw new IllegalArgumentException("Service duration is required");
         }
-        if (durationMinutes <= 0 || durationMinutes > 720) {
-            throw new IllegalArgumentException("Service duration must be between 1 and 720 minutes");
+        if (!ALLOWED_DURATIONS.contains(durationMinutes)) {
+            throw new IllegalArgumentException("Duration must be 15, 30, 45, 60, 90, or 120");
         }
 
         if (request.getActive() == null) {

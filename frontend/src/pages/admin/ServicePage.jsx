@@ -6,7 +6,8 @@ import ImageUpload from '@/components/ImageUpload';
 import { AdminDashboardLayout } from '@/components/common/AdminDashboardLayout';
 import { resolveImageUrl } from '@/utils/resolveImageUrl';
 
-const MAX_SERVICE_PHOTO_MB = 10;
+const MAX_SERVICE_PHOTO_MB = 1;
+const ALLOWED_SERVICE_DURATIONS = [15, 30, 45, 60, 90, 120];
 
 export default function ServicePage() {
   const [services, setServices] = useState([]);
@@ -79,8 +80,8 @@ export default function ServicePage() {
     }
 
     const durationValue = Number(formData.durationMinutes);
-    if (!formData.durationMinutes || !Number.isInteger(durationValue) || durationValue <= 0) {
-      toast.error('Valid service duration is required');
+    if (!formData.durationMinutes || !ALLOWED_SERVICE_DURATIONS.includes(durationValue)) {
+      toast.error('Duration must be 15, 30, 45, 60, 90, or 120');
       return;
     }
 
@@ -186,7 +187,7 @@ export default function ServicePage() {
 
         {isFormOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-md w-full p-6 my-8">
+            <div className="bg-card border border-border rounded-lg shadow-lg max-w-md w-full p-6 my-8">
               <h2 className="text-2xl font-bold mb-4 text-foreground">
                 {editingId ? 'Edit Service' : 'Add New Service'}
               </h2>
@@ -246,18 +247,21 @@ export default function ServicePage() {
                   <label htmlFor="durationMinutes" className="block text-sm font-medium text-foreground mb-2">
                     Duration (minutes)
                   </label>
-                  <input
+                  <select
                     id="durationMinutes"
-                    type="number"
                     name="durationMinutes"
                     value={formData.durationMinutes}
                     onChange={handleInputChange}
-                    placeholder="30"
-                    step="1"
-                    min="1"
                     disabled={isSubmitting}
                     className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                  />
+                  >
+                    <option value="">Select duration</option>
+                    {ALLOWED_SERVICE_DURATIONS.map((minutes) => (
+                      <option key={minutes} value={minutes}>
+                        {minutes} minutes
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="flex items-center justify-between rounded-lg border border-input bg-background px-3 py-2">
@@ -300,7 +304,7 @@ export default function ServicePage() {
                     type="button"
                     onClick={handleClose}
                     disabled={isSubmitting}
-                    className="flex-1 px-4 py-2 border border-input rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
+                    className="flex-1 px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>

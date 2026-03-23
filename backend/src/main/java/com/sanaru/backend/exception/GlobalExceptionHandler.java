@@ -118,7 +118,7 @@ public class GlobalExceptionHandler {
         Map<String, Object> response = new HashMap<>();
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("error", "Invalid Input");
-        response.put("message", "Service photo is too large. Maximum size is 10MB.");
+        response.put("message", "Photo is too large. Maximum size is 1MB.");
         response.put("timestamp", System.currentTimeMillis());
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);

@@ -6,6 +6,8 @@ import ImageUpload from '@/components/ImageUpload';
 import { AdminDashboardLayout } from '@/components/common/AdminDashboardLayout';
 import { resolveImageUrl } from '@/utils/resolveImageUrl';
 
+const MAX_PRODUCT_PHOTO_MB = 1;
+
 export default function ProductPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -129,7 +131,7 @@ export default function ProductPage() {
       await fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
-      toast.error(error.response?.data?.message || 'Failed to save product');
+      toast.error(error.response?.data?.message || `Failed to save product. Maximum photo size is ${MAX_PRODUCT_PHOTO_MB}MB.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -225,7 +227,7 @@ export default function ProductPage() {
         {/* Form Modal */}
         {isFormOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-md w-full p-6 my-8">
+            <div className="bg-card border border-border rounded-lg shadow-lg max-w-md w-full p-6 my-8">
               <h2 className="text-2xl font-bold mb-4 text-foreground">
                 {editingId ? 'Edit Product' : 'Add New Product'}
               </h2>
@@ -316,9 +318,12 @@ export default function ProductPage() {
                     previewUrl={previewUrl}
                     onRemove={handleRemoveImage}
                     isLoading={isSubmitting}
-                    maxSize={2}
+                    maxSize={MAX_PRODUCT_PHOTO_MB}
                     acceptedTypes={['image/jpeg', 'image/png']}
                   />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Maximum photo size: {MAX_PRODUCT_PHOTO_MB}MB (JPG or PNG)
+                  </p>
                 </div>
 
                 {/* Action Buttons */}
@@ -327,7 +332,7 @@ export default function ProductPage() {
                     type="button"
                     onClick={handleClose}
                     disabled={isSubmitting}
-                    className="flex-1 px-4 py-2 border border-input rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
+                    className="flex-1 px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>

@@ -6,7 +6,7 @@ export default function ImageUpload({
   previewUrl,
   onRemove,
   isLoading = false,
-  maxSize = 2,
+  maxSize = 1,
   acceptedTypes = ['image/jpeg', 'image/png'],
 }) {
   const fileInputRef = useRef(null);
