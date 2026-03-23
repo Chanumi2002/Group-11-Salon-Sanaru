@@ -21,11 +21,7 @@ export default function Register() {
   const [oauthLoading, setOAuthLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Initialize OAuth providers on component mount
-  useEffect(() => {
-    // Initialize Google
-    oauth2Service.initializeGoogle();
-  }, []);
+
 
   const validate = () => {
     const e = {};

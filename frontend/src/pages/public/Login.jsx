@@ -25,11 +25,7 @@ export default function Login() {
   const location = useLocation();
   const from = location.state?.from?.pathname || "/customer_dashboard";
 
-  // Initialize OAuth providers on component mount
-  useEffect(() => {
-    // Initialize Google
-    oauth2Service.initializeGoogle();
-  }, []);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
