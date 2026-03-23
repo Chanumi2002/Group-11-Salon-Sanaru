@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/Button";
 
 const cards = [
   {
-    title: "Book a service",
-    desc: "Choose a time and stylist in minutes.",
-    to: "/customer_dashboard/book",
-    cta: "Book now",
+    title: "Salon services",
+    desc: "Compare service details, pricing, and duration.",
+    to: "/customer_dashboard/services",
+    cta: "View services",
   },
   {
     title: "My bookings",
@@ -66,5 +66,4 @@ export default function CustomerDashboard() {
     </DashboardLayout>
   );
 }
-
 

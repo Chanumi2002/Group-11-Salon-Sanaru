@@ -22,6 +22,16 @@ export const shopService = {
     const response = await shopApi.get(`/products/${productId}`);
     return response.data;
   },
+
+  getServices: async () => {
+    const response = await shopApi.get('/services');
+    return response.data || [];
+  },
+
+  getServiceById: async (serviceId) => {
+    const response = await shopApi.get(`/services/${serviceId}`);
+    return response.data;
+  },
 };
 
 export default shopApi;

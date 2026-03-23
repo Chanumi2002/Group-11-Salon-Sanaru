@@ -149,6 +149,41 @@ export const adminService = {
   deleteProduct: async (productId) => {
     return await api.delete(`/admin/products/${productId}`);
   },
+
+  // ==================== SERVICE OPERATIONS ====================
+
+  // Get all services
+  getServices: async () => {
+    return await api.get('/admin/services');
+  },
+
+  // Get service by ID
+  getServiceById: async (serviceId) => {
+    return await api.get(`/admin/services/${serviceId}`);
+  },
+
+  // Create new service with image
+  createService: async (formData) => {
+    return await api.post('/admin/services', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Update service with image
+  updateService: async (serviceId, formData) => {
+    return await api.put(`/admin/services/${serviceId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Delete service
+  deleteService: async (serviceId) => {
+    return await api.delete(`/admin/services/${serviceId}`);
+  },
 };
 
 export default api;

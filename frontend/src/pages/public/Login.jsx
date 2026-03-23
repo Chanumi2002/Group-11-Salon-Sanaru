@@ -23,7 +23,10 @@ export default function Login() {
   const [oauthLoading, setOAuthLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/customer_dashboard";
+  const fromLocation = location.state?.from;
+  const from = typeof fromLocation === 'string'
+    ? fromLocation
+    : `${fromLocation?.pathname || "/customer_dashboard"}${fromLocation?.search || ""}`;
 
 
 

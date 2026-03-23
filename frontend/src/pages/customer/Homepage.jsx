@@ -36,7 +36,7 @@ export default function Homepage() {
                 Book Now
               </Link>
               <Link
-                to="/shop"
+                to="/customer_dashboard/services"
                 className="rounded-full border border-[#8E1616]/40 bg-white/30 px-7 py-3 text-sm font-semibold uppercase tracking-[0.07em] text-[#8E1616] backdrop-blur-[1px] transition-all duration-300 hover:border-[#8E1616] hover:bg-white/50"
               >
                 Explore Services
@@ -67,5 +67,4 @@ export default function Homepage() {
     </DashboardLayout>
   );
 }
-
 

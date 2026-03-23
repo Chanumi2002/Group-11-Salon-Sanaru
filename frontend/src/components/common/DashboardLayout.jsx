@@ -17,7 +17,7 @@ const sidebarLinks = [
   { label: "Customer Dashboard", to: "/customer_dashboard", icon: LayoutDashboard },
   { label: "Profile", to: "/customer_profile", icon: User },
   { label: "Products", to: "/products", icon: ShoppingBag },
-  { label: "Services", to: "/#services", icon: Briefcase },
+  { label: "Services", to: "/customer_dashboard/services", icon: Briefcase },
   { label: "Book Appointment", to: "/customer_dashboard/book", icon: CalendarPlus },
   { label: "My Bookings", to: "/customer_dashboard/bookings", icon: CalendarCheck },
   { label: "Orders", to: "/customer_dashboard/orders", icon: ShoppingBag },

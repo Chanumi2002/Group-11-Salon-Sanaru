@@ -192,7 +192,7 @@ export default function CategoryPage() {
                     previewUrl={previewUrl}
                     onRemove={handleRemoveImage}
                     isLoading={isSubmitting}
-                    maxSize={2}
+                    maxSize={1}
                     acceptedTypes={['image/jpeg', 'image/png']}
                   />
                 </div>
