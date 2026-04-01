@@ -12,6 +12,8 @@ export default function ProductDetails({
   onQuantityIncrease,
   onAddToCart,
   isAddingToCart,
+  onBuyNow,
+  isBuyingNow,
 }) {
   if (isLoading) {
     return (
@@ -98,8 +100,8 @@ export default function ProductDetails({
             <motion.button
               type="button"
               onClick={onAddToCart}
-              disabled={isAddingToCart}
-              whileTap={{ scale: isAddingToCart ? 1 : 0.98 }}
+              disabled={isAddingToCart || isBuyingNow}
+              whileTap={{ scale: isAddingToCart || isBuyingNow ? 1 : 0.98 }}
               className="inline-flex min-w-[165px] items-center justify-center gap-2 rounded-full border border-[#8B1A1A]/35 bg-[#A31A11] px-6 py-2.5 text-sm font-semibold text-[#FDFDFD] transition-all duration-300 hover:bg-[#E34F4F] hover:shadow-[0_10px_20px_-12px_rgba(227,79,79,0.8)] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isAddingToCart ? (
@@ -109,6 +111,23 @@ export default function ProductDetails({
                 </>
               ) : (
                 'Add to Cart'
+              )}
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={onBuyNow}
+              disabled={isBuyingNow || isAddingToCart}
+              whileTap={{ scale: isBuyingNow || isAddingToCart ? 1 : 0.98 }}
+              className="inline-flex min-w-[165px] items-center justify-center gap-2 rounded-full border border-[#8B1A1A]/30 bg-[#FDFDFD] px-6 py-2.5 text-sm font-semibold text-[#8B1A1A] transition-all duration-300 hover:bg-[#F9ECEC] hover:shadow-[0_10px_20px_-12px_rgba(227,79,79,0.45)] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isBuyingNow ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Redirecting...
+                </>
+              ) : (
+                'Buy Now'
               )}
             </motion.button>
           </div>
