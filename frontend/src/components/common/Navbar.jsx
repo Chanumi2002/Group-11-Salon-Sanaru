@@ -1,14 +1,21 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, ShoppingCart, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { authService } from "@/services/api";
+import { useCart } from "@/context/CartContext";
 import logoImage from "@/assets/logo.jpeg";
 
-const navLinks = [
+const guestNavLinks = [
   { label: "Home", to: "/" },
   { label: "Services", to: "/services" },
   { label: "Products", to: "/products" },
   { label: "About Us", to: "/about-us" },
+];
+
+const customerNavLinks = [
+  { label: "Services", to: "/customer_dashboard/services" },
+  { label: "Products", to: "/products" },
 ];
 
 const isLinkActive = (location, to) => {
@@ -26,7 +33,45 @@ const isLinkActive = (location, to) => {
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [authState, setAuthState] = useState({ token: null, role: null });
   const location = useLocation();
+  const navigate = useNavigate();
+  const { cartCount } = useCart();
+
+  useEffect(() => {
+    const updateAuthState = () => {
+      setAuthState({
+        token: localStorage.getItem("token"),
+        role: localStorage.getItem("role"),
+      });
+    };
+
+    updateAuthState();
+    window.addEventListener("storage", updateAuthState);
+
+    return () => window.removeEventListener("storage", updateAuthState);
+  }, [location.pathname]);
+
+  const isCustomerLoggedIn = Boolean(authState.token) && authState.role === "CUSTOMER";
+  const isAdminLoggedIn = Boolean(authState.token) && authState.role === "ADMIN";
+  const navLinks = isCustomerLoggedIn ? customerNavLinks : guestNavLinks;
+
+  const handleCartClick = () => {
+    if (!isCustomerLoggedIn) {
+      navigate("/login", {
+        state: { from: `${location.pathname}${location.search}` },
+      });
+      return;
+    }
+
+    navigate("/cart");
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setAuthState({ token: null, role: null });
+    navigate("/login");
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -48,7 +93,7 @@ export function Navbar() {
       }`}
     >
       <div className="relative mx-auto flex h-[4.6rem] w-full max-w-[1380px] items-center px-5 sm:px-8 lg:px-12">
-        <Link to="/" className="flex items-center gap-2.5 shrink-0">
+        <Link to={isCustomerLoggedIn ? "/customer_dashboard" : "/"} className="flex items-center gap-2.5 shrink-0">
           <img src={logoImage} alt="Salon Sanaru Logo" className="h-10 w-10 object-contain rounded-full" />
           <span
             className="text-[1.24rem] font-semibold tracking-[0.02em] text-[#1D1616] leading-none font-body"
@@ -75,19 +120,71 @@ export function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3 ml-auto">
-          <Button
-            variant="ghost"
-            asChild
-            className="px-3 text-[0.95rem] font-medium text-[#3D2F2F] hover:text-[#8E1616] hover:bg-transparent"
-          >
-            <Link to="/login">Login</Link>
-          </Button>
-          <Button
-            asChild
-            className="rounded-full px-6 bg-[#8E1616] text-[#FDF8F8] shadow-[0_10px_22px_-14px_rgba(142,22,22,0.75)] transition-all duration-300 hover:bg-[#D84040]"
-          >
-            <Link to="/register">Register</Link>
-          </Button>
+          {isCustomerLoggedIn ? (
+            <button
+              type="button"
+              onClick={handleCartClick}
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#E8D4D4] bg-[#FFF8F7] text-[#3D2F2F] transition-colors hover:text-[#8E1616]"
+              aria-label="Open cart"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 ? (
+                <span className="absolute -right-1.5 -top-1.5 inline-flex min-w-[20px] items-center justify-center rounded-full bg-[#D84040] px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              ) : null}
+            </button>
+          ) : null}
+
+          {isCustomerLoggedIn ? (
+            <>
+              <Button
+                variant="ghost"
+                asChild
+                className="px-3 text-[0.95rem] font-medium text-[#3D2F2F] hover:text-[#8E1616] hover:bg-transparent"
+              >
+                <Link to="/customer_dashboard">My Dashboard</Link>
+              </Button>
+              <Button
+                onClick={handleLogout}
+                className="rounded-full px-6 bg-[#8E1616] text-[#FDF8F8] shadow-[0_10px_22px_-14px_rgba(142,22,22,0.75)] transition-all duration-300 hover:bg-[#D84040]"
+              >
+                Logout
+              </Button>
+            </>
+          ) : isAdminLoggedIn ? (
+            <>
+              <Button
+                variant="ghost"
+                asChild
+                className="px-3 text-[0.95rem] font-medium text-[#3D2F2F] hover:text-[#8E1616] hover:bg-transparent"
+              >
+                <Link to="/admin_dashboard">Admin Panel</Link>
+              </Button>
+              <Button
+                onClick={handleLogout}
+                className="rounded-full px-6 bg-[#8E1616] text-[#FDF8F8] shadow-[0_10px_22px_-14px_rgba(142,22,22,0.75)] transition-all duration-300 hover:bg-[#D84040]"
+              >
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                asChild
+                className="px-3 text-[0.95rem] font-medium text-[#3D2F2F] hover:text-[#8E1616] hover:bg-transparent"
+              >
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button
+                asChild
+                className="rounded-full px-6 bg-[#8E1616] text-[#FDF8F8] shadow-[0_10px_22px_-14px_rgba(142,22,22,0.75)] transition-all duration-300 hover:bg-[#D84040]"
+              >
+                <Link to="/register">Register</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -118,12 +215,50 @@ export function Navbar() {
             </Link>
           ))}
           <div className="flex items-center gap-3 pt-2">
-            <Button variant="ghost" asChild className="flex-1 text-[#3D2F2F] hover:text-[#8E1616]">
-              <Link to="/login">Login</Link>
-            </Button>
-            <Button asChild className="flex-1 rounded-full bg-[#8E1616] hover:bg-[#D84040]">
-              <Link to="/register">Register</Link>
-            </Button>
+            {isCustomerLoggedIn ? (
+              <button
+                type="button"
+                onClick={handleCartClick}
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#E8D4D4] bg-[#FFF8F7] text-[#3D2F2F] transition-colors hover:text-[#8E1616]"
+                aria-label="Open cart"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 ? (
+                  <span className="absolute -right-1.5 -top-1.5 inline-flex min-w-[20px] items-center justify-center rounded-full bg-[#D84040] px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                ) : null}
+              </button>
+            ) : null}
+
+            {isCustomerLoggedIn ? (
+              <>
+                <Button variant="ghost" asChild className="flex-1 text-[#3D2F2F] hover:text-[#8E1616]">
+                  <Link to="/customer_dashboard">Dashboard</Link>
+                </Button>
+                <Button onClick={handleLogout} className="flex-1 rounded-full bg-[#8E1616] hover:bg-[#D84040]">
+                  Logout
+                </Button>
+              </>
+            ) : isAdminLoggedIn ? (
+              <>
+                <Button variant="ghost" asChild className="flex-1 text-[#3D2F2F] hover:text-[#8E1616]">
+                  <Link to="/admin_dashboard">Admin</Link>
+                </Button>
+                <Button onClick={handleLogout} className="flex-1 rounded-full bg-[#8E1616] hover:bg-[#D84040]">
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild className="flex-1 text-[#3D2F2F] hover:text-[#8E1616]">
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button asChild className="flex-1 rounded-full bg-[#8E1616] hover:bg-[#D84040]">
+                  <Link to="/register">Register</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}
