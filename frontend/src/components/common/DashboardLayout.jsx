@@ -6,21 +6,21 @@ import {
   User,
   CalendarPlus,
   CalendarCheck,
-  ShoppingBag,
+  ShoppingCart,
   Briefcase,
   LogOut,
   Menu,
   X,
 } from "lucide-react";
 import logoImage from "@/assets/logo.jpeg";
+
 const sidebarLinks = [
-  { label: "Customer Dashboard", to: "/customer_dashboard", icon: LayoutDashboard },
-  { label: "Profile", to: "/customer_profile", icon: User },
-  { label: "Products", to: "/products", icon: ShoppingBag },
-  { label: "Services", to: "/customer_dashboard/services", icon: Briefcase },
+  { label: "Dashboard", to: "/customer_dashboard", icon: LayoutDashboard },
+  { label: "Manage Profile", to: "/customer_profile", icon: User },
+  { label: "Shop Products", to: "/products", icon: ShoppingCart },
+  { label: "Booking a Service", to: "/customer_dashboard/services", icon: Briefcase },
   { label: "Book Appointment", to: "/customer_dashboard/book", icon: CalendarPlus },
   { label: "My Bookings", to: "/customer_dashboard/bookings", icon: CalendarCheck },
-  { label: "Orders", to: "/customer_dashboard/orders", icon: ShoppingBag },
 ];
 
 export function DashboardLayout({ children }) {
@@ -40,8 +40,9 @@ export function DashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }`}
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-[282px] bg-[#F8F8F8] border-r border-[#D8D8D8] flex flex-col transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
       >
         <div className="flex items-center gap-2 px-6 h-16 border-b border-border">
           <img src={logoImage} alt="Salon Sanaru Logo" className="h-9 w-9 object-cover rounded-full" />
@@ -56,7 +57,13 @@ export function DashboardLayout({ children }) {
           </button>
         </div>
 
-        <nav className="flex-1 py-6 px-3 space-y-1">
+        <div className="px-6 py-4 border-b border-[#D8D8D8]">
+          <div className="rounded-full bg-[#F3D9D9] px-3 py-2 text-center text-sm font-semibold text-[#A72B2B]">
+            Customer Panel
+          </div>
+        </div>
+
+        <nav className="flex-1 py-6 px-3 space-y-1.5 overflow-y-auto">
           {sidebarLinks.map((link) => {
             const active =
               location.pathname === link.to || location.pathname.startsWith(link.to + "/");
@@ -65,18 +72,31 @@ export function DashboardLayout({ children }) {
                 key={link.to}
                 to={link.to}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active
-                  ? "bg-primary text-primary-foreground shadow-salon"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[1.02rem] font-medium transition-colors ${
+                  active
+                    ? "bg-[#EF1F1F] text-white"
+                    : "text-slate-600 hover:bg-[#ECECEC] hover:text-slate-900"
+                }`}
               >
-                <link.icon className="h-4 w-4" />
+                <link.icon className="h-5 w-5" />
                 {link.label}
               </Link>
             );
           })}
         </nav>
 
+        <div className="px-4 py-4 border-t border-[#D8D8D8]">
+          <button
+            onClick={() => {
+              authService.logout();
+              navigate("/login");
+            }}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-sm font-medium text-[#A72B2B] hover:bg-[#F8E7E7] transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            Logout
+          </button>
+        </div>
 
       </aside>
 
@@ -100,14 +120,6 @@ export function DashboardLayout({ children }) {
             >
               <User className="h-4 w-4 text-muted-foreground" />
             </Link>
-            <button
-              onClick={() => { authService.logout(); navigate("/login"); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-              title="Logout"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
           </div>
         </header>
         <main className="flex-1 p-4 lg:p-8">{children}</main>
