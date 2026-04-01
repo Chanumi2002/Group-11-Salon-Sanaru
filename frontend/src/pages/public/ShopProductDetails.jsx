@@ -6,6 +6,7 @@ import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
 import { shopService } from '@/services/shopApi';
 import { useCart } from '@/context/CartContext';
+import { getStoredToken } from '@/utils/authState';
 
 export default function ShopProductDetails() {
   const { id } = useParams();
@@ -17,7 +18,8 @@ export default function ShopProductDetails() {
   const [isLoading, setIsLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const { isCustomerLoggedIn, addItemToCart } = useCart();
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const { addItemToCart } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -58,7 +60,7 @@ export default function ShopProductDetails() {
       return;
     }
 
-    if (!isCustomerLoggedIn) {
+    if (!getStoredToken()) {
       toast.info('Please login to add items to cart.');
       navigate('/login', {
         state: { from: `${location.pathname}${location.search}` },
@@ -75,12 +77,8 @@ export default function ShopProductDetails() {
       toast.success(`${product.name} added to cart`);
     } catch (error) {
       const message = String(error?.message || '').toLowerCase();
-      const shouldRedirectToLogin =
-        message.includes('jwt') ||
-        message.includes('token') ||
-        message.includes('unauthorized') ||
-        message.includes('authentication failed') ||
-        message.includes('401');
+      const statusCode = Number(error?.statusCode || 0);
+      const shouldRedirectToLogin = statusCode === 401 || message.includes('unauthorized');
 
       if (shouldRedirectToLogin) {
         toast.info('Please login to add items to cart.');
@@ -93,6 +91,46 @@ export default function ShopProductDetails() {
       toast.error(error?.message || 'Failed to add item to cart. Please try again.');
     } finally {
       setIsAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!product?.id) {
+      toast.error('Unable to buy this item right now.');
+      return;
+    }
+
+    if (!getStoredToken()) {
+      toast.info('Please login to continue to payment.');
+      navigate('/login', {
+        state: { from: `${location.pathname}${location.search}` },
+      });
+      return;
+    }
+
+    try {
+      setIsBuyingNow(true);
+      await addItemToCart({
+        productId: product.id,
+        quantity,
+      });
+      navigate('/cart');
+    } catch (error) {
+      const message = String(error?.message || '').toLowerCase();
+      const statusCode = Number(error?.statusCode || 0);
+      const shouldRedirectToLogin = statusCode === 401 || message.includes('unauthorized');
+
+      if (shouldRedirectToLogin) {
+        toast.info('Please login to continue to payment.');
+        navigate('/login', {
+          state: { from: `${location.pathname}${location.search}` },
+        });
+        return;
+      }
+
+      toast.error(error?.message || 'Unable to start payment right now. Please try again.');
+    } finally {
+      setIsBuyingNow(false);
     }
   };
 
@@ -115,6 +153,8 @@ export default function ShopProductDetails() {
           onQuantityIncrease={handleQuantityIncrease}
           onAddToCart={handleAddToCart}
           isAddingToCart={isAddingToCart}
+          onBuyNow={handleBuyNow}
+          isBuyingNow={isBuyingNow}
         />
       </main>
 

@@ -5,6 +5,14 @@ const cartApi = axios.create({
   timeout: 10000,
 });
 
+class CartServiceError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.name = 'CartServiceError';
+    this.statusCode = statusCode;
+  }
+}
+
 const tokenKeys = ['token', 'authToken', 'accessToken', 'jwtToken'];
 
 export const getAuthToken = () => {
@@ -51,7 +59,7 @@ const withErrorHandling = async (request) => {
     const response = await request();
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new CartServiceError(getErrorMessage(error), error?.response?.status);
   }
 };
 

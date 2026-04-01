@@ -17,6 +17,8 @@ import Services from "./pages/public/Services";
 import ProductsByCategory from "./pages/public/ProductsByCategory";
 import ShopProductDetails from "./pages/public/ShopProductDetails";
 import About from "./pages/public/About";
+import PaymentSuccess from "./pages/public/PaymentSuccess";
+import PaymentCancel from "./pages/public/PaymentCancel";
 import CartPage from "./pages/CartPage";
 
 // Customer pages
@@ -58,6 +60,8 @@ const App = () => (
               <Route path="/products/category/:categoryId/product/:id" element={<ShopProductDetails />} />
               <Route path="/shop" element={<Navigate to="/products" replace />} />
               <Route path="/shop/products/:id" element={<ShopProductDetails />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentCancel />} />
               <Route path="/cart" element={<CartPage />} />
             
               <Route

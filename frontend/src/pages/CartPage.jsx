@@ -6,6 +6,8 @@ import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
 import CartItemRow from '@/components/CartItemRow';
 import { useCart } from '@/context/CartContext';
+import { paymentService } from '@/services/paymentService';
+import { submitPayHereForm } from '@/utils/payHereRedirect';
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -25,7 +27,7 @@ export default function CartPage() {
   const [updatingItemId, setUpdatingItemId] = useState(null);
   const [removingItemId, setRemovingItemId] = useState(null);
   const [isClearingCart, setIsClearingCart] = useState(false);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isPreparingPayment, setIsPreparingPayment] = useState(false);
 
   useEffect(() => {
     if (!isCustomerLoggedIn) {
@@ -86,20 +88,46 @@ export default function CartPage() {
     }
   };
 
-  const handleCheckout = async () => {
+  const handleProceedToPayment = async () => {
     if (!cartItems.length) {
       return;
     }
 
     try {
-      setIsCheckingOut(true);
-      await checkout();
-      toast.success('Checkout successful! Your order has been placed.');
-      navigate('/customer_dashboard');
+      setIsPreparingPayment(true);
+
+      const orderResponse = await checkout();
+      const orderId = Number(orderResponse?.orderId);
+
+      if (!orderId) {
+        throw new Error('Order was created, but payment session could not be prepared.');
+      }
+
+      const payHereCheckout = await paymentService.preparePayHereCheckout(orderId);
+      submitPayHereForm(payHereCheckout);
     } catch (error) {
-      toast.error(error?.message || 'Checkout failed. Please try again.');
+      const message = String(error?.message || '').toLowerCase();
+      const statusCode = Number(error?.statusCode || 0);
+      const shouldRedirectToLogin =
+        statusCode === 401 ||
+        message.includes('jwt') ||
+        message.includes('token') ||
+        message.includes('unauthorized') ||
+        message.includes('authentication failed') ||
+        message.includes('401');
+
+      if (shouldRedirectToLogin) {
+        toast.info('Please login to continue with payment.');
+        navigate('/login', {
+          replace: true,
+          state: { from: `${location.pathname}${location.search}` },
+        });
+        return;
+      }
+
+      toast.error(error?.message || 'Unable to start payment right now. Please try again.');
     } finally {
-      setIsCheckingOut(false);
+      setIsPreparingPayment(false);
     }
   };
 
@@ -123,7 +151,7 @@ export default function CartPage() {
             <button
               type="button"
               onClick={handleClearCart}
-              disabled={!cartItems.length || isClearingCart || isCheckingOut}
+              disabled={!cartItems.length || isClearingCart || isPreparingPayment}
               className="inline-flex items-center gap-2 rounded-full border border-[#E6C7C7] px-4 py-2 text-sm font-semibold text-[#A72B2B] transition hover:bg-[#FCEEEE] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isClearingCart ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
@@ -187,14 +215,18 @@ export default function CartPage() {
                   <span>Rs. {Number(cart.totalAmount || 0).toFixed(2)}</span>
                 </div>
 
+                <p className="mt-3 text-xs text-[#7D746F]">
+                  You will be redirected to PayHere Sandbox to complete your secure payment.
+                </p>
+
                 <button
                   type="button"
-                  onClick={handleCheckout}
-                  disabled={isCheckingOut || isClearingCart || !cartItems.length}
+                  onClick={handleProceedToPayment}
+                  disabled={isPreparingPayment || isClearingCart || !cartItems.length}
                   className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#8E1616] px-6 py-3 text-sm font-semibold uppercase tracking-[0.05em] text-white transition-all duration-300 hover:bg-[#D84040] disabled:cursor-not-allowed disabled:opacity-65"
                 >
-                  {isCheckingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  {isCheckingOut ? 'Processing checkout...' : 'Checkout'}
+                  {isPreparingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {isPreparingPayment ? 'Preparing payment...' : 'Proceed to Payment'}
                 </button>
               </div>
             </div>
