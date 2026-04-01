@@ -13,6 +13,7 @@ import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.PaymentService;
 import com.sanaru.backend.util.PayHereHashUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentServiceImpl implements PaymentService {
 
     private final OrderRepository orderRepository;
@@ -107,25 +109,35 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public void handlePayHereNotify(Map<String, String> payload) {
-        String merchantId = payload.get("merchant_id");
-        String orderId = payload.get("order_id");
-        String paymentId = payload.get("payment_id");
-        String payhereAmount = payload.get("payhere_amount");
-        String payhereCurrency = payload.get("payhere_currency");
-        String statusCode = payload.get("status_code");
-        String md5sig = payload.get("md5sig");
-        String statusMessage = payload.get("status_message");
+        String merchantId = trimToNull(payload.get("merchant_id"));
+        String orderId = trimToNull(payload.get("order_id"));
+        String paymentId = trimToNull(payload.get("payment_id"));
+        String payhereAmount = trimToNull(payload.get("payhere_amount"));
+        String payhereCurrency = trimToNull(payload.get("payhere_currency"));
+        String statusCode = trimToNull(payload.get("status_code"));
+        String md5sig = trimToNull(payload.get("md5sig"));
+        String statusMessage = trimToNull(payload.get("status_message"));
 
-        System.out.println("PAYHERE NOTIFY HIT");
-        System.out.println("Payload: " + payload);
+        boolean signatureValidationPassed = false;
+        boolean transactionFound = false;
+        boolean orderUpdatedToPaid = false;
+
+        log.info(
+                "PayHere notify received: merchant_id={}, order_id={}, payment_id={}, status_code={}, status_message={}",
+                merchantId,
+                orderId,
+                paymentId,
+                statusCode,
+                statusMessage
+        );
 
         if (merchantId == null || orderId == null || payhereAmount == null || payhereCurrency == null
                 || statusCode == null || md5sig == null) {
-            throw new RuntimeException("Missing required PayHere notify fields");
+            throw new IllegalArgumentException("Missing required PayHere notify fields");
         }
 
         if (!payHereConfig.getMerchantId().equals(merchantId)) {
-            throw new RuntimeException("Invalid merchant id");
+            throw new IllegalArgumentException("Invalid merchant id");
         }
 
         String localMd5Sig = PayHereHashUtil.generateNotifySignature(
@@ -137,15 +149,27 @@ public class PaymentServiceImpl implements PaymentService {
                 payHereConfig.getMerchantSecret()
         );
 
-        if (!localMd5Sig.equalsIgnoreCase(md5sig)) {
-            throw new RuntimeException("Invalid PayHere signature");
+        signatureValidationPassed = localMd5Sig.equalsIgnoreCase(md5sig);
+        log.info(
+                "PayHere notify signature validation: merchant_id={}, order_id={}, passed={}",
+                merchantId,
+                orderId,
+                signatureValidationPassed
+        );
+
+        if (!signatureValidationPassed) {
+            throw new IllegalArgumentException("Invalid PayHere signature");
         }
 
         PaymentTransaction transaction = paymentTransactionRepository.findByMerchantReference(orderId)
-                .orElseThrow(() -> new RuntimeException("Payment transaction not found for order reference: " + orderId));
+                .orElseGet(() -> resolveByNumericOrderId(orderId)
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "Payment transaction not found for order reference/order_id: " + orderId)));
+
+        transactionFound = true;
 
         Order order = orderRepository.findById(transaction.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found for transaction"));
+                .orElseThrow(() -> new IllegalArgumentException("Order not found for transaction"));
 
         transaction.setProviderPaymentRef(paymentId);
         transaction.setStatusMessage(statusMessage != null ? statusMessage : "Payment callback received");
@@ -154,6 +178,7 @@ public class PaymentServiceImpl implements PaymentService {
             case "2" -> {
                 transaction.setStatus(PaymentStatus.SUCCESS);
                 order.setStatus(OrderStatus.PAID);
+                orderUpdatedToPaid = true;
             }
             case "0" -> {
                 transaction.setStatus(PaymentStatus.INITIATED);
@@ -163,10 +188,40 @@ public class PaymentServiceImpl implements PaymentService {
                 transaction.setStatus(PaymentStatus.FAILED);
                 order.setStatus(OrderStatus.PENDING_PAYMENT);
             }
-            default -> throw new RuntimeException("Unknown PayHere status code: " + statusCode);
+            default -> throw new IllegalArgumentException("Unknown PayHere status code: " + statusCode);
         }
 
         paymentTransactionRepository.save(transaction);
         orderRepository.save(order);
+
+        log.info(
+                "PayHere notify processed: merchant_id={}, order_id={}, payment_id={}, status_code={}, status_message={}, signature_validation_passed={}, transaction_found={}, order_updated_to_paid={}",
+                merchantId,
+                orderId,
+                paymentId,
+                statusCode,
+                statusMessage,
+                signatureValidationPassed,
+                transactionFound,
+                orderUpdatedToPaid
+        );
+    }
+
+    private java.util.Optional<PaymentTransaction> resolveByNumericOrderId(String orderId) {
+        try {
+            Long numericOrderId = Long.parseLong(orderId);
+            return paymentTransactionRepository.findTopByOrderIdOrderByCreatedAtDesc(numericOrderId);
+        } catch (NumberFormatException ex) {
+            return java.util.Optional.empty();
+        }
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

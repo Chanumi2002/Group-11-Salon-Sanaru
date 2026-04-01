@@ -84,6 +84,20 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
     }
 
+    @Override
+    public OrderResponse getMyOrderByReference(String orderReference) {
+        User user = getCurrentUser();
+
+        if (orderReference == null || orderReference.isBlank()) {
+            throw new RuntimeException("Order reference is required");
+        }
+
+        Order order = orderRepository.findByUserIdAndOrderNumber(user.getId(), orderReference.trim())
+                .orElseThrow(() -> new RuntimeException("Order not found for reference: " + orderReference));
+
+        return mapToOrderResponse(order);
+    }
+
     private OrderResponse mapToOrderResponse(Order order) {
         List<OrderItemResponse> itemResponses = order.getItems().stream().map(item -> {
             OrderItemResponse response = new OrderItemResponse();

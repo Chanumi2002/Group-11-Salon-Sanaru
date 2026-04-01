@@ -3,6 +3,8 @@ package com.sanaru.backend.controller;
 import com.sanaru.backend.dto.PayHereCheckoutResponse;
 import com.sanaru.backend.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +14,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -31,8 +34,13 @@ public class PaymentController {
         try {
             paymentService.handlePayHereNotify(payload);
             return ResponseEntity.ok("OK");
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
+            log.warn("PayHere notify rejected: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("PayHere notify failed unexpectedly", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to process payment notification");
         }
     }
 }

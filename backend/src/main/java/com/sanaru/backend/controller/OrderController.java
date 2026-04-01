@@ -23,4 +23,9 @@ public class OrderController {
     public List<OrderResponse> getMyOrders() {
         return orderService.getMyOrders();
     }
+
+    @GetMapping("/reference/{orderReference}")
+    public OrderResponse getMyOrderByReference(@PathVariable String orderReference) {
+        return orderService.getMyOrderByReference(orderReference);
+    }
 }
