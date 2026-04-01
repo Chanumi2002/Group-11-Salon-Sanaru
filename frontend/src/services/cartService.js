@@ -97,6 +97,11 @@ export const cartService = {
     }),
 
   getOrderHistory: () => withErrorHandling(() => cartApi.get('/orders/history', getAuthConfig())),
+
+  getOrderByReference: (orderReference) =>
+    withErrorHandling(() =>
+      cartApi.get(`/orders/reference/${encodeURIComponent(orderReference)}`, getAuthConfig()),
+    ),
 };
 
 export default cartApi;

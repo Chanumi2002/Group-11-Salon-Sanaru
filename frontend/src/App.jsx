@@ -27,6 +27,7 @@ import Homepage from "./pages/customer/Homepage";
 import Profile from "./pages/customer/Profile";
 import CustomerServices from "./pages/customer/CustomerServices";
 import BookAppointment from "./pages/customer/BookAppointment";
+import CustomerOrders from "./pages/customer/CustomerOrders";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -35,6 +36,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import CategoryPage from "./pages/admin/CategoryPage";
 import ProductPage from "./pages/admin/ProductPage";
 import ServicePage from "./pages/admin/ServicePage";
+import AdminOrders from "./pages/admin/AdminOrders";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -104,6 +106,14 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/customer_dashboard/orders"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <CustomerOrders />
+                  </ProtectedRoute>
+                }
+              />
             
               <Route
                 path="/admin_dashboard"
@@ -155,6 +165,14 @@ const App = () => (
                 element={
                   <AdminProtectedRoute>
                     <ServicePage />
+                  </AdminProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin_dashboard/orders"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminOrders />
                   </AdminProtectedRoute>
                 }
               />

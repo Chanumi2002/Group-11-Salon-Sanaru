@@ -86,6 +86,18 @@ export const adminService = {
     return await api.delete(`/admin/customers/${customerId}`);
   },
 
+  // ==================== ORDER & PAYMENT OPERATIONS ====================
+
+  // Get all orders for admin management
+  getOrders: async () => {
+    return await api.get('/admin/orders');
+  },
+
+  // Approve payment for an order
+  approveOrderPayment: async (orderId) => {
+    return await api.put(`/admin/orders/${orderId}/approve-payment`);
+  },
+
   // ==================== CATEGORY OPERATIONS ====================
 
   // Get all categories
