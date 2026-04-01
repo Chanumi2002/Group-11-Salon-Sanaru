@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
+import { CartProvider } from "./context/CartContext";
 
 // Public pages
 import Index from "./pages/public/Index";
@@ -16,6 +17,7 @@ import Services from "./pages/public/Services";
 import ProductsByCategory from "./pages/public/ProductsByCategory";
 import ShopProductDetails from "./pages/public/ShopProductDetails";
 import About from "./pages/public/About";
+import CartPage from "./pages/CartPage";
 
 // Customer pages
 import CustomerDashboard from "./pages/customer/CustomerDashboard";
@@ -43,117 +45,120 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/oauth/callback" element={<OAuthCallback />} />
-            <Route path="/products" element={<Shop />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/about-us" element={<About />} />
-            <Route path="/products/category/:categoryId" element={<ProductsByCategory />} />
-            <Route path="/products/category/:categoryId/product/:id" element={<ShopProductDetails />} />
-            <Route path="/shop" element={<Navigate to="/products" replace />} />
-            <Route path="/shop/products/:id" element={<ShopProductDetails />} />
+          <CartProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/oauth/callback" element={<OAuthCallback />} />
+              <Route path="/products" element={<Shop />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/about-us" element={<About />} />
+              <Route path="/products/category/:categoryId" element={<ProductsByCategory />} />
+              <Route path="/products/category/:categoryId/product/:id" element={<ShopProductDetails />} />
+              <Route path="/shop" element={<Navigate to="/products" replace />} />
+              <Route path="/shop/products/:id" element={<ShopProductDetails />} />
+              <Route path="/cart" element={<CartPage />} />
             
-            <Route
-              path="/customer_dashboard"
-              element={
-                <ProtectedRoute requiredRole="CUSTOMER">
-                  <CustomerDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/homepage"
-              element={
-                <ProtectedRoute requiredRole="CUSTOMER">
-                  <Homepage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/customer_profile"
-              element={
-                <ProtectedRoute requiredRole="CUSTOMER">
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/customer_dashboard/services"
-              element={
-                <ProtectedRoute requiredRole="CUSTOMER">
-                  <CustomerServices />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/customer_dashboard/book"
-              element={
-                <ProtectedRoute requiredRole="CUSTOMER">
-                  <BookAppointment />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/customer_dashboard"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <CustomerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/homepage"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <Homepage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer_profile"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer_dashboard/services"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <CustomerServices />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer_dashboard/book"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <BookAppointment />
+                  </ProtectedRoute>
+                }
+              />
             
-            <Route
-              path="/admin_dashboard"
-              element={
-                <ProtectedRoute requiredRole="ADMIN">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/admin_dashboard"
+                element={
+                  <ProtectedRoute requiredRole="ADMIN">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
             
-            <Route
-              path="/admin_dashboard/profile"
-              element={
-                <AdminProtectedRoute>
-                  <AdminProfile />
-                </AdminProtectedRoute>
-              }
-            />
+              <Route
+                path="/admin_dashboard/profile"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminProfile />
+                  </AdminProtectedRoute>
+                }
+              />
             
-            <Route
-              path="/admin_dashboard/users"
-              element={
-                <AdminProtectedRoute>
-                  <AdminUsers />
-                </AdminProtectedRoute>
-              }
-            />
+              <Route
+                path="/admin_dashboard/users"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminUsers />
+                  </AdminProtectedRoute>
+                }
+              />
             
-            <Route
-              path="/admin_dashboard/categories"
-              element={
-                <AdminProtectedRoute>
-                  <CategoryPage />
-                </AdminProtectedRoute>
-              }
-            />
+              <Route
+                path="/admin_dashboard/categories"
+                element={
+                  <AdminProtectedRoute>
+                    <CategoryPage />
+                  </AdminProtectedRoute>
+                }
+              />
             
-            <Route
-              path="/admin_dashboard/products"
-              element={
-                <AdminProtectedRoute>
-                  <ProductPage />
-                </AdminProtectedRoute>
-              }
-            />
+              <Route
+                path="/admin_dashboard/products"
+                element={
+                  <AdminProtectedRoute>
+                    <ProductPage />
+                  </AdminProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/admin_dashboard/services"
-              element={
-                <AdminProtectedRoute>
-                  <ServicePage />
-                </AdminProtectedRoute>
-              }
-            />
+              <Route
+                path="/admin_dashboard/services"
+                element={
+                  <AdminProtectedRoute>
+                    <ServicePage />
+                  </AdminProtectedRoute>
+                }
+              />
             
-            <Route path="/not-found" element={<NotFound />} />
-            <Route path="*" element={<Navigate to="/not-found" replace />} />
-          </Routes>
+              <Route path="/not-found" element={<NotFound />} />
+              <Route path="*" element={<Navigate to="/not-found" replace />} />
+            </Routes>
+          </CartProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
