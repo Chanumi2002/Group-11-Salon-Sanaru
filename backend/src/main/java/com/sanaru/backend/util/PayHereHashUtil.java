@@ -17,6 +17,19 @@ public class PayHereHashUtil {
         return md5(raw).toUpperCase();
     }
 
+    public static String generateNotifySignature(
+            String merchantId,
+            String orderId,
+            String amount,
+            String currency,
+            String statusCode,
+            String merchantSecret
+    ) {
+        String merchantSecretMd5 = md5(merchantSecret).toUpperCase();
+        String raw = merchantId + orderId + amount + currency + statusCode + merchantSecretMd5;
+        return md5(raw).toUpperCase();
+    }
+
     private static String md5(String value) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
