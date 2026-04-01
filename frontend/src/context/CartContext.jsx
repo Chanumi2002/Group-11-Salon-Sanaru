@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { cartService } from '@/services/cartService';
+import { readAuthState } from '@/utils/authState';
 
 const defaultCart = {
   items: [],
@@ -22,10 +23,23 @@ export function CartProvider({ children }) {
   const [cart, setCart] = useState(defaultCart);
   const [isFetchingCart, setIsFetchingCart] = useState(false);
   const [cartError, setCartError] = useState('');
+  const [authState, setAuthState] = useState(() => readAuthState());
 
-  const token = cartService.getAuthToken();
-  const role = localStorage.getItem('role');
-  const isCustomerLoggedIn = Boolean(token) && role === 'CUSTOMER';
+  useEffect(() => {
+    const syncAuthState = () => {
+      setAuthState(readAuthState());
+    };
+
+    window.addEventListener('storage', syncAuthState);
+    window.addEventListener('focus', syncAuthState);
+
+    return () => {
+      window.removeEventListener('storage', syncAuthState);
+      window.removeEventListener('focus', syncAuthState);
+    };
+  }, []);
+
+  const isCustomerLoggedIn = authState.isCustomer;
 
   const fetchCart = useCallback(async ({ silent = false } = {}) => {
     if (!cartService.getAuthToken()) {

@@ -4,6 +4,7 @@ import { Menu, ShoppingCart, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { authService } from "@/services/api";
 import { useCart } from "@/context/CartContext";
+import { readAuthState } from "@/utils/authState";
 import logoImage from "@/assets/logo.jpeg";
 
 const guestNavLinks = [
@@ -33,27 +34,28 @@ const isLinkActive = (location, to) => {
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [authState, setAuthState] = useState({ token: null, role: null });
+  const [authState, setAuthState] = useState(() => readAuthState());
   const location = useLocation();
   const navigate = useNavigate();
   const { cartCount } = useCart();
 
   useEffect(() => {
     const updateAuthState = () => {
-      setAuthState({
-        token: localStorage.getItem("token"),
-        role: localStorage.getItem("role"),
-      });
+      setAuthState(readAuthState());
     };
 
     updateAuthState();
     window.addEventListener("storage", updateAuthState);
+    window.addEventListener("focus", updateAuthState);
 
-    return () => window.removeEventListener("storage", updateAuthState);
+    return () => {
+      window.removeEventListener("storage", updateAuthState);
+      window.removeEventListener("focus", updateAuthState);
+    };
   }, [location.pathname]);
 
-  const isCustomerLoggedIn = Boolean(authState.token) && authState.role === "CUSTOMER";
-  const isAdminLoggedIn = Boolean(authState.token) && authState.role === "ADMIN";
+  const isCustomerLoggedIn = authState.isCustomer;
+  const isAdminLoggedIn = authState.isAdmin;
   const navLinks = isCustomerLoggedIn ? customerNavLinks : guestNavLinks;
 
   const handleCartClick = () => {
