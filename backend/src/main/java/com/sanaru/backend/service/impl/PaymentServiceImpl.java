@@ -15,6 +15,7 @@ import com.sanaru.backend.util.PayHereHashUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PayHereConfig payHereConfig;
 
     @Override
+    @Transactional
     public PayHereCheckoutResponse preparePayHereCheckout(Long orderId, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -48,6 +50,8 @@ public class PaymentServiceImpl implements PaymentService {
         String merchantReference = order.getOrderNumber();
         if (merchantReference == null || merchantReference.isBlank()) {
             merchantReference = "ORD-" + order.getId() + "-" + UUID.randomUUID().toString().substring(0, 8);
+            order.setOrderNumber(merchantReference);
+            orderRepository.save(order);
         }
 
         PaymentTransaction transaction = paymentTransactionRepository
@@ -98,5 +102,71 @@ public class PaymentServiceImpl implements PaymentService {
                 .method("POST")
                 .fields(fields)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void handlePayHereNotify(Map<String, String> payload) {
+        String merchantId = payload.get("merchant_id");
+        String orderId = payload.get("order_id");
+        String paymentId = payload.get("payment_id");
+        String payhereAmount = payload.get("payhere_amount");
+        String payhereCurrency = payload.get("payhere_currency");
+        String statusCode = payload.get("status_code");
+        String md5sig = payload.get("md5sig");
+        String statusMessage = payload.get("status_message");
+
+        System.out.println("PAYHERE NOTIFY HIT");
+        System.out.println("Payload: " + payload);
+
+        if (merchantId == null || orderId == null || payhereAmount == null || payhereCurrency == null
+                || statusCode == null || md5sig == null) {
+            throw new RuntimeException("Missing required PayHere notify fields");
+        }
+
+        if (!payHereConfig.getMerchantId().equals(merchantId)) {
+            throw new RuntimeException("Invalid merchant id");
+        }
+
+        String localMd5Sig = PayHereHashUtil.generateNotifySignature(
+                merchantId,
+                orderId,
+                payhereAmount,
+                payhereCurrency,
+                statusCode,
+                payHereConfig.getMerchantSecret()
+        );
+
+        if (!localMd5Sig.equalsIgnoreCase(md5sig)) {
+            throw new RuntimeException("Invalid PayHere signature");
+        }
+
+        PaymentTransaction transaction = paymentTransactionRepository.findByMerchantReference(orderId)
+                .orElseThrow(() -> new RuntimeException("Payment transaction not found for order reference: " + orderId));
+
+        Order order = orderRepository.findById(transaction.getOrderId())
+                .orElseThrow(() -> new RuntimeException("Order not found for transaction"));
+
+        transaction.setProviderPaymentRef(paymentId);
+        transaction.setStatusMessage(statusMessage != null ? statusMessage : "Payment callback received");
+
+        switch (statusCode) {
+            case "2" -> {
+                transaction.setStatus(PaymentStatus.SUCCESS);
+                order.setStatus(OrderStatus.PAID);
+            }
+            case "0" -> {
+                transaction.setStatus(PaymentStatus.INITIATED);
+                order.setStatus(OrderStatus.PENDING_PAYMENT);
+            }
+            case "-1", "-2", "-3" -> {
+                transaction.setStatus(PaymentStatus.FAILED);
+                order.setStatus(OrderStatus.PENDING_PAYMENT);
+            }
+            default -> throw new RuntimeException("Unknown PayHere status code: " + statusCode);
+        }
+
+        paymentTransactionRepository.save(transaction);
+        orderRepository.save(order);
     }
 }
