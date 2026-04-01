@@ -19,6 +19,13 @@ const customerNavLinks = [
   { label: "Products", to: "/products" },
 ];
 
+const adminNavLinks = [
+  { label: "Dashboard", to: "/admin_dashboard" },
+  { label: "Users", to: "/admin_dashboard/users" },
+  { label: "Products", to: "/admin_dashboard/products" },
+  { label: "Services", to: "/admin_dashboard/services" },
+];
+
 const isLinkActive = (location, to) => {
   if (to === "/") {
     return location.pathname === "/";
@@ -56,7 +63,16 @@ export function Navbar() {
 
   const isCustomerLoggedIn = authState.isCustomer;
   const isAdminLoggedIn = authState.isAdmin;
-  const navLinks = isCustomerLoggedIn ? customerNavLinks : guestNavLinks;
+  const navLinks = isCustomerLoggedIn
+    ? customerNavLinks
+    : isAdminLoggedIn
+      ? adminNavLinks
+      : guestNavLinks;
+  const brandHomeLink = isCustomerLoggedIn
+    ? "/customer_dashboard"
+    : isAdminLoggedIn
+      ? "/admin_dashboard"
+      : "/";
 
   const handleCartClick = () => {
     if (!isCustomerLoggedIn) {
@@ -95,7 +111,7 @@ export function Navbar() {
       }`}
     >
       <div className="relative mx-auto flex h-[4.6rem] w-full max-w-[1380px] items-center px-5 sm:px-8 lg:px-12">
-        <Link to={isCustomerLoggedIn ? "/customer_dashboard" : "/"} className="flex items-center gap-2.5 shrink-0">
+        <Link to={brandHomeLink} className="flex items-center gap-2.5 shrink-0">
           <img src={logoImage} alt="Salon Sanaru Logo" className="h-10 w-10 object-contain rounded-full" />
           <span
             className="text-[1.24rem] font-semibold tracking-[0.02em] text-[#1D1616] leading-none font-body"
