@@ -1,8 +1,18 @@
 import { ArrowLeft, Loader2, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { resolveImageUrl } from '@/utils/resolveImageUrl';
+import QuantitySelector from '@/components/QuantitySelector';
 
-export default function ProductDetails({ product, isLoading, onBack }) {
+export default function ProductDetails({
+  product,
+  isLoading,
+  onBack,
+  quantity,
+  onQuantityDecrease,
+  onQuantityIncrease,
+  onAddToCart,
+  isAddingToCart,
+}) {
   if (isLoading) {
     return (
       <div className="flex min-h-[420px] items-center justify-center rounded-[20px] border border-[#8B1A1A]/30 bg-[linear-gradient(145deg,rgba(253,253,253,0.94),rgba(235,235,235,0.9))] shadow-[0_18px_40px_-24px_rgba(26,23,23,0.55)]">
@@ -76,6 +86,32 @@ export default function ProductDetails({ product, isLoading, onBack }) {
           <p className="mt-6 text-[1.03rem] leading-[1.75] text-[#4C4542]">
             {product.description || 'No description available for this product.'}
           </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <QuantitySelector
+              quantity={quantity}
+              onDecrease={onQuantityDecrease}
+              onIncrease={onQuantityIncrease}
+              disabled={isAddingToCart}
+            />
+
+            <motion.button
+              type="button"
+              onClick={onAddToCart}
+              disabled={isAddingToCart}
+              whileTap={{ scale: isAddingToCart ? 1 : 0.98 }}
+              className="inline-flex min-w-[165px] items-center justify-center gap-2 rounded-full border border-[#8B1A1A]/35 bg-[#A31A11] px-6 py-2.5 text-sm font-semibold text-[#FDFDFD] transition-all duration-300 hover:bg-[#E34F4F] hover:shadow-[0_10px_20px_-12px_rgba(227,79,79,0.8)] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isAddingToCart ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add to Cart'
+              )}
+            </motion.button>
+          </div>
         </motion.div>
       </div>
     </motion.section>
