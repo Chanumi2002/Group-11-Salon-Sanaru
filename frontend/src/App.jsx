@@ -36,7 +36,6 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import CategoryPage from "./pages/admin/CategoryPage";
 import ProductPage from "./pages/admin/ProductPage";
 import ServicePage from "./pages/admin/ServicePage";
-import AdminOrders from "./pages/admin/AdminOrders";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -168,15 +167,6 @@ const App = () => (
                   </AdminProtectedRoute>
                 }
               />
-              <Route
-                path="/admin_dashboard/orders"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminOrders />
-                  </AdminProtectedRoute>
-                }
-              />
-            
               <Route path="/not-found" element={<NotFound />} />
               <Route path="*" element={<Navigate to="/not-found" replace />} />
             </Routes>
