@@ -1,0 +1,227 @@
+package com.sanaru.backend.service.impl;
+
+import com.sanaru.backend.config.PayHereConfig;
+import com.sanaru.backend.dto.PayHereCheckoutResponse;
+import com.sanaru.backend.enums.OrderStatus;
+import com.sanaru.backend.enums.PaymentStatus;
+import com.sanaru.backend.model.Order;
+import com.sanaru.backend.model.PaymentTransaction;
+import com.sanaru.backend.model.User;
+import com.sanaru.backend.repository.OrderRepository;
+import com.sanaru.backend.repository.PaymentTransactionRepository;
+import com.sanaru.backend.repository.UserRepository;
+import com.sanaru.backend.service.PaymentService;
+import com.sanaru.backend.util.PayHereHashUtil;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class PaymentServiceImpl implements PaymentService {
+
+    private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
+    private final PayHereConfig payHereConfig;
+
+    @Override
+    @Transactional
+    public PayHereCheckoutResponse preparePayHereCheckout(Long orderId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getUser() == null || !order.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to pay for this order");
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
+            throw new RuntimeException("Order is not in pending payment status");
+        }
+
+        String merchantReference = order.getOrderNumber();
+        if (merchantReference == null || merchantReference.isBlank()) {
+            merchantReference = "ORD-" + order.getId() + "-" + UUID.randomUUID().toString().substring(0, 8);
+            order.setOrderNumber(merchantReference);
+            orderRepository.save(order);
+        }
+
+        PaymentTransaction transaction = paymentTransactionRepository
+                .findByOrderId(order.getId())
+                .orElseGet(PaymentTransaction::new);
+
+        transaction.setOrderId(order.getId());
+        transaction.setUserId(user.getId());
+        transaction.setPaymentProvider("PAYHERE");
+        transaction.setMerchantReference(merchantReference);
+        transaction.setAmount(order.getTotalAmount());
+        transaction.setCurrency(payHereConfig.getCurrency());
+        transaction.setStatus(PaymentStatus.INITIATED);
+        transaction.setStatusMessage("Sandbox checkout initialized");
+
+        paymentTransactionRepository.save(transaction);
+
+        String amount = order.getTotalAmount().setScale(2).toPlainString();
+
+        String hash = PayHereHashUtil.generateHash(
+                payHereConfig.getMerchantId(),
+                merchantReference,
+                amount,
+                payHereConfig.getCurrency(),
+                payHereConfig.getMerchantSecret()
+        );
+
+        Map<String, String> fields = new LinkedHashMap<>();
+        fields.put("merchant_id", payHereConfig.getMerchantId());
+        fields.put("return_url", payHereConfig.getReturnUrl());
+        fields.put("cancel_url", payHereConfig.getCancelUrl());
+        fields.put("notify_url", payHereConfig.getNotifyUrl());
+        fields.put("order_id", merchantReference);
+        fields.put("items", "Order " + merchantReference);
+        fields.put("currency", payHereConfig.getCurrency());
+        fields.put("amount", amount);
+        fields.put("first_name", user.getFirstName() != null ? user.getFirstName() : "Customer");
+        fields.put("last_name", user.getLastName() != null ? user.getLastName() : "");
+        fields.put("email", user.getEmail());
+        fields.put("phone", user.getPhone() != null ? user.getPhone() : "0770000000");
+        fields.put("address", "N/A");
+        fields.put("city", "Colombo");
+        fields.put("country", "Sri Lanka");
+        fields.put("hash", hash);
+
+        return PayHereCheckoutResponse.builder()
+                .action(payHereConfig.getCheckoutUrl())
+                .method("POST")
+                .fields(fields)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void handlePayHereNotify(Map<String, String> payload) {
+        String merchantId = trimToNull(payload.get("merchant_id"));
+        String orderId = trimToNull(payload.get("order_id"));
+        String paymentId = trimToNull(payload.get("payment_id"));
+        String payhereAmount = trimToNull(payload.get("payhere_amount"));
+        String payhereCurrency = trimToNull(payload.get("payhere_currency"));
+        String statusCode = trimToNull(payload.get("status_code"));
+        String md5sig = trimToNull(payload.get("md5sig"));
+        String statusMessage = trimToNull(payload.get("status_message"));
+
+        boolean signatureValidationPassed = false;
+        boolean transactionFound = false;
+        boolean orderUpdatedToPaid = false;
+
+        log.info(
+                "PayHere notify received: merchant_id={}, order_id={}, payment_id={}, status_code={}, status_message={}",
+                merchantId,
+                orderId,
+                paymentId,
+                statusCode,
+                statusMessage
+        );
+
+        if (merchantId == null || orderId == null || payhereAmount == null || payhereCurrency == null
+                || statusCode == null || md5sig == null) {
+            throw new IllegalArgumentException("Missing required PayHere notify fields");
+        }
+
+        if (!payHereConfig.getMerchantId().equals(merchantId)) {
+            throw new IllegalArgumentException("Invalid merchant id");
+        }
+
+        String localMd5Sig = PayHereHashUtil.generateNotifySignature(
+                merchantId,
+                orderId,
+                payhereAmount,
+                payhereCurrency,
+                statusCode,
+                payHereConfig.getMerchantSecret()
+        );
+
+        signatureValidationPassed = localMd5Sig.equalsIgnoreCase(md5sig);
+        log.info(
+                "PayHere notify signature validation: merchant_id={}, order_id={}, passed={}",
+                merchantId,
+                orderId,
+                signatureValidationPassed
+        );
+
+        if (!signatureValidationPassed) {
+            throw new IllegalArgumentException("Invalid PayHere signature");
+        }
+
+        PaymentTransaction transaction = paymentTransactionRepository.findByMerchantReference(orderId)
+                .orElseGet(() -> resolveByNumericOrderId(orderId)
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "Payment transaction not found for order reference/order_id: " + orderId)));
+
+        transactionFound = true;
+
+        Order order = orderRepository.findById(transaction.getOrderId())
+                .orElseThrow(() -> new IllegalArgumentException("Order not found for transaction"));
+
+        transaction.setProviderPaymentRef(paymentId);
+        transaction.setStatusMessage(statusMessage != null ? statusMessage : "Payment callback received");
+
+        switch (statusCode) {
+            case "2" -> {
+                transaction.setStatus(PaymentStatus.SUCCESS);
+                order.setStatus(OrderStatus.PAID);
+                orderUpdatedToPaid = true;
+            }
+            case "0" -> {
+                transaction.setStatus(PaymentStatus.INITIATED);
+                order.setStatus(OrderStatus.PENDING_PAYMENT);
+            }
+            case "-1", "-2", "-3" -> {
+                transaction.setStatus(PaymentStatus.FAILED);
+                order.setStatus(OrderStatus.PENDING_PAYMENT);
+            }
+            default -> throw new IllegalArgumentException("Unknown PayHere status code: " + statusCode);
+        }
+
+        paymentTransactionRepository.save(transaction);
+        orderRepository.save(order);
+
+        log.info(
+                "PayHere notify processed: merchant_id={}, order_id={}, payment_id={}, status_code={}, status_message={}, signature_validation_passed={}, transaction_found={}, order_updated_to_paid={}",
+                merchantId,
+                orderId,
+                paymentId,
+                statusCode,
+                statusMessage,
+                signatureValidationPassed,
+                transactionFound,
+                orderUpdatedToPaid
+        );
+    }
+
+    private java.util.Optional<PaymentTransaction> resolveByNumericOrderId(String orderId) {
+        try {
+            Long numericOrderId = Long.parseLong(orderId);
+            return paymentTransactionRepository.findTopByOrderIdOrderByCreatedAtDesc(numericOrderId);
+        } catch (NumberFormatException ex) {
+            return java.util.Optional.empty();
+        }
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+}
