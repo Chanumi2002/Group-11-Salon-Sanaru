@@ -33,6 +33,12 @@ public class PaymentTransaction {
     @Column(name = "provider_payment_ref", length = 100)
     private String providerPaymentRef;
 
+    @Column(name = "transaction_id", length = 100)
+    private String transactionId;
+
+    @Column(name = "payment_date")
+    private LocalDateTime paymentDate;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 

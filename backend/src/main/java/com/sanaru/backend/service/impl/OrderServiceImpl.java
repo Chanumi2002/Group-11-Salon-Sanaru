@@ -11,6 +11,7 @@ import com.sanaru.backend.repository.CartItemRepository;
 import com.sanaru.backend.repository.OrderRepository;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.OrderService;
+import com.sanaru.backend.service.PaymentTransactionService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -29,6 +30,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
+    private final PaymentTransactionService paymentTransactionService;
 
     @Override
     @Transactional
@@ -117,6 +119,12 @@ public class OrderServiceImpl implements OrderService {
         response.setTotalAmount(order.getTotalAmount());
         response.setCreatedAt(order.getCreatedAt());
         response.setItems(itemResponses);
+
+        paymentTransactionService.findLatestByOrderId(order.getId()).ifPresent(transaction -> {
+            response.setPaymentStatus(transaction.getStatus().name());
+            response.setTransactionId(transaction.getTransactionId());
+            response.setPaymentDate(transaction.getPaymentDate());
+        });
 
         return response;
     }

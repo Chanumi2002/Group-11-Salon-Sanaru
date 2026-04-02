@@ -2,17 +2,17 @@ package com.sanaru.backend.service.impl;
 
 import com.sanaru.backend.config.PayHereConfig;
 import com.sanaru.backend.dto.PayHereCancelRequest;
-import com.sanaru.backend.dto.PaymentCallbackResponse;
 import com.sanaru.backend.dto.PayHereCheckoutResponse;
+import com.sanaru.backend.dto.PaymentCallbackResponse;
 import com.sanaru.backend.enums.OrderStatus;
 import com.sanaru.backend.enums.PaymentStatus;
 import com.sanaru.backend.model.Order;
 import com.sanaru.backend.model.PaymentTransaction;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.OrderRepository;
-import com.sanaru.backend.repository.PaymentTransactionRepository;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.PaymentService;
+import com.sanaru.backend.service.PaymentTransactionService;
 import com.sanaru.backend.util.PayHereHashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-    private final PaymentTransactionRepository paymentTransactionRepository;
+    private final PaymentTransactionService paymentTransactionService;
     private final PayHereConfig payHereConfig;
 
     @Override
@@ -62,20 +62,12 @@ public class PaymentServiceImpl implements PaymentService {
             orderRepository.save(order);
         }
 
-        PaymentTransaction transaction = paymentTransactionRepository
-                .findByOrderId(order.getId())
-                .orElseGet(PaymentTransaction::new);
-
-        transaction.setOrderId(order.getId());
-        transaction.setUserId(user.getId());
-        transaction.setPaymentProvider(PAYHERE_GATEWAY);
-        transaction.setMerchantReference(merchantReference);
-        transaction.setAmount(order.getTotalAmount());
-        transaction.setCurrency(payHereConfig.getCurrency());
-        transaction.setStatus(PaymentStatus.INITIATED);
-        transaction.setStatusMessage("Sandbox checkout initialized");
-
-        paymentTransactionRepository.save(transaction);
+        paymentTransactionService.initializeTransaction(
+                order,
+                user,
+                merchantReference,
+                payHereConfig.getCurrency()
+        );
 
         String amount = order.getTotalAmount().setScale(2).toPlainString();
 
@@ -116,7 +108,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public PaymentCallbackResponse handlePayHereNotify(Map<String, String> payload) {
         String merchantId = trimToNull(payload.get("merchant_id"));
-        String orderId = trimToNull(payload.get("order_id"));
+        String orderReference = trimToNull(payload.get("order_id"));
         String paymentId = trimToNull(payload.get("payment_id"));
         String payhereAmount = trimToNull(payload.get("payhere_amount"));
         String payhereCurrency = trimToNull(payload.get("payhere_currency"));
@@ -129,13 +121,13 @@ public class PaymentServiceImpl implements PaymentService {
         log.info(
                 "PayHere notify received: merchant_id={}, order_id={}, payment_id={}, status_code={}, status_message={}",
                 merchantId,
-                orderId,
+                orderReference,
                 paymentId,
                 statusCode,
                 statusMessage
         );
 
-        if (merchantId == null || orderId == null || payhereAmount == null || payhereCurrency == null
+        if (merchantId == null || orderReference == null || payhereAmount == null || payhereCurrency == null
                 || statusCode == null || md5sig == null) {
             throw new IllegalArgumentException("Missing required PayHere notify fields");
         }
@@ -146,7 +138,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         String localMd5Sig = PayHereHashUtil.generateNotifySignature(
                 merchantId,
-                orderId,
+                orderReference,
                 payhereAmount,
                 payhereCurrency,
                 statusCode,
@@ -154,10 +146,11 @@ public class PaymentServiceImpl implements PaymentService {
         );
 
         signatureValidationPassed = localMd5Sig.equalsIgnoreCase(md5sig);
+
         log.info(
                 "PayHere notify signature validation: merchant_id={}, order_id={}, passed={}",
                 merchantId,
-                orderId,
+                orderReference,
                 signatureValidationPassed
         );
 
@@ -165,18 +158,23 @@ public class PaymentServiceImpl implements PaymentService {
             throw new IllegalArgumentException("Invalid PayHere signature");
         }
 
-        ResolvedPaymentContext paymentContext = resolveOrCreateContext(orderId, payhereAmount, payhereCurrency);
+        ResolvedPaymentContext paymentContext = resolveOrCreateContext(orderReference, payhereAmount, payhereCurrency);
         PaymentTransaction transaction = paymentContext.transaction();
         Order order = paymentContext.order();
 
         PaymentStatus incomingPaymentStatus = resolvePaymentStatus(statusCode);
 
-        transaction.setProviderPaymentRef(paymentId);
-        transaction.setStatusMessage(statusMessage != null ? statusMessage : "Payment callback received");
+        transaction = paymentTransactionService.applyNotificationPayload(transaction, payload);
 
         if (order.getStatus() == OrderStatus.PAID && incomingPaymentStatus != PaymentStatus.SUCCESS) {
-            log.info("Ignoring PayHere callback that would downgrade paid order: order_id={}, status_code={}", orderId, statusCode);
-            paymentTransactionRepository.save(transaction);
+            log.info(
+                    "Ignoring PayHere callback that would downgrade paid order: order_id={}, status_code={}",
+                    orderReference,
+                    statusCode
+            );
+
+            paymentTransactionService.save(transaction);
+
             return PaymentCallbackResponse.builder()
                     .processed(false)
                     .confirmedPaid(true)
@@ -188,29 +186,36 @@ public class PaymentServiceImpl implements PaymentService {
                     .build();
         }
 
-                if (incomingPaymentStatus == PaymentStatus.INITIATED && isTerminalOrderStatus(order.getStatus())) {
-                    log.info("Ignoring pending callback for terminal order: order_id={}, status_code={}, current_status={}", orderId, statusCode, order.getStatus());
-                    paymentTransactionRepository.save(transaction);
-                    return PaymentCallbackResponse.builder()
-                        .processed(false)
-                        .confirmedPaid(order.getStatus() == OrderStatus.PAID)
-                        .orderId(order.getId())
-                        .orderReference(transaction.getMerchantReference())
-                        .orderStatus(order.getStatus())
-                        .paymentStatus(transaction.getStatus())
-                        .message("Pending callback ignored for terminal order")
-                        .build();
-                }
+        if (incomingPaymentStatus == PaymentStatus.INITIATED && isTerminalOrderStatus(order.getStatus())) {
+            log.info(
+                    "Ignoring pending callback for terminal order: order_id={}, status_code={}, current_status={}",
+                    orderReference,
+                    statusCode,
+                    order.getStatus()
+            );
+
+            paymentTransactionService.save(transaction);
+
+            return PaymentCallbackResponse.builder()
+                    .processed(false)
+                    .confirmedPaid(order.getStatus() == OrderStatus.PAID)
+                    .orderId(order.getId())
+                    .orderReference(transaction.getMerchantReference())
+                    .orderStatus(order.getStatus())
+                    .paymentStatus(transaction.getStatus())
+                    .message("Pending callback ignored for terminal order")
+                    .build();
+        }
 
         updateStatusesForCallback(order, transaction, incomingPaymentStatus);
 
-        paymentTransactionRepository.save(transaction);
+        paymentTransactionService.save(transaction);
         orderRepository.save(order);
 
         log.info(
                 "PayHere notify processed: merchant_id={}, order_id={}, payment_id={}, status_code={}, status_message={}, signature_validation_passed={}, transaction_found={}, order_updated_to_paid={}",
                 merchantId,
-                orderId,
+                orderReference,
                 paymentId,
                 statusCode,
                 statusMessage,
@@ -252,10 +257,12 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         transaction.setStatusMessage(reason != null ? reason : "Payment cancelled by customer");
-        paymentTransactionRepository.save(transaction);
+
+        paymentTransactionService.save(transaction);
         orderRepository.save(order);
 
         boolean confirmedPaid = order.getStatus() == OrderStatus.PAID;
+
         return PaymentCallbackResponse.builder()
                 .processed(!confirmedPaid)
                 .confirmedPaid(confirmedPaid)
@@ -304,7 +311,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private Optional<PaymentTransaction> resolveTransaction(String orderReference) {
-        return paymentTransactionRepository.findByMerchantReference(orderReference)
+        return paymentTransactionService.findByMerchantReference(orderReference)
                 .or(() -> resolveByNumericOrderId(orderReference));
     }
 
@@ -336,7 +343,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw new IllegalArgumentException("Order user is missing for reference/order_id: " + orderReference);
         }
 
-        PaymentTransaction transaction = paymentTransactionRepository.findTopByOrderIdOrderByCreatedAtDesc(order.getId())
+        PaymentTransaction transaction = paymentTransactionService.findLatestByOrderId(order.getId())
                 .orElseGet(PaymentTransaction::new);
 
         transaction.setOrderId(order.getId());
@@ -367,10 +374,10 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
-    private Optional<PaymentTransaction> resolveByNumericOrderId(String orderId) {
+    private Optional<PaymentTransaction> resolveByNumericOrderId(String orderReference) {
         try {
-            Long numericOrderId = Long.parseLong(orderId);
-            return paymentTransactionRepository.findTopByOrderIdOrderByCreatedAtDesc(numericOrderId);
+            Long numericOrderId = Long.parseLong(orderReference);
+            return paymentTransactionService.findLatestByOrderId(numericOrderId);
         } catch (NumberFormatException ex) {
             return Optional.empty();
         }
