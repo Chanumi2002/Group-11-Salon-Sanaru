@@ -1,7 +1,9 @@
 package com.sanaru.backend.service.impl;
 
 import com.sanaru.backend.config.PayHereConfig;
+import com.sanaru.backend.dto.PayHereCancelRequest;
 import com.sanaru.backend.dto.PayHereCheckoutResponse;
+import com.sanaru.backend.dto.PaymentCallbackResponse;
 import com.sanaru.backend.enums.OrderStatus;
 import com.sanaru.backend.enums.PaymentStatus;
 import com.sanaru.backend.model.Order;
@@ -18,14 +20,18 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentServiceImpl implements PaymentService {
+
+    private static final String PAYHERE_GATEWAY = "PAYHERE";
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
@@ -45,7 +51,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw new AccessDeniedException("You are not allowed to pay for this order");
         }
 
-        if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
+        if (!isPendingOrderStatus(order.getStatus())) {
             throw new RuntimeException("Order is not in pending payment status");
         }
 
@@ -56,7 +62,7 @@ public class PaymentServiceImpl implements PaymentService {
             orderRepository.save(order);
         }
 
-        PaymentTransaction transaction = paymentTransactionService.initializeTransaction(
+        paymentTransactionService.initializeTransaction(
                 order,
                 user,
                 merchantReference,
@@ -100,9 +106,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public void handlePayHereNotify(Map<String, String> payload) {
+    public PaymentCallbackResponse handlePayHereNotify(Map<String, String> payload) {
         String merchantId = trimToNull(payload.get("merchant_id"));
-        String orderId = trimToNull(payload.get("order_id"));
+        String orderReference = trimToNull(payload.get("order_id"));
         String paymentId = trimToNull(payload.get("payment_id"));
         String payhereAmount = trimToNull(payload.get("payhere_amount"));
         String payhereCurrency = trimToNull(payload.get("payhere_currency"));
@@ -111,19 +117,17 @@ public class PaymentServiceImpl implements PaymentService {
         String statusMessage = trimToNull(payload.get("status_message"));
 
         boolean signatureValidationPassed = false;
-        boolean transactionFound = false;
-        boolean orderUpdatedToPaid = false;
 
         log.info(
                 "PayHere notify received: merchant_id={}, order_id={}, payment_id={}, status_code={}, status_message={}",
                 merchantId,
-                orderId,
+                orderReference,
                 paymentId,
                 statusCode,
                 statusMessage
         );
 
-        if (merchantId == null || orderId == null || payhereAmount == null || payhereCurrency == null
+        if (merchantId == null || orderReference == null || payhereAmount == null || payhereCurrency == null
                 || statusCode == null || md5sig == null) {
             throw new IllegalArgumentException("Missing required PayHere notify fields");
         }
@@ -134,7 +138,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         String localMd5Sig = PayHereHashUtil.generateNotifySignature(
                 merchantId,
-                orderId,
+                orderReference,
                 payhereAmount,
                 payhereCurrency,
                 statusCode,
@@ -142,46 +146,68 @@ public class PaymentServiceImpl implements PaymentService {
         );
 
         signatureValidationPassed = localMd5Sig.equalsIgnoreCase(md5sig);
+
         log.info(
                 "PayHere notify signature validation: merchant_id={}, order_id={}, passed={}",
                 merchantId,
-                orderId,
+                orderReference,
                 signatureValidationPassed
         );
 
         if (!signatureValidationPassed) {
             throw new IllegalArgumentException("Invalid PayHere signature");
         }
-        
 
-        PaymentTransaction transaction = paymentTransactionService.findByMerchantReference(orderId)
-                .orElseGet(() -> resolveByNumericOrderId(orderId)
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "Payment transaction not found for order reference/order_id: " + orderId)));
+        ResolvedPaymentContext paymentContext = resolveOrCreateContext(orderReference, payhereAmount, payhereCurrency);
+        PaymentTransaction transaction = paymentContext.transaction();
+        Order order = paymentContext.order();
 
-        transactionFound = true;
-
-        Order order = orderRepository.findById(transaction.getOrderId())
-                .orElseThrow(() -> new IllegalArgumentException("Order not found for transaction"));
+        PaymentStatus incomingPaymentStatus = resolvePaymentStatus(statusCode);
 
         transaction = paymentTransactionService.applyNotificationPayload(transaction, payload);
 
-        switch (statusCode) {
-            case "2" -> {
-                transaction.setStatus(PaymentStatus.SUCCESS);
-                order.setStatus(OrderStatus.PAID);
-                orderUpdatedToPaid = true;
-            }
-            case "0" -> {
-                transaction.setStatus(PaymentStatus.INITIATED);
-                order.setStatus(OrderStatus.PENDING_PAYMENT);
-            }
-            case "-1", "-2", "-3" -> {
-                transaction.setStatus(PaymentStatus.FAILED);
-                order.setStatus(OrderStatus.PENDING_PAYMENT);
-            }
-            default -> throw new IllegalArgumentException("Unknown PayHere status code: " + statusCode);
+        if (order.getStatus() == OrderStatus.PAID && incomingPaymentStatus != PaymentStatus.SUCCESS) {
+            log.info(
+                    "Ignoring PayHere callback that would downgrade paid order: order_id={}, status_code={}",
+                    orderReference,
+                    statusCode
+            );
+
+            paymentTransactionService.save(transaction);
+
+            return PaymentCallbackResponse.builder()
+                    .processed(false)
+                    .confirmedPaid(true)
+                    .orderId(order.getId())
+                    .orderReference(transaction.getMerchantReference())
+                    .orderStatus(order.getStatus())
+                    .paymentStatus(transaction.getStatus())
+                    .message("Order already paid. Non-success callback ignored")
+                    .build();
         }
+
+        if (incomingPaymentStatus == PaymentStatus.INITIATED && isTerminalOrderStatus(order.getStatus())) {
+            log.info(
+                    "Ignoring pending callback for terminal order: order_id={}, status_code={}, current_status={}",
+                    orderReference,
+                    statusCode,
+                    order.getStatus()
+            );
+
+            paymentTransactionService.save(transaction);
+
+            return PaymentCallbackResponse.builder()
+                    .processed(false)
+                    .confirmedPaid(order.getStatus() == OrderStatus.PAID)
+                    .orderId(order.getId())
+                    .orderReference(transaction.getMerchantReference())
+                    .orderStatus(order.getStatus())
+                    .paymentStatus(transaction.getStatus())
+                    .message("Pending callback ignored for terminal order")
+                    .build();
+        }
+
+        updateStatusesForCallback(order, transaction, incomingPaymentStatus);
 
         paymentTransactionService.save(transaction);
         orderRepository.save(order);
@@ -189,23 +215,196 @@ public class PaymentServiceImpl implements PaymentService {
         log.info(
                 "PayHere notify processed: merchant_id={}, order_id={}, payment_id={}, status_code={}, status_message={}, signature_validation_passed={}, transaction_found={}, order_updated_to_paid={}",
                 merchantId,
-                orderId,
+                orderReference,
                 paymentId,
                 statusCode,
                 statusMessage,
                 signatureValidationPassed,
-                transactionFound,
-                orderUpdatedToPaid
+                true,
+                order.getStatus() == OrderStatus.PAID
         );
+
+        return PaymentCallbackResponse.builder()
+                .processed(true)
+                .confirmedPaid(order.getStatus() == OrderStatus.PAID)
+                .orderId(order.getId())
+                .orderReference(transaction.getMerchantReference())
+                .orderStatus(order.getStatus())
+                .paymentStatus(transaction.getStatus())
+                .message(resolveCallbackMessage(incomingPaymentStatus))
+                .build();
     }
 
-    private java.util.Optional<PaymentTransaction> resolveByNumericOrderId(String orderId) {
+    @Override
+    @Transactional
+    public PaymentCallbackResponse handlePayHereCancel(PayHereCancelRequest request) {
+        String orderReference = trimToNull(request.getOrderReference());
+        String reason = trimToNull(request.getReason());
+
+        if (orderReference == null) {
+            throw new IllegalArgumentException("orderReference is required");
+        }
+
+        PaymentTransaction transaction = resolveTransaction(orderReference)
+                .orElseThrow(() -> new IllegalArgumentException("Order/payment record not found for reference: " + orderReference));
+
+        Order order = orderRepository.findById(transaction.getOrderId())
+                .orElseThrow(() -> new IllegalArgumentException("Order not found for transaction"));
+
+        if (order.getStatus() != OrderStatus.PAID) {
+            order.setStatus(OrderStatus.CANCELLED);
+            transaction.setStatus(PaymentStatus.CANCELLED);
+        }
+
+        transaction.setStatusMessage(reason != null ? reason : "Payment cancelled by customer");
+
+        paymentTransactionService.save(transaction);
+        orderRepository.save(order);
+
+        boolean confirmedPaid = order.getStatus() == OrderStatus.PAID;
+
+        return PaymentCallbackResponse.builder()
+                .processed(!confirmedPaid)
+                .confirmedPaid(confirmedPaid)
+                .orderId(order.getId())
+                .orderReference(transaction.getMerchantReference())
+                .orderStatus(order.getStatus())
+                .paymentStatus(transaction.getStatus())
+                .message(confirmedPaid
+                        ? "Order already paid. Cancellation ignored"
+                        : "Order cancelled successfully")
+                .build();
+    }
+
+    private void updateStatusesForCallback(Order order, PaymentTransaction transaction, PaymentStatus incomingPaymentStatus) {
+        switch (incomingPaymentStatus) {
+            case SUCCESS -> {
+                transaction.setStatus(PaymentStatus.SUCCESS);
+                order.setStatus(OrderStatus.PAID);
+            }
+            case FAILED -> {
+                transaction.setStatus(PaymentStatus.FAILED);
+                order.setStatus(OrderStatus.FAILED);
+            }
+            case CANCELLED -> {
+                transaction.setStatus(PaymentStatus.CANCELLED);
+                order.setStatus(OrderStatus.CANCELLED);
+            }
+            case INITIATED -> {
+                transaction.setStatus(PaymentStatus.INITIATED);
+                if (isPendingOrderStatus(order.getStatus())) {
+                    order.setStatus(OrderStatus.PENDING);
+                }
+            }
+            default -> throw new IllegalArgumentException("Unhandled payment status: " + incomingPaymentStatus);
+        }
+    }
+
+    private String resolveCallbackMessage(PaymentStatus incomingPaymentStatus) {
+        return switch (incomingPaymentStatus) {
+            case SUCCESS -> "Payment confirmed successfully";
+            case FAILED -> "Payment failed";
+            case CANCELLED -> "Payment cancelled";
+            case INITIATED -> "Payment is pending";
+            default -> "Payment callback processed";
+        };
+    }
+
+    private Optional<PaymentTransaction> resolveTransaction(String orderReference) {
+        return paymentTransactionService.findByMerchantReference(orderReference)
+                .or(() -> resolveByNumericOrderId(orderReference));
+    }
+
+    private PaymentStatus resolvePaymentStatus(String statusCode) {
+        return switch (statusCode) {
+            case "2" -> PaymentStatus.SUCCESS;
+            case "0" -> PaymentStatus.INITIATED;
+            case "-1" -> PaymentStatus.CANCELLED;
+            case "-2", "-3" -> PaymentStatus.FAILED;
+            default -> throw new IllegalArgumentException("Unknown PayHere status code: " + statusCode);
+        };
+    }
+
+    private ResolvedPaymentContext resolveOrCreateContext(String orderReference, String payhereAmount, String payhereCurrency) {
+        Optional<PaymentTransaction> existingTransaction = resolveTransaction(orderReference);
+
+        if (existingTransaction.isPresent()) {
+            PaymentTransaction transaction = existingTransaction.get();
+            Order order = orderRepository.findById(transaction.getOrderId())
+                    .orElseThrow(() -> new IllegalArgumentException("Order not found for transaction"));
+            return new ResolvedPaymentContext(order, transaction);
+        }
+
+        Order order = resolveOrderByReference(orderReference)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Payment transaction and order not found for reference/order_id: " + orderReference));
+
+        if (order.getUser() == null || order.getUser().getId() == null) {
+            throw new IllegalArgumentException("Order user is missing for reference/order_id: " + orderReference);
+        }
+
+        PaymentTransaction transaction = paymentTransactionService.findLatestByOrderId(order.getId())
+                .orElseGet(PaymentTransaction::new);
+
+        transaction.setOrderId(order.getId());
+        transaction.setUserId(order.getUser().getId());
+        transaction.setPaymentProvider(PAYHERE_GATEWAY);
+        transaction.setMerchantReference(
+                (order.getOrderNumber() == null || order.getOrderNumber().isBlank()) ? orderReference : order.getOrderNumber()
+        );
+        transaction.setAmount(parseAmount(payhereAmount).orElse(order.getTotalAmount()));
+        transaction.setCurrency((payhereCurrency == null || payhereCurrency.isBlank()) ? payHereConfig.getCurrency() : payhereCurrency);
+        transaction.setStatus(PaymentStatus.INITIATED);
+        transaction.setStatusMessage("Transaction created from callback");
+
+        return new ResolvedPaymentContext(order, transaction);
+    }
+
+    private Optional<Order> resolveOrderByReference(String orderReference) {
+        Optional<Order> byOrderNumber = orderRepository.findByOrderNumber(orderReference);
+        if (byOrderNumber.isPresent()) {
+            return byOrderNumber;
+        }
+
         try {
-            Long numericOrderId = Long.parseLong(orderId);
+            Long orderId = Long.parseLong(orderReference);
+            return orderRepository.findById(orderId);
+        } catch (NumberFormatException ex) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<PaymentTransaction> resolveByNumericOrderId(String orderReference) {
+        try {
+            Long numericOrderId = Long.parseLong(orderReference);
             return paymentTransactionService.findLatestByOrderId(numericOrderId);
         } catch (NumberFormatException ex) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
+    }
+
+    private boolean isPendingOrderStatus(OrderStatus status) {
+        return status == OrderStatus.PENDING || status == OrderStatus.PENDING_PAYMENT;
+    }
+
+    private boolean isTerminalOrderStatus(OrderStatus status) {
+        return status == OrderStatus.PAID || status == OrderStatus.FAILED || status == OrderStatus.CANCELLED;
+    }
+
+    private Optional<BigDecimal> parseAmount(String amount) {
+        if (amount == null || amount.isBlank()) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.of(new BigDecimal(amount));
+        } catch (NumberFormatException ex) {
+            log.warn("Unable to parse PayHere amount: {}", amount);
+            return Optional.empty();
+        }
+    }
+
+    private record ResolvedPaymentContext(Order order, PaymentTransaction transaction) {
     }
 
     private String trimToNull(String value) {

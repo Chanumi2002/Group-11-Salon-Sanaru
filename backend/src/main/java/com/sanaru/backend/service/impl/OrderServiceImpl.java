@@ -45,7 +45,7 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = new Order();
         order.setUser(user);
-        order.setStatus(OrderStatus.PENDING_PAYMENT);
+        order.setStatus(OrderStatus.PENDING);
         order.setOrderNumber(generateOrderNumber());
 
         List<OrderItem> orderItems = new ArrayList<>();

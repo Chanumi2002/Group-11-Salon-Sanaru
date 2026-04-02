@@ -1,15 +1,15 @@
 import { Navigate, useLocation } from "react-router-dom";
+import { readAuthState } from "@/utils/authState";
 
 export default function ProtectedRoute({ children, requiredRole }) {
-  const token = localStorage.getItem("token");
-  const userRole = localStorage.getItem("role");
+  const { isAuthenticated, role } = readAuthState();
   const location = useLocation();
 
-  if (!token) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && userRole !== requiredRole) {
+  if (requiredRole && role !== requiredRole) {
     return <Navigate to="/" replace />;
   }
 

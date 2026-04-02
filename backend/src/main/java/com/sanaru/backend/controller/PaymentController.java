@@ -1,7 +1,10 @@
 package com.sanaru.backend.controller;
 
+import com.sanaru.backend.dto.PayHereCancelRequest;
+import com.sanaru.backend.dto.PaymentCallbackResponse;
 import com.sanaru.backend.dto.PayHereCheckoutResponse;
 import com.sanaru.backend.service.PaymentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,17 +33,30 @@ public class PaymentController {
     }
 
     @PostMapping("/payhere/notify")
-    public ResponseEntity<String> handlePayHereNotify(@RequestParam Map<String, String> payload) {
+    public ResponseEntity<PaymentCallbackResponse> handlePayHereNotify(@RequestParam Map<String, String> payload) {
         try {
-            paymentService.handlePayHereNotify(payload);
-            return ResponseEntity.ok("OK");
+            return ResponseEntity.ok(paymentService.handlePayHereNotify(payload));
         } catch (IllegalArgumentException e) {
             log.warn("PayHere notify rejected: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(PaymentCallbackResponse.error(e.getMessage()));
         } catch (RuntimeException e) {
             log.error("PayHere notify failed unexpectedly", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to process payment notification");
+                    .body(PaymentCallbackResponse.error("Failed to process payment notification"));
+        }
+    }
+
+    @PostMapping("/payhere/cancel")
+    public ResponseEntity<PaymentCallbackResponse> handlePayHereCancel(@Valid @RequestBody PayHereCancelRequest request) {
+        try {
+            return ResponseEntity.ok(paymentService.handlePayHereCancel(request));
+        } catch (IllegalArgumentException e) {
+            log.warn("PayHere cancel rejected: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(PaymentCallbackResponse.error(e.getMessage()));
+        } catch (RuntimeException e) {
+            log.error("PayHere cancel failed unexpectedly", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(PaymentCallbackResponse.error("Failed to process cancellation"));
         }
     }
 }
