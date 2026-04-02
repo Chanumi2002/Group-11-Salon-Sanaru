@@ -70,6 +70,8 @@ export default function PaymentSuccess() {
   const [isSyncingStatus, setIsSyncingStatus] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('Confirming payment...');
+  const [transactionId, setTransactionId] = useState('');
+  const [paymentDate, setPaymentDate] = useState('');
 
   const shouldShowOrdersButton = useMemo(() => authState.isCustomer, [authState.isCustomer]);
 
@@ -123,9 +125,13 @@ export default function PaymentSuccess() {
             findField(order, ['status', 'orderStatus', 'paymentStatus', 'payment_status', 'paymentState']) ||
               'PENDING_PAYMENT',
           ).toUpperCase();
+          const backendTransactionId = findField(order, ['transactionId', 'transaction_id', 'paymentTransactionId'], '');
+          const backendPaymentDate = findField(order, ['paymentDate', 'payment_date'], '');
 
           setReference(backendReference);
           setPaymentStatus(backendStatus);
+          setTransactionId(backendTransactionId);
+          setPaymentDate(backendPaymentDate);
 
           if (backendStatus === 'PAID') {
             setIsConfirmed(true);
@@ -202,6 +208,17 @@ export default function PaymentSuccess() {
               </span>
               {isSyncingStatus ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[#7A695E]" /> : null}
             </p>
+            {transactionId ? (
+              <p className="text-center text-sm text-[#6A5B53]">
+                Transaction ID: <span className="font-semibold text-[#2D2521]">{transactionId}</span>
+              </p>
+            ) : null}
+            {paymentDate ? (
+              <p className="text-center text-sm text-[#6A5B53]">
+                Payment date:{' '}
+                <span className="font-semibold text-[#2D2521]">{new Date(paymentDate).toLocaleString()}</span>
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2">

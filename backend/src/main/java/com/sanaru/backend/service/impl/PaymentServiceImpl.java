@@ -8,9 +8,9 @@ import com.sanaru.backend.model.Order;
 import com.sanaru.backend.model.PaymentTransaction;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.OrderRepository;
-import com.sanaru.backend.repository.PaymentTransactionRepository;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.PaymentService;
+import com.sanaru.backend.service.PaymentTransactionService;
 import com.sanaru.backend.util.PayHereHashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-    private final PaymentTransactionRepository paymentTransactionRepository;
+    private final PaymentTransactionService paymentTransactionService;
     private final PayHereConfig payHereConfig;
 
     @Override
@@ -56,20 +56,12 @@ public class PaymentServiceImpl implements PaymentService {
             orderRepository.save(order);
         }
 
-        PaymentTransaction transaction = paymentTransactionRepository
-                .findByOrderId(order.getId())
-                .orElseGet(PaymentTransaction::new);
-
-        transaction.setOrderId(order.getId());
-        transaction.setUserId(user.getId());
-        transaction.setPaymentProvider("PAYHERE");
-        transaction.setMerchantReference(merchantReference);
-        transaction.setAmount(order.getTotalAmount());
-        transaction.setCurrency(payHereConfig.getCurrency());
-        transaction.setStatus(PaymentStatus.INITIATED);
-        transaction.setStatusMessage("Sandbox checkout initialized");
-
-        paymentTransactionRepository.save(transaction);
+        PaymentTransaction transaction = paymentTransactionService.initializeTransaction(
+                order,
+                user,
+                merchantReference,
+                payHereConfig.getCurrency()
+        );
 
         String amount = order.getTotalAmount().setScale(2).toPlainString();
 
@@ -160,8 +152,9 @@ public class PaymentServiceImpl implements PaymentService {
         if (!signatureValidationPassed) {
             throw new IllegalArgumentException("Invalid PayHere signature");
         }
+        
 
-        PaymentTransaction transaction = paymentTransactionRepository.findByMerchantReference(orderId)
+        PaymentTransaction transaction = paymentTransactionService.findByMerchantReference(orderId)
                 .orElseGet(() -> resolveByNumericOrderId(orderId)
                         .orElseThrow(() -> new IllegalArgumentException(
                                 "Payment transaction not found for order reference/order_id: " + orderId)));
@@ -171,8 +164,7 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = orderRepository.findById(transaction.getOrderId())
                 .orElseThrow(() -> new IllegalArgumentException("Order not found for transaction"));
 
-        transaction.setProviderPaymentRef(paymentId);
-        transaction.setStatusMessage(statusMessage != null ? statusMessage : "Payment callback received");
+        transaction = paymentTransactionService.applyNotificationPayload(transaction, payload);
 
         switch (statusCode) {
             case "2" -> {
@@ -191,7 +183,7 @@ public class PaymentServiceImpl implements PaymentService {
             default -> throw new IllegalArgumentException("Unknown PayHere status code: " + statusCode);
         }
 
-        paymentTransactionRepository.save(transaction);
+        paymentTransactionService.save(transaction);
         orderRepository.save(order);
 
         log.info(
@@ -210,7 +202,7 @@ public class PaymentServiceImpl implements PaymentService {
     private java.util.Optional<PaymentTransaction> resolveByNumericOrderId(String orderId) {
         try {
             Long numericOrderId = Long.parseLong(orderId);
-            return paymentTransactionRepository.findTopByOrderIdOrderByCreatedAtDesc(numericOrderId);
+            return paymentTransactionService.findLatestByOrderId(numericOrderId);
         } catch (NumberFormatException ex) {
             return java.util.Optional.empty();
         }
