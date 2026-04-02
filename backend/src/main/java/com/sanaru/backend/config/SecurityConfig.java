@@ -84,7 +84,7 @@ public class SecurityConfig {
                         // Public endpoints for customers / guests
                     .requestMatchers("/api/products/**", "/api/categories/**", "/api/services/**", "/uploads/**").permitAll()
                     // Public payment provider callback endpoint
-                    .requestMatchers("/api/v1/payments/payhere/notify").permitAll()
+                    .requestMatchers("/api/v1/payments/payhere/notify", "/api/v1/payments/payhere/cancel").permitAll()
                         // Authenticated endpoints
                         .requestMatchers("/api/auth/profile", "/api/auth/change-password").authenticated()
                         // Admin endpoints
