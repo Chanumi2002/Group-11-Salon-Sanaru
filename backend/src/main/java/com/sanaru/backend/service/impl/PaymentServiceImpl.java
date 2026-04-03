@@ -13,6 +13,7 @@ import com.sanaru.backend.repository.OrderRepository;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.PaymentService;
 import com.sanaru.backend.service.PaymentTransactionService;
+import com.sanaru.backend.service.ProductService;
 import com.sanaru.backend.util.PayHereHashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final UserRepository userRepository;
     private final PaymentTransactionService paymentTransactionService;
     private final PayHereConfig payHereConfig;
+    private final ProductService productService;
 
     @Override
     @Transactional
@@ -162,10 +164,9 @@ public class PaymentServiceImpl implements PaymentService {
 
         transaction = paymentTransactionService.applyNotificationPayload(transaction, payload);
 
-        if ((order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.PAID)
-                && incomingPaymentStatus != PaymentStatus.SUCCESS) {
+        if (order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.PAID) {
             log.info(
-                    "Ignoring PayHere callback that would downgrade confirmed order: order_id={}, status_code={}",
+                    "Ignoring PayHere callback since order is already fully confirmed: order_id={}, status_code={}",
                     orderReference,
                     statusCode);
 
@@ -178,7 +179,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .orderReference(transaction.getMerchantReference())
                     .orderStatus(order.getStatus())
                     .paymentStatus(transaction.getStatus())
-                    .message("Order already confirmed. Non-success callback ignored")
+                    .message("Order already confirmed. Duplicate/late callback ignored.")
                     .build();
         }
 
@@ -278,6 +279,11 @@ public class PaymentServiceImpl implements PaymentService {
                 // Story 5: order is CONFIRMED automatically on successful payment
                 transaction.setStatus(PaymentStatus.SUCCESS);
                 order.setStatus(OrderStatus.CONFIRMED);
+                
+                // Story 1: Automatically reduce stock
+                for (com.sanaru.backend.model.OrderItem item : order.getItems()) {
+                    productService.deductStock(item.getProduct().getId(), item.getQuantity());
+                }
             }
             case FAILED -> {
                 transaction.setStatus(PaymentStatus.FAILED);

@@ -59,6 +59,13 @@ public class ProductServiceImpl implements ProductService {
             product.setCategories(categories);
         }
 
+        if (dto.getStockQuantity() != null) {
+            product.setStockQuantity(dto.getStockQuantity());
+        }
+        if (dto.getLowStockThreshold() != null) {
+            product.setLowStockThreshold(dto.getLowStockThreshold());
+        }
+
         return mapToResponse(productRepository.save(product));
     }
 
@@ -88,6 +95,13 @@ public class ProductServiceImpl implements ProductService {
         if (dto.getCategoryIds() != null) {
             List<Category> categories = categoryRepository.findAllById(dto.getCategoryIds());
             product.setCategories(categories);
+        }
+
+        if (dto.getStockQuantity() != null) {
+            product.setStockQuantity(dto.getStockQuantity());
+        }
+        if (dto.getLowStockThreshold() != null) {
+            product.setLowStockThreshold(dto.getLowStockThreshold());
         }
 
         return mapToResponse(productRepository.save(product));
@@ -125,6 +139,50 @@ public class ProductServiceImpl implements ProductService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    // STORY 1 - INVENTORY TRACKING METHODS
+
+    @Override
+    public ProductResponse updateProductStock(Long id, com.sanaru.backend.dto.InventoryUpdateRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id " + id));
+
+        if (request.getStockQuantity() != null) {
+            product.setStockQuantity(request.getStockQuantity());
+        }
+        if (request.getLowStockThreshold() != null) {
+            product.setLowStockThreshold(request.getLowStockThreshold());
+        }
+
+        return mapToResponse(productRepository.save(product));
+    }
+
+    @Override
+    public List<com.sanaru.backend.dto.LowStockAlertResponse> getLowStockAlerts() {
+        return productRepository.findLowStockProducts().stream().map(product -> {
+            com.sanaru.backend.dto.LowStockAlertResponse alert = new com.sanaru.backend.dto.LowStockAlertResponse();
+            alert.setProductId(product.getId());
+            alert.setProductName(product.getName());
+            alert.setStockQuantity(product.getStockQuantity());
+            alert.setLowStockThreshold(product.getLowStockThreshold());
+            alert.setOutOfStock(product.getStockQuantity() == 0);
+            return alert;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public void deductStock(Long id, Integer quantity) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id " + id));
+
+        int newStock = product.getStockQuantity() - quantity;
+        if (newStock < 0) {
+            throw new IllegalArgumentException("Insufficient stock for product: " + product.getName());
+        }
+
+        product.setStockQuantity(newStock);
+        productRepository.save(product);
     }
 
     // VALIDATIONS
@@ -166,6 +224,12 @@ public class ProductServiceImpl implements ProductService {
         response.setCreatedAt(product.getCreatedAt());
         response.setUpdatedAt(product.getUpdatedAt());
         response.setCategories(product.getCategories());
+
+        response.setStockQuantity(product.getStockQuantity());
+        response.setLowStockThreshold(product.getLowStockThreshold());
+        response.setLowStock(product.getStockQuantity() <= product.getLowStockThreshold());
+        response.setOutOfStock(product.getStockQuantity() <= 0);
+
         return response;
     }
 

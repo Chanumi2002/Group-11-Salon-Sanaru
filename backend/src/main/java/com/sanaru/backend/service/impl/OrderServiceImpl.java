@@ -52,6 +52,13 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (CartItem cartItem : cartItems) {
+            if (cartItem.getQuantity() > cartItem.getProduct().getStockQuantity()) {
+                if (cartItem.getProduct().getStockQuantity() == 0) {
+                    throw new RuntimeException("Out of Stock: '" + cartItem.getProduct().getName() + "' is no longer available");
+                }
+                throw new RuntimeException("Insufficient stock: Only " + cartItem.getProduct().getStockQuantity() + " available for '" + cartItem.getProduct().getName() + "'");
+            }
+
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
             orderItem.setProduct(cartItem.getProduct());
