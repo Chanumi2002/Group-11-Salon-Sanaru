@@ -32,6 +32,13 @@ public class Product {
     @Column(name = "image_path", nullable = false, length = 500)
     private String imagePath;
 
+    // Story 1 – Inventory Tracking
+    @Column(name = "stock_quantity", nullable = false)
+    private Integer stockQuantity = 0;
+
+    @Column(name = "low_stock_threshold", nullable = false)
+    private Integer lowStockThreshold = 5;
+
     // Many-to-Many with Category
     @ManyToMany
     @JoinTable(
