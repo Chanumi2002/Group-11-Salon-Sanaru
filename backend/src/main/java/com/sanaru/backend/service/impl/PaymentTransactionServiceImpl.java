@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -81,6 +82,19 @@ public class PaymentTransactionServiceImpl implements PaymentTransactionService 
     @Override
     public PaymentTransaction save(PaymentTransaction transaction) {
         return paymentTransactionRepository.save(transaction);
+    }
+
+    @Override
+    public Optional<PaymentTransaction> findById(Long id) {
+        return paymentTransactionRepository.findById(id);
+    }
+
+    @Override
+    public List<PaymentTransaction> findAll() {
+        // Returns all transactions sorted newest-first for the admin audit view
+        return paymentTransactionRepository.findAll(
+                org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
     }
 
     private String trimToNull(String value) {
