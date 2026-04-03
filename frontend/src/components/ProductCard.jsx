@@ -81,6 +81,13 @@ export default function ProductCard({ product, selectedCategoryId, detailsPath }
               No image available
             </div>
           )}
+          {product.outOfStock || product.stockQuantity === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[1px] z-10 transition-all duration-300">
+              <span className="px-4 py-1.5 bg-[#A31A11] text-white text-sm font-bold uppercase tracking-wider rounded-md shadow-lg rotate-12 scale-110">
+                Out of Stock
+              </span>
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-1.5 p-4 pb-2">
@@ -93,14 +100,20 @@ export default function ProductCard({ product, selectedCategoryId, detailsPath }
         <button
           type="button"
           onClick={handleBuyNow}
-          disabled={isBuyingNow}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#8B1A1A]/35 bg-[#A31A11] px-5 py-2.5 text-sm font-semibold text-[#FDFDFD] transition-all duration-300 hover:bg-[#E34F4F] hover:shadow-[0_10px_20px_-12px_rgba(227,79,79,0.8)] disabled:cursor-not-allowed disabled:opacity-70"
+          disabled={isBuyingNow || product.outOfStock || product.stockQuantity === 0}
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all duration-300 ${
+            product.outOfStock || product.stockQuantity === 0
+              ? 'bg-gray-200 border-gray-300 text-gray-500 cursor-not-allowed'
+              : 'border-[#8B1A1A]/35 bg-[#A31A11] text-[#FDFDFD] hover:bg-[#E34F4F] hover:shadow-[0_10px_20px_-12px_rgba(227,79,79,0.8)] disabled:cursor-not-allowed disabled:opacity-70'
+          }`}
         >
           {isBuyingNow ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Redirecting...
             </>
+          ) : product.outOfStock || product.stockQuantity === 0 ? (
+            'Out of Stock'
           ) : (
             'Buy Now'
           )}
