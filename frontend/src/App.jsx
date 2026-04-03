@@ -38,6 +38,7 @@ import ProductPage from "./pages/admin/ProductPage";
 import ServicePage from "./pages/admin/ServicePage";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminTransactions from "./pages/admin/AdminTransactions";
+import AdminInventory from "./pages/admin/AdminInventory";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -157,6 +158,15 @@ const App = () => (
                 element={
                   <AdminProtectedRoute>
                     <ProductPage />
+                  </AdminProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin_dashboard/inventory"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminInventory />
                   </AdminProtectedRoute>
                 }
               />

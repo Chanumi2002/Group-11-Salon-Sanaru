@@ -167,6 +167,18 @@ export const adminService = {
     return await api.delete(`/admin/products/${productId}`);
   },
 
+  // ==================== INVENTORY OPERATIONS (STORY 1) ====================
+
+  // Get low stock alerts
+  getLowStockAlerts: async () => {
+    return await api.get('/admin/inventory/low-stock');
+  },
+
+  // Update product stock
+  updateProductStock: async (productId, updateData) => {
+    return await api.patch(`/admin/products/${productId}/stock`, updateData);
+  },
+
   // ==================== SERVICE OPERATIONS ====================
 
   // Get all services
