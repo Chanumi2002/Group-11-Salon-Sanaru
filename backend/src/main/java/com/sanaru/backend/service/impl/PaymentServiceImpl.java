@@ -162,9 +162,10 @@ public class PaymentServiceImpl implements PaymentService {
 
         transaction = paymentTransactionService.applyNotificationPayload(transaction, payload);
 
-        if (order.getStatus() == OrderStatus.PAID && incomingPaymentStatus != PaymentStatus.SUCCESS) {
+        if ((order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.PAID)
+                && incomingPaymentStatus != PaymentStatus.SUCCESS) {
             log.info(
-                    "Ignoring PayHere callback that would downgrade paid order: order_id={}, status_code={}",
+                    "Ignoring PayHere callback that would downgrade confirmed order: order_id={}, status_code={}",
                     orderReference,
                     statusCode);
 
@@ -177,7 +178,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .orderReference(transaction.getMerchantReference())
                     .orderStatus(order.getStatus())
                     .paymentStatus(transaction.getStatus())
-                    .message("Order already paid. Non-success callback ignored")
+                    .message("Order already confirmed. Non-success callback ignored")
                     .build();
         }
 
@@ -192,7 +193,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             return PaymentCallbackResponse.builder()
                     .processed(false)
-                    .confirmedPaid(order.getStatus() == OrderStatus.PAID)
+                    .confirmedPaid(order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.PAID)
                     .orderId(order.getId())
                     .orderReference(transaction.getMerchantReference())
                     .orderStatus(order.getStatus())
@@ -219,7 +220,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         return PaymentCallbackResponse.builder()
                 .processed(true)
-                .confirmedPaid(order.getStatus() == OrderStatus.PAID)
+                .confirmedPaid(order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.PAID)
                 .orderId(order.getId())
                 .orderReference(transaction.getMerchantReference())
                 .orderStatus(order.getStatus())
@@ -245,7 +246,7 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = orderRepository.findById(transaction.getOrderId())
                 .orElseThrow(() -> new IllegalArgumentException("Order not found for transaction"));
 
-        if (order.getStatus() != OrderStatus.PAID) {
+        if (order.getStatus() != OrderStatus.CONFIRMED && order.getStatus() != OrderStatus.PAID) {
             order.setStatus(OrderStatus.CANCELLED);
             transaction.setStatus(PaymentStatus.CANCELLED);
         }
@@ -255,7 +256,7 @@ public class PaymentServiceImpl implements PaymentService {
         paymentTransactionService.save(transaction);
         orderRepository.save(order);
 
-        boolean confirmedPaid = order.getStatus() == OrderStatus.PAID;
+        boolean confirmedPaid = order.getStatus() == OrderStatus.CONFIRMED || order.getStatus() == OrderStatus.PAID;
 
         return PaymentCallbackResponse.builder()
                 .processed(!confirmedPaid)
@@ -274,8 +275,9 @@ public class PaymentServiceImpl implements PaymentService {
             PaymentStatus incomingPaymentStatus) {
         switch (incomingPaymentStatus) {
             case SUCCESS -> {
+                // Story 5: order is CONFIRMED automatically on successful payment
                 transaction.setStatus(PaymentStatus.SUCCESS);
-                order.setStatus(OrderStatus.PAID);
+                order.setStatus(OrderStatus.CONFIRMED);
             }
             case FAILED -> {
                 transaction.setStatus(PaymentStatus.FAILED);
@@ -385,7 +387,10 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private boolean isTerminalOrderStatus(OrderStatus status) {
-        return status == OrderStatus.PAID || status == OrderStatus.FAILED || status == OrderStatus.CANCELLED;
+        return status == OrderStatus.CONFIRMED
+                || status == OrderStatus.PAID   // legacy
+                || status == OrderStatus.FAILED
+                || status == OrderStatus.CANCELLED;
     }
 
     private Optional<BigDecimal> parseAmount(String amount) {
