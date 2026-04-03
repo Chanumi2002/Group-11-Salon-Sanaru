@@ -26,6 +26,27 @@ public class ProductController {
 
     // ADMIN ENDPOINTS
 
+    // GET LOW STOCK ALERTS
+    @GetMapping("/admin/inventory/low-stock")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<com.sanaru.backend.dto.LowStockAlertResponse>> getLowStockAlerts() {
+        return ResponseEntity.ok(productService.getLowStockAlerts());
+    }
+
+    // UPDATE PRODUCT STOCK
+    @PatchMapping("/admin/products/{id}/stock")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> updateProductStock(
+            @PathVariable Long id,
+            @RequestBody @jakarta.validation.Valid com.sanaru.backend.dto.InventoryUpdateRequest request) {
+        
+        ProductResponse updatedProduct = productService.updateProductStock(id, request);
+        return ResponseEntity.ok(Map.of(
+                "message", "Stock updated successfully",
+                "product", updatedProduct
+        ));
+    }
+
     // CREATE PRODUCT
     @PostMapping(value = "/admin/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> createProduct(
@@ -33,7 +54,9 @@ public class ProductController {
             @RequestParam("description") String description,
             @RequestParam("price") String price,
             @RequestParam("image") MultipartFile imageFile,
-            @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds
+            @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
+            @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
+            @RequestParam(value = "lowStockThreshold", required = false) Integer lowStockThreshold
     ) throws IOException {
 
         ProductRequest productRequest = new ProductRequest();
@@ -41,6 +64,8 @@ public class ProductController {
         productRequest.setDescription(description);
         productRequest.setPrice(new BigDecimal(price));
         productRequest.setCategoryIds(categoryIds);
+        if (stockQuantity != null) productRequest.setStockQuantity(stockQuantity);
+        if (lowStockThreshold != null) productRequest.setLowStockThreshold(lowStockThreshold);
 
         ProductResponse createdProduct = productService.createProduct(productRequest, imageFile);
 
@@ -59,7 +84,9 @@ public class ProductController {
             @RequestParam("description") String description,
             @RequestParam("price") String price,
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
-            @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds
+            @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
+            @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
+            @RequestParam(value = "lowStockThreshold", required = false) Integer lowStockThreshold
     ) throws IOException {
 
         ProductRequest productRequest = new ProductRequest();
@@ -67,6 +94,8 @@ public class ProductController {
         productRequest.setDescription(description);
         productRequest.setPrice(new BigDecimal(price));
         productRequest.setCategoryIds(categoryIds);
+        if (stockQuantity != null) productRequest.setStockQuantity(stockQuantity);
+        if (lowStockThreshold != null) productRequest.setLowStockThreshold(lowStockThreshold);
 
         ProductResponse updatedProduct = productService.updateProduct(id, productRequest, imageFile);
 
