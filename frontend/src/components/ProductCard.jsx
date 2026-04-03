@@ -1,0 +1,111 @@
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { resolveImageUrl } from '@/utils/resolveImageUrl';
+import { useCart } from '@/context/CartContext';
+import { getStoredToken } from '@/utils/authState';
+
+export default function ProductCard({ product, selectedCategoryId, detailsPath }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { addItemToCart } = useCart();
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
+
+  const imagePath = product?.imageUrl || product?.image || product?.imagePath;
+  const categoryQuery = selectedCategoryId ? `?categoryId=${encodeURIComponent(selectedCategoryId)}` : '';
+  const fallbackPath = `/shop/products/${product.id}${categoryQuery}`;
+  const productDetailsPath = detailsPath || fallbackPath;
+
+  const handleBuyNow = async (event) => {
+    event.preventDefault();
+
+    if (!product?.id) {
+      toast.error('Unable to buy this item right now.');
+      return;
+    }
+
+    if (!getStoredToken()) {
+      toast.info('Please login to continue to payment.');
+      navigate('/login', {
+        state: { from: `${location.pathname}${location.search}` },
+      });
+      return;
+    }
+
+    try {
+      setIsBuyingNow(true);
+      await addItemToCart({
+        productId: product.id,
+        quantity: 1,
+      });
+      navigate('/cart');
+    } catch (error) {
+      const message = String(error?.message || '').toLowerCase();
+      const statusCode = Number(error?.statusCode || 0);
+      const shouldRedirectToLogin = statusCode === 401 || message.includes('unauthorized');
+
+      if (shouldRedirectToLogin) {
+        toast.info('Please login to continue to payment.');
+        navigate('/login', {
+          state: { from: `${location.pathname}${location.search}` },
+        });
+        return;
+      }
+
+      toast.error(error?.message || 'Unable to start payment right now. Please try again.');
+    } finally {
+      setIsBuyingNow(false);
+    }
+  };
+
+  return (
+    <motion.div
+      whileTap={{ scale: 0.98, y: 1 }}
+      transition={{ duration: 0.18, ease: 'easeOut' }}
+      className="group overflow-hidden rounded-[16px] border border-[#E4D8D2] bg-[#FDFDFD] shadow-[0_10px_22px_-18px_rgba(75,58,58,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_30px_-18px_rgba(75,58,58,0.45)]"
+    >
+      <Link to={productDetailsPath}>
+        <div className="relative h-[220px] overflow-hidden rounded-b-none bg-[#F2ECE8]">
+          {imagePath ? (
+            <img
+              src={resolveImageUrl(imagePath)}
+              alt={product.name}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-sm text-[#7B706B]">
+              No image available
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-1.5 p-4 pb-2">
+          <h3 className="line-clamp-1 text-[1rem] font-medium text-[#1A1717]">{product.name}</h3>
+          <p className="text-[1.05rem] font-semibold text-[#A31A11]">Rs. {Number(product.price || 0).toFixed(2)}</p>
+        </div>
+      </Link>
+
+      <div className="p-4 pt-2">
+        <button
+          type="button"
+          onClick={handleBuyNow}
+          disabled={isBuyingNow}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#8B1A1A]/35 bg-[#A31A11] px-5 py-2.5 text-sm font-semibold text-[#FDFDFD] transition-all duration-300 hover:bg-[#E34F4F] hover:shadow-[0_10px_20px_-12px_rgba(227,79,79,0.8)] disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {isBuyingNow ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Redirecting...
+            </>
+          ) : (
+            'Buy Now'
+          )}
+        </button>
+      </div>
+    </motion.div>
+  );
+}
