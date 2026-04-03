@@ -1,6 +1,8 @@
 package com.sanaru.backend.controller;
 
+import com.sanaru.backend.dto.OrderResponse;
 import com.sanaru.backend.dto.UserResponse;
+import com.sanaru.backend.service.OrderService;
 import com.sanaru.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,9 @@ public class AdminController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private OrderService orderService;
 
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
@@ -69,6 +74,42 @@ public class AdminController {
         try {
             userService.deleteCustomer(customerId);
             return ResponseEntity.ok(Map.of("message", "Customer deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // ==================== ORDER OPERATIONS ====================
+
+    @GetMapping("/orders")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<OrderResponse>> getAllOrders(Authentication authentication) {
+        return ResponseEntity.ok(orderService.getAllOrders());
+    }
+
+    /**
+     * Story 5 – Admin approves a customer cancellation request → CANCELLED.
+     * PUT /api/admin/orders/{orderId}/cancel
+     */
+    @PutMapping("/orders/{orderId}/cancel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> cancelOrder(@PathVariable Long orderId, Authentication authentication) {
+        try {
+            return ResponseEntity.ok(orderService.adminCancelOrder(orderId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Story 5 – Admin rejects a customer cancellation request → reverts to CONFIRMED.
+     * PUT /api/admin/orders/{orderId}/reject-cancel
+     */
+    @PutMapping("/orders/{orderId}/reject-cancel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> rejectCancellation(@PathVariable Long orderId, Authentication authentication) {
+        try {
+            return ResponseEntity.ok(orderService.adminRejectCancellation(orderId));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

@@ -21,6 +21,8 @@ export default function ProductPage() {
     description: '',
     price: '',
     categoryId: '',
+    stockQuantity: 0,
+    lowStockThreshold: 5,
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
@@ -108,6 +110,8 @@ export default function ProductPage() {
       // Keep both keys for backend compatibility.
       form.append('categoryIds', selectedCategoryId);
       form.append('categoryId', selectedCategoryId);
+      form.append('stockQuantity', formData.stockQuantity);
+      form.append('lowStockThreshold', formData.lowStockThreshold);
       if (selectedFile) {
         form.append('image', selectedFile);
       }
@@ -121,7 +125,7 @@ export default function ProductPage() {
       }
 
       // Reset form
-      setFormData({ name: '', description: '', price: '', categoryId: '' });
+      setFormData({ name: '', description: '', price: '', categoryId: '', stockQuantity: 0, lowStockThreshold: 5 });
       setSelectedFile(null);
       setPreviewUrl('');
       setEditingId(null);
@@ -149,6 +153,8 @@ export default function ProductPage() {
       description: product.description,
       price: product.price,
       categoryId: selectedCategoryId ? String(selectedCategoryId) : '',
+      stockQuantity: product.stockQuantity ?? 0,
+      lowStockThreshold: product.lowStockThreshold ?? 5,
     });
     setPreviewUrl(resolveImageUrl(product.imageUrl || product.image || product.imagePath || ''));
     setSelectedFile(null);
@@ -171,7 +177,7 @@ export default function ProductPage() {
   const handleClose = () => {
     setIsFormOpen(false);
     setEditingId(null);
-    setFormData({ name: '', description: '', price: '', categoryId: '' });
+    setFormData({ name: '', description: '', price: '', categoryId: '', stockQuantity: 0, lowStockThreshold: 5 });
     setSelectedFile(null);
     setPreviewUrl('');
   };
@@ -286,6 +292,42 @@ export default function ProductPage() {
                   />
                 </div>
 
+                {/* Stock Quantity */}
+                <div>
+                  <label htmlFor="stockQuantity" className="block text-sm font-medium text-foreground mb-2">
+                    Stock Quantity
+                  </label>
+                  <input
+                    id="stockQuantity"
+                    type="number"
+                    name="stockQuantity"
+                    value={formData.stockQuantity}
+                    onChange={handleInputChange}
+                    placeholder="0"
+                    min="0"
+                    disabled={isSubmitting}
+                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </div>
+
+                {/* Low Stock Threshold */}
+                <div>
+                  <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-foreground mb-2">
+                    Low Stock Threshold
+                  </label>
+                  <input
+                    id="lowStockThreshold"
+                    type="number"
+                    name="lowStockThreshold"
+                    value={formData.lowStockThreshold}
+                    onChange={handleInputChange}
+                    placeholder="5"
+                    min="0"
+                    disabled={isSubmitting}
+                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </div>
+
                 {/* Category */}
                 <div>
                   <label htmlFor="categoryId" className="block text-sm font-medium text-foreground mb-2">
@@ -379,6 +421,9 @@ export default function ProductPage() {
                       Price
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-foreground">
+                      Stock
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-foreground">
                       Actions
                     </th>
                   </tr>
@@ -412,6 +457,18 @@ export default function ProductPage() {
                       </td>
                       <td className="px-6 py-4 text-foreground font-medium">
                         Rs. {parseFloat(product.price).toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="font-medium text-foreground">{product.stockQuantity ?? 0} units</span>
+                          {product.outOfStock ? (
+                            <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded-full dark:bg-red-900/30 dark:text-red-400">Out of Stock</span>
+                          ) : product.lowStock ? (
+                            <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full dark:bg-yellow-900/30 dark:text-yellow-400">Low Stock</span>
+                          ) : (
+                            <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded-full dark:bg-green-900/30 dark:text-green-400">In Stock</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">

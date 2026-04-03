@@ -48,7 +48,15 @@ public class CartServiceImpl implements CartService {
                     return newItem;
                 });
 
-        cartItem.setQuantity(cartItem.getQuantity() + request.getQuantity());
+        int newQuantity = cartItem.getQuantity() + request.getQuantity();
+        if (newQuantity > product.getStockQuantity()) {
+            if (product.getStockQuantity() == 0) {
+                throw new RuntimeException("Out of Stock: '" + product.getName() + "' is no longer available");
+            }
+            throw new RuntimeException("Insufficient stock: Only " + product.getStockQuantity() + " available for '" + product.getName() + "'");
+        }
+
+        cartItem.setQuantity(newQuantity);
         cartItem.setUnitPrice(product.getPrice());
 
         cartItemRepository.save(cartItem);
@@ -75,6 +83,14 @@ public class CartServiceImpl implements CartService {
 
         if (!cartItem.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("You cannot update another user's cart item");
+        }
+
+        Product product = cartItem.getProduct();
+        if (request.getQuantity() > product.getStockQuantity()) {
+            if (product.getStockQuantity() == 0) {
+                throw new RuntimeException("Out of Stock: '" + product.getName() + "' is no longer available");
+            }
+            throw new RuntimeException("Insufficient stock: Only " + product.getStockQuantity() + " available for '" + product.getName() + "'");
         }
 
         cartItem.setQuantity(request.getQuantity());

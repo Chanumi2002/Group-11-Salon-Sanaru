@@ -21,4 +21,10 @@ public interface ProductService {
     void deleteProduct(Long id);
 
     List<ProductResponse> getProductsFiltered(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice);
+
+    ProductResponse updateProductStock(Long id, com.sanaru.backend.dto.InventoryUpdateRequest request);
+
+    List<com.sanaru.backend.dto.LowStockAlertResponse> getLowStockAlerts();
+
+    void deductStock(Long id, Integer quantity);
 }

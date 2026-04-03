@@ -16,4 +16,8 @@ public class OrderResponse {
     private BigDecimal totalAmount;
     private LocalDateTime createdAt;
     private List<OrderItemResponse> items;
+
+    private String paymentStatus;
+    private String transactionId;
+    private LocalDateTime paymentDate;
 }

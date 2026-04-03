@@ -1,9 +1,9 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { readAuthState } from "@/utils/authState";
 
 export function AdminProtectedRoute({ children }) {
-  const token = localStorage.getItem("token");
-  const userRole = localStorage.getItem("role");
+  const { isAuthenticated, role } = readAuthState();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -23,11 +23,11 @@ export function AdminProtectedRoute({ children }) {
     );
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (userRole !== "ADMIN") {
+  if (role !== "ADMIN") {
     return <Navigate to="/customer_dashboard" replace />;
   }
 

@@ -1,4 +1,4 @@
-﻿import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -27,6 +27,7 @@ import Homepage from "./pages/customer/Homepage";
 import Profile from "./pages/customer/Profile";
 import CustomerServices from "./pages/customer/CustomerServices";
 import BookAppointment from "./pages/customer/BookAppointment";
+import CustomerOrders from "./pages/customer/CustomerOrders";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -35,6 +36,9 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import CategoryPage from "./pages/admin/CategoryPage";
 import ProductPage from "./pages/admin/ProductPage";
 import ServicePage from "./pages/admin/ServicePage";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminTransactions from "./pages/admin/AdminTransactions";
+import AdminInventory from "./pages/admin/AdminInventory";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -104,6 +108,14 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/customer_dashboard/orders"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <CustomerOrders />
+                  </ProtectedRoute>
+                }
+              />
             
               <Route
                 path="/admin_dashboard"
@@ -151,6 +163,15 @@ const App = () => (
               />
 
               <Route
+                path="/admin_dashboard/inventory"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminInventory />
+                  </AdminProtectedRoute>
+                }
+              />
+
+              <Route
                 path="/admin_dashboard/services"
                 element={
                   <AdminProtectedRoute>
@@ -158,7 +179,33 @@ const App = () => (
                   </AdminProtectedRoute>
                 }
               />
-            
+
+              <Route
+                path="/admin_dashboard/transactions"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminTransactions />
+                  </AdminProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin_dashboard/orders"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminOrders />
+                  </AdminProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin_dashboard/payments"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminTransactions />
+                  </AdminProtectedRoute>
+                }
+              />
               <Route path="/not-found" element={<NotFound />} />
               <Route path="*" element={<Navigate to="/not-found" replace />} />
             </Routes>

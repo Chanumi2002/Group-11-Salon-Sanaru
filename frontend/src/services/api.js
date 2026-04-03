@@ -86,6 +86,23 @@ export const adminService = {
     return await api.delete(`/admin/customers/${customerId}`);
   },
 
+  // ==================== ORDER & PAYMENT OPERATIONS ====================
+
+  // Get all orders for admin management
+  getOrders: async () => {
+    return await api.get('/admin/orders');
+  },
+
+  // Story 5: Admin approves a cancellation request → CANCELLED
+  cancelOrder: async (orderId) => {
+    return await api.put(`/admin/orders/${orderId}/cancel`);
+  },
+
+  // Story 5: Admin rejects a cancellation request → reverts to CONFIRMED
+  rejectCancelOrder: async (orderId) => {
+    return await api.put(`/admin/orders/${orderId}/reject-cancel`);
+  },
+
   // ==================== CATEGORY OPERATIONS ====================
 
   // Get all categories
@@ -148,6 +165,18 @@ export const adminService = {
   // Delete product
   deleteProduct: async (productId) => {
     return await api.delete(`/admin/products/${productId}`);
+  },
+
+  // ==================== INVENTORY OPERATIONS (STORY 1) ====================
+
+  // Get low stock alerts
+  getLowStockAlerts: async () => {
+    return await api.get('/admin/inventory/low-stock');
+  },
+
+  // Update product stock
+  updateProductStock: async (productId, updateData) => {
+    return await api.patch(`/admin/products/${productId}/stock`, updateData);
   },
 
   // ==================== SERVICE OPERATIONS ====================

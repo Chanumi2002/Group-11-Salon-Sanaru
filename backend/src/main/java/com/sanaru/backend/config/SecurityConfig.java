@@ -64,7 +64,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("http://localhost:*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -83,6 +83,8 @@ public class SecurityConfig {
                                 "/oauth2/**", "/login/oauth2/**").permitAll()
                         // Public endpoints for customers / guests
                     .requestMatchers("/api/products/**", "/api/categories/**", "/api/services/**", "/uploads/**").permitAll()
+                    // Public payment provider callback endpoint
+                    .requestMatchers("/api/v1/payments/payhere/notify", "/api/v1/payments/payhere/cancel").permitAll()
                         // Authenticated endpoints
                         .requestMatchers("/api/auth/profile", "/api/auth/change-password").authenticated()
                         // Admin endpoints

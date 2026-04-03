@@ -23,23 +23,8 @@ export function CartProvider({ children }) {
   const [cart, setCart] = useState(defaultCart);
   const [isFetchingCart, setIsFetchingCart] = useState(false);
   const [cartError, setCartError] = useState('');
-  const [authState, setAuthState] = useState(() => readAuthState());
-
-  useEffect(() => {
-    const syncAuthState = () => {
-      setAuthState(readAuthState());
-    };
-
-    window.addEventListener('storage', syncAuthState);
-    window.addEventListener('focus', syncAuthState);
-
-    return () => {
-      window.removeEventListener('storage', syncAuthState);
-      window.removeEventListener('focus', syncAuthState);
-    };
-  }, []);
-
-  const isCustomerLoggedIn = authState.isCustomer;
+  const authState = readAuthState();
+  const isCustomerLoggedIn = authState.isAuthenticated;
 
   const fetchCart = useCallback(async ({ silent = false } = {}) => {
     if (!cartService.getAuthToken()) {

@@ -36,4 +36,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByFilters(@Param("categoryId") Long categoryId,
                                 @Param("minPrice") BigDecimal minPrice,
                                 @Param("maxPrice") BigDecimal maxPrice);
+
+    @Query("SELECT p FROM Product p WHERE p.stockQuantity <= p.lowStockThreshold")
+    List<Product> findLowStockProducts();
 }

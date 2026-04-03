@@ -14,4 +14,7 @@ public class ProductRequest {
     private String imagePath;
     private Long categoryId;
     private List<Long> categoryIds;
+    // Story 1 – Inventory Tracking
+    private Integer stockQuantity;
+    private Integer lowStockThreshold;
 }
