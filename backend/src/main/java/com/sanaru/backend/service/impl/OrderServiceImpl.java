@@ -87,6 +87,65 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public List<OrderResponse> getAllOrders() {
+        return orderRepository.findAll(
+                        org.springframework.data.domain.Sort.by(
+                                org.springframework.data.domain.Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .map(this::mapToOrderResponse)
+                .toList();
+    }
+
+    // ── Story 5: Cancellation flow ────────────────────────────────────────────
+
+    @Override
+    public OrderResponse requestCancellation(Long orderId) {
+        User user = getCurrentUser();
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("You are not authorised to cancel this order");
+        }
+
+        if (order.getStatus() == OrderStatus.CANCELLED
+                || order.getStatus() == OrderStatus.CANCELLATION_REQUESTED) {
+            throw new RuntimeException("Order is already cancelled or a cancellation request is pending");
+        }
+
+        order.setStatus(OrderStatus.CANCELLATION_REQUESTED);
+        return mapToOrderResponse(orderRepository.save(order));
+    }
+
+    @Override
+    public OrderResponse adminCancelOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (order.getStatus() != OrderStatus.CANCELLATION_REQUESTED) {
+            throw new RuntimeException("Order does not have a pending cancellation request");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        return mapToOrderResponse(orderRepository.save(order));
+    }
+
+    @Override
+    public OrderResponse adminRejectCancellation(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (order.getStatus() != OrderStatus.CANCELLATION_REQUESTED) {
+            throw new RuntimeException("Order does not have a pending cancellation request");
+        }
+
+        // Revert to CONFIRMED (the typical status before a customer requests cancellation)
+        order.setStatus(OrderStatus.CONFIRMED);
+        return mapToOrderResponse(orderRepository.save(order));
+    }
+
+    @Override
     public OrderResponse getMyOrderByReference(String orderReference) {
         User user = getCurrentUser();
 

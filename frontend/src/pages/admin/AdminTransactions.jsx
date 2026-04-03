@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, ReceiptText, SearchX } from 'lucide-react';
 import { paymentTransactionService } from '@/services/paymentTransactionService';
+import { AdminDashboardLayout } from '@/components/common/AdminDashboardLayout';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ export default function AdminTransactions() {
   });
 
   return (
+    <AdminDashboardLayout>
     <div className="min-h-screen bg-[#F5F0EC] p-6">
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -135,5 +137,6 @@ export default function AdminTransactions() {
         </div>
       )}
     </div>
+    </AdminDashboardLayout>
   );
 }

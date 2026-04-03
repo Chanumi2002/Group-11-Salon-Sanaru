@@ -93,9 +93,14 @@ export const adminService = {
     return await api.get('/admin/orders');
   },
 
-  // Approve payment for an order
-  approveOrderPayment: async (orderId) => {
-    return await api.put(`/admin/orders/${orderId}/approve-payment`);
+  // Story 5: Admin approves a cancellation request → CANCELLED
+  cancelOrder: async (orderId) => {
+    return await api.put(`/admin/orders/${orderId}/cancel`);
+  },
+
+  // Story 5: Admin rejects a cancellation request → reverts to CONFIRMED
+  rejectCancelOrder: async (orderId) => {
+    return await api.put(`/admin/orders/${orderId}/reject-cancel`);
   },
 
   // ==================== CATEGORY OPERATIONS ====================
