@@ -18,9 +18,4 @@ public class ProductResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<Category> categories;
-    // Story 1 – Inventory Tracking
-    private Integer stockQuantity;
-    private Integer lowStockThreshold;
-    private boolean lowStock;   // true when stockQuantity <= lowStockThreshold
-    private boolean outOfStock; // true when stockQuantity == 0
 }
