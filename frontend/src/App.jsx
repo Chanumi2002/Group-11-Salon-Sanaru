@@ -1,4 +1,4 @@
-﻿import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -36,6 +36,8 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import CategoryPage from "./pages/admin/CategoryPage";
 import ProductPage from "./pages/admin/ProductPage";
 import ServicePage from "./pages/admin/ServicePage";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminTransactions from "./pages/admin/AdminTransactions";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -164,6 +166,33 @@ const App = () => (
                 element={
                   <AdminProtectedRoute>
                     <ServicePage />
+                  </AdminProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin_dashboard/transactions"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminTransactions />
+                  </AdminProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin_dashboard/orders"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminOrders />
+                  </AdminProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin_dashboard/payments"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminTransactions />
                   </AdminProtectedRoute>
                 }
               />
