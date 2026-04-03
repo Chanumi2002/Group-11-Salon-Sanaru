@@ -102,6 +102,11 @@ export const cartService = {
     withErrorHandling(() =>
       cartApi.get(`/orders/reference/${encodeURIComponent(orderReference)}`, getAuthConfig()),
     ),
+
+  requestCancellation: (orderId) =>
+    withErrorHandling(() =>
+      cartApi.put(`/orders/${orderId}/cancel-request`, null, getAuthConfig()),
+    ),
 };
 
 export default cartApi;

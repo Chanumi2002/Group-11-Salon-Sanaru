@@ -2,15 +2,34 @@ import { AdminDashboardLayout } from "@/components/common/AdminDashboardLayout";
 import { adminService } from "@/services/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+
+// ── Status helpers ──────────────────────────────────────────────────────────
+
+const STATUS_CONFIG = {
+  PENDING:                { label: "Pending",               cls: "bg-gray-100 text-gray-700" },
+  PENDING_PAYMENT:        { label: "Pending Payment",       cls: "bg-yellow-100 text-yellow-700" },
+  CONFIRMED:              { label: "Confirmed",             cls: "bg-green-100 text-green-700" },
+  PAID:                   { label: "Confirmed",             cls: "bg-green-100 text-green-700" }, // legacy
+  FAILED:                 { label: "Failed",                cls: "bg-red-100 text-red-700" },
+  CANCELLED:              { label: "Cancelled",             cls: "bg-red-100 text-red-700" },
+  CANCELLATION_REQUESTED: { label: "Cancellation Pending",  cls: "bg-orange-100 text-orange-700 font-semibold ring-1 ring-orange-300" },
+};
+
+const getStatus = (s) =>
+  STATUS_CONFIG[s] ?? { label: s ?? "—", cls: "bg-gray-100 text-gray-600" };
+
+const formatDate = (v) => (v ? new Date(v).toLocaleString() : "—");
+const toMoney = (v) => (v != null ? `Rs. ${Number(v).toFixed(2)}` : "—");
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminOrders() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null);
+  const [orders, setOrders]         = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [actionId, setActionId]     = useState(null); // orderId currently being acted on
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  useEffect(() => { fetchOrders(); }, []);
 
   const fetchOrders = async () => {
     try {
@@ -25,26 +44,26 @@ export default function AdminOrders() {
     }
   };
 
-  const handleApprovePayment = async (orderId) => {
-    if (!window.confirm("Approve payment for this order?")) {
-      return;
-    }
+  const handleAction = async (orderId, action) => {
+    const messages = {
+      cancel:  { confirm: "Approve this cancellation request? The order will be cancelled.", success: "Order cancelled successfully." },
+      reject:  { confirm: "Reject this cancellation request? The order will revert to Confirmed.", success: "Cancellation request rejected." },
+    };
+    if (!window.confirm(messages[action].confirm)) return;
 
     try {
-      setActionLoading(orderId);
-      await adminService.approveOrderPayment(orderId);
-      toast.success("Payment approved successfully");
+      setActionId(`${orderId}-${action}`);
+      if (action === "cancel") await adminService.cancelOrder(orderId);
+      else                     await adminService.rejectCancelOrder(orderId);
+
+      toast.success(messages[action].success);
       await fetchOrders();
     } catch (error) {
-      console.error("Error approving payment:", error);
-      toast.error(error.response?.data?.message || "Failed to approve payment");
+      console.error(`Error performing ${action}:`, error);
+      toast.error(error.response?.data?.message || "Action failed");
     } finally {
-      setActionLoading(null);
+      setActionId(null);
     }
-  };
-
-  const formatDate = (value) => {
-    return value ? new Date(value).toLocaleString() : "-";
   };
 
   return (
@@ -52,14 +71,17 @@ export default function AdminOrders() {
       <div className="max-w-7xl mx-auto p-4 md:p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Order Management</h1>
-          <p className="text-muted-foreground">Review and manage customer orders and payments.</p>
+          <p className="text-muted-foreground">
+            Review and manage customer orders. Orders with a{" "}
+            <span className="font-medium text-orange-600">Cancellation Pending</span> status are awaiting your decision.
+          </p>
         </div>
 
         <div className="bg-card border border-border rounded-lg overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading orders...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading orders…</p>
             </div>
           ) : orders.length === 0 ? (
             <div className="p-8 text-center">
@@ -67,52 +89,95 @@ export default function AdminOrders() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted">
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Order #</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Payment</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Total</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Created</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Actions</th>
+                    {["Order #", "Status", "Payment", "Total", "Created", "Actions"].map((h) => (
+                      <th
+                        key={h}
+                        className={`px-6 py-4 text-sm font-semibold text-foreground ${h === "Actions" ? "text-right" : "text-left"}`}
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order) => (
-                    <tr key={order.orderId} className="border-b border-border hover:bg-muted transition">
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-foreground">{order.orderNumber || order.orderReference || "-"}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-muted-foreground">{order.status || "-"}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-muted-foreground">{order.paymentStatus || "-"}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-medium text-foreground">
-                          {order.totalAmount ? `₹${order.totalAmount}` : "-"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-muted-foreground">{formatDate(order.createdAt)}</span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        {order.status === "PENDING_PAYMENT" || order.paymentStatus === "INITIATED" ? (
-                          <button
-                            onClick={() => handleApprovePayment(order.orderId)}
-                            disabled={actionLoading === order.orderId}
-                            className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition disabled:opacity-50"
-                          >
-                            {actionLoading === order.orderId ? "Approving..." : "Approve Payment"}
-                          </button>
-                        ) : (
-                          <span className="text-sm text-green-700">No action</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {orders.map((order) => {
+                    const { label, cls } = getStatus(order.status);
+                    const isCancellationPending = order.status === "CANCELLATION_REQUESTED";
+
+                    return (
+                      <tr
+                        key={order.orderId}
+                        className={`border-b border-border transition ${isCancellationPending ? "bg-orange-50/40" : "hover:bg-muted"}`}
+                      >
+                        {/* Order # */}
+                        <td className="px-6 py-4 font-medium text-foreground">
+                          {order.orderNumber ?? order.orderReference ?? `#${order.orderId}`}
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-6 py-4">
+                          <span className={`rounded-full px-2.5 py-0.5 text-xs ${cls}`}>{label}</span>
+                        </td>
+
+                        {/* Payment */}
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {order.paymentStatus ?? "—"}
+                        </td>
+
+                        {/* Total */}
+                        <td className="px-6 py-4 font-medium text-foreground">
+                          {toMoney(order.totalAmount)}
+                        </td>
+
+                        {/* Created */}
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {formatDate(order.createdAt)}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-6 py-4">
+                          {isCancellationPending ? (
+                            <div className="flex items-center justify-end gap-2">
+                              {/* Approve cancellation */}
+                              <button
+                                onClick={() => handleAction(order.orderId, "cancel")}
+                                disabled={!!actionId}
+                                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition disabled:opacity-50"
+                                title="Approve cancellation — order will be marked Cancelled"
+                              >
+                                {actionId === `${order.orderId}-cancel` ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircle className="h-3.5 w-3.5" />
+                                )}
+                                Approve
+                              </button>
+
+                              {/* Reject cancellation */}
+                              <button
+                                onClick={() => handleAction(order.orderId, "reject")}
+                                disabled={!!actionId}
+                                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition disabled:opacity-50"
+                                title="Reject cancellation — order reverts to Confirmed"
+                              >
+                                {actionId === `${order.orderId}-reject` ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <XCircle className="h-3.5 w-3.5" />
+                                )}
+                                Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="flex justify-end text-xs text-muted-foreground">No action</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
