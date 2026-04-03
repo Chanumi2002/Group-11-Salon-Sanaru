@@ -51,8 +51,9 @@ public class PaymentServiceImpl implements PaymentService {
             throw new AccessDeniedException("You are not allowed to pay for this order");
         }
 
+
         if (!isPendingOrderStatus(order.getStatus())) {
-            throw new RuntimeException("Order is not in pending payment status");
+          throw new RuntimeException("Order is not in pending payment status");
         }
 
         String merchantReference = order.getOrderNumber();
@@ -66,8 +67,7 @@ public class PaymentServiceImpl implements PaymentService {
                 order,
                 user,
                 merchantReference,
-                payHereConfig.getCurrency()
-        );
+                payHereConfig.getCurrency());
 
         String amount = order.getTotalAmount().setScale(2).toPlainString();
 
@@ -76,8 +76,7 @@ public class PaymentServiceImpl implements PaymentService {
                 merchantReference,
                 amount,
                 payHereConfig.getCurrency(),
-                payHereConfig.getMerchantSecret()
-        );
+                payHereConfig.getMerchantSecret());
 
         Map<String, String> fields = new LinkedHashMap<>();
         fields.put("merchant_id", payHereConfig.getMerchantId());
@@ -124,8 +123,7 @@ public class PaymentServiceImpl implements PaymentService {
                 orderReference,
                 paymentId,
                 statusCode,
-                statusMessage
-        );
+                statusMessage);
 
         if (merchantId == null || orderReference == null || payhereAmount == null || payhereCurrency == null
                 || statusCode == null || md5sig == null) {
@@ -142,8 +140,7 @@ public class PaymentServiceImpl implements PaymentService {
                 payhereAmount,
                 payhereCurrency,
                 statusCode,
-                payHereConfig.getMerchantSecret()
-        );
+                payHereConfig.getMerchantSecret());
 
         signatureValidationPassed = localMd5Sig.equalsIgnoreCase(md5sig);
 
@@ -151,8 +148,7 @@ public class PaymentServiceImpl implements PaymentService {
                 "PayHere notify signature validation: merchant_id={}, order_id={}, passed={}",
                 merchantId,
                 orderReference,
-                signatureValidationPassed
-        );
+                signatureValidationPassed);
 
         if (!signatureValidationPassed) {
             throw new IllegalArgumentException("Invalid PayHere signature");
@@ -170,8 +166,7 @@ public class PaymentServiceImpl implements PaymentService {
             log.info(
                     "Ignoring PayHere callback that would downgrade paid order: order_id={}, status_code={}",
                     orderReference,
-                    statusCode
-            );
+                    statusCode);
 
             paymentTransactionService.save(transaction);
 
@@ -191,8 +186,7 @@ public class PaymentServiceImpl implements PaymentService {
                     "Ignoring pending callback for terminal order: order_id={}, status_code={}, current_status={}",
                     orderReference,
                     statusCode,
-                    order.getStatus()
-            );
+                    order.getStatus());
 
             paymentTransactionService.save(transaction);
 
@@ -221,8 +215,7 @@ public class PaymentServiceImpl implements PaymentService {
                 statusMessage,
                 signatureValidationPassed,
                 true,
-                order.getStatus() == OrderStatus.PAID
-        );
+                order.getStatus() == OrderStatus.PAID);
 
         return PaymentCallbackResponse.builder()
                 .processed(true)
@@ -246,7 +239,8 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         PaymentTransaction transaction = resolveTransaction(orderReference)
-                .orElseThrow(() -> new IllegalArgumentException("Order/payment record not found for reference: " + orderReference));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Order/payment record not found for reference: " + orderReference));
 
         Order order = orderRepository.findById(transaction.getOrderId())
                 .orElseThrow(() -> new IllegalArgumentException("Order not found for transaction"));
@@ -276,7 +270,8 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
     }
 
-    private void updateStatusesForCallback(Order order, PaymentTransaction transaction, PaymentStatus incomingPaymentStatus) {
+    private void updateStatusesForCallback(Order order, PaymentTransaction transaction,
+            PaymentStatus incomingPaymentStatus) {
         switch (incomingPaymentStatus) {
             case SUCCESS -> {
                 transaction.setStatus(PaymentStatus.SUCCESS);
@@ -325,7 +320,8 @@ public class PaymentServiceImpl implements PaymentService {
         };
     }
 
-    private ResolvedPaymentContext resolveOrCreateContext(String orderReference, String payhereAmount, String payhereCurrency) {
+    private ResolvedPaymentContext resolveOrCreateContext(String orderReference, String payhereAmount,
+            String payhereCurrency) {
         Optional<PaymentTransaction> existingTransaction = resolveTransaction(orderReference);
 
         if (existingTransaction.isPresent()) {
@@ -350,10 +346,11 @@ public class PaymentServiceImpl implements PaymentService {
         transaction.setUserId(order.getUser().getId());
         transaction.setPaymentProvider(PAYHERE_GATEWAY);
         transaction.setMerchantReference(
-                (order.getOrderNumber() == null || order.getOrderNumber().isBlank()) ? orderReference : order.getOrderNumber()
-        );
+                (order.getOrderNumber() == null || order.getOrderNumber().isBlank()) ? orderReference
+                        : order.getOrderNumber());
         transaction.setAmount(parseAmount(payhereAmount).orElse(order.getTotalAmount()));
-        transaction.setCurrency((payhereCurrency == null || payhereCurrency.isBlank()) ? payHereConfig.getCurrency() : payhereCurrency);
+        transaction.setCurrency(
+                (payhereCurrency == null || payhereCurrency.isBlank()) ? payHereConfig.getCurrency() : payhereCurrency);
         transaction.setStatus(PaymentStatus.INITIATED);
         transaction.setStatusMessage("Transaction created from callback");
 
