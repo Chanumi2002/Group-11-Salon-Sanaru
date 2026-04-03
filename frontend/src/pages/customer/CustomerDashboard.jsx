@@ -27,6 +27,12 @@ const cards = [
     to: "/customer_dashboard/profile",
     cta: "Edit profile",
   },
+  {
+    title: "AI Beauty Advisor",
+    desc: "Get personalized product & service recommendations.",
+    to: "/customer_dashboard/ai-recommendation",
+    cta: "Ask AI",
+  },
 ];
 
 export default function CustomerDashboard() {
@@ -51,6 +57,19 @@ export default function CustomerDashboard() {
               </Button>
             </div>
           ))}
+        </div>
+
+        <div className="border border-gray-300 p-4">
+          <h2 className="font-bold mb-2 flex items-center gap-2">
+            <span className="text-purple-600">✨</span> AI Beauty Advisor
+          </h2>
+          <p className="text-sm text-gray-600 mb-3">
+            Not sure what services or products are right for your hair and skin type? 
+            Try out our new AI Beauty Advisor for personalized curations!
+          </p>
+          <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0">
+            <Link to="/customer_dashboard/ai-recommendation">Get Recommendations</Link>
+          </Button>
         </div>
 
         <div className="border border-gray-300 p-4">

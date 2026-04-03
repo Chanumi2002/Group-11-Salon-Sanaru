@@ -28,6 +28,7 @@ import Profile from "./pages/customer/Profile";
 import CustomerServices from "./pages/customer/CustomerServices";
 import BookAppointment from "./pages/customer/BookAppointment";
 import CustomerOrders from "./pages/customer/CustomerOrders";
+import AiRecommendation from "./pages/customer/AiRecommendation";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -113,6 +114,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredRole="CUSTOMER">
                     <CustomerOrders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer_dashboard/ai-recommendation"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <AiRecommendation />
                   </ProtectedRoute>
                 }
               />
