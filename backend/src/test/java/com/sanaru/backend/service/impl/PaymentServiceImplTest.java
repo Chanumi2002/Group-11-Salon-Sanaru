@@ -8,8 +8,8 @@ import com.sanaru.backend.model.Order;
 import com.sanaru.backend.model.PaymentTransaction;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.OrderRepository;
-import com.sanaru.backend.repository.PaymentTransactionRepository;
 import com.sanaru.backend.repository.UserRepository;
+import com.sanaru.backend.service.PaymentTransactionService;
 import com.sanaru.backend.util.PayHereHashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,8 +42,14 @@ class PaymentServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
+    /**
+     * Must be PaymentTransactionService – not PaymentTransactionRepository.
+     * PaymentServiceImpl depends on the SERVICE layer, not the repository directly.
+     * Using the wrong type here causes paymentTransactionService to be null
+     * inside PaymentServiceImpl, leading to NullPointerException at runtime.
+     */
     @Mock
-    private PaymentTransactionRepository paymentTransactionRepository;
+    private PaymentTransactionService paymentTransactionService;
 
     @Mock
     private PayHereConfig payHereConfig;
@@ -59,21 +65,36 @@ class PaymentServiceImplTest {
 
     @Test
     void handlePayHereNotify_successCallback_updatesOrderToPaid() {
+        // Given: a PENDING order and an INITIATED transaction
         Order order = buildOrder(10L, OrderStatus.PENDING);
         PaymentTransaction transaction = buildTransaction(10L, "ORD-001", PaymentStatus.INITIATED);
 
-        when(paymentTransactionRepository.findByMerchantReference("ORD-001")).thenReturn(Optional.of(transaction));
+        // Stub service (not repository) – this is what PaymentServiceImpl actually calls
+        when(paymentTransactionService.findByMerchantReference("ORD-001"))
+                .thenReturn(Optional.of(transaction));
         when(orderRepository.findById(10L)).thenReturn(Optional.of(order));
+        // applyNotificationPayload sets transactionId/providerRef/paymentDate and returns the same object
+        when(paymentTransactionService.applyNotificationPayload(eq(transaction), any()))
+                .thenAnswer(invocation -> {
+                    PaymentTransaction tx = invocation.getArgument(0);
+                    tx.setTransactionId("PAY-123");
+                    tx.setProviderPaymentRef("PAY-123");
+                    tx.setPaymentDate(java.time.LocalDateTime.now());
+                    return tx;
+                });
+        when(paymentTransactionService.save(transaction)).thenReturn(transaction);
 
+        // When: PayHere sends status_code = 2 (SUCCESS)
         PaymentCallbackResponse response = paymentService.handlePayHereNotify(buildPayload("ORD-001", "2"));
 
-        assertEquals(OrderStatus.PAID, order.getStatus());
+        // Then: transaction is SUCCESS, order is PAID
+        assertEquals(OrderStatus.PAID,      order.getStatus());
         assertEquals(PaymentStatus.SUCCESS, transaction.getStatus());
-        assertEquals("PAY-123", transaction.getProviderPaymentRef());
+        assertEquals("PAY-123",             transaction.getProviderPaymentRef());
         assertTrue(response.isProcessed());
         assertTrue(response.isConfirmedPaid());
         assertEquals(OrderStatus.PAID, response.getOrderStatus());
-        verify(paymentTransactionRepository).save(transaction);
+        verify(paymentTransactionService).save(transaction);
         verify(orderRepository).save(order);
     }
 
@@ -82,17 +103,19 @@ class PaymentServiceImplTest {
         Order order = buildOrder(11L, OrderStatus.PENDING);
         PaymentTransaction transaction = buildTransaction(11L, "ORD-002", PaymentStatus.INITIATED);
 
-        when(paymentTransactionRepository.findByMerchantReference("ORD-002")).thenReturn(Optional.of(transaction));
+        when(paymentTransactionService.findByMerchantReference("ORD-002")).thenReturn(Optional.of(transaction));
         when(orderRepository.findById(11L)).thenReturn(Optional.of(order));
+        when(paymentTransactionService.applyNotificationPayload(eq(transaction), any())).thenReturn(transaction);
+        when(paymentTransactionService.save(transaction)).thenReturn(transaction);
 
         PaymentCallbackResponse response = paymentService.handlePayHereNotify(buildPayload("ORD-002", "-2"));
 
-        assertEquals(OrderStatus.FAILED, order.getStatus());
+        assertEquals(OrderStatus.FAILED,   order.getStatus());
         assertEquals(PaymentStatus.FAILED, transaction.getStatus());
         assertTrue(response.isProcessed());
         assertFalse(response.isConfirmedPaid());
         assertEquals(OrderStatus.FAILED, response.getOrderStatus());
-        verify(paymentTransactionRepository).save(transaction);
+        verify(paymentTransactionService).save(transaction);
         verify(orderRepository).save(order);
     }
 
@@ -101,17 +124,19 @@ class PaymentServiceImplTest {
         Order order = buildOrder(12L, OrderStatus.PENDING);
         PaymentTransaction transaction = buildTransaction(12L, "ORD-003", PaymentStatus.INITIATED);
 
-        when(paymentTransactionRepository.findByMerchantReference("ORD-003")).thenReturn(Optional.of(transaction));
+        when(paymentTransactionService.findByMerchantReference("ORD-003")).thenReturn(Optional.of(transaction));
         when(orderRepository.findById(12L)).thenReturn(Optional.of(order));
+        when(paymentTransactionService.applyNotificationPayload(eq(transaction), any())).thenReturn(transaction);
+        when(paymentTransactionService.save(transaction)).thenReturn(transaction);
 
         PaymentCallbackResponse response = paymentService.handlePayHereNotify(buildPayload("ORD-003", "-1"));
 
-        assertEquals(OrderStatus.CANCELLED, order.getStatus());
+        assertEquals(OrderStatus.CANCELLED,   order.getStatus());
         assertEquals(PaymentStatus.CANCELLED, transaction.getStatus());
         assertTrue(response.isProcessed());
         assertFalse(response.isConfirmedPaid());
         assertEquals(OrderStatus.CANCELLED, response.getOrderStatus());
-        verify(paymentTransactionRepository).save(transaction);
+        verify(paymentTransactionService).save(transaction);
         verify(orderRepository).save(order);
     }
 
@@ -120,16 +145,18 @@ class PaymentServiceImplTest {
         Order order = buildOrder(15L, OrderStatus.PENDING);
         PaymentTransaction transaction = buildTransaction(15L, "ORD-006", PaymentStatus.INITIATED);
 
-        when(paymentTransactionRepository.findByMerchantReference("ORD-006")).thenReturn(Optional.of(transaction));
+        when(paymentTransactionService.findByMerchantReference("ORD-006")).thenReturn(Optional.of(transaction));
         when(orderRepository.findById(15L)).thenReturn(Optional.of(order));
+        when(paymentTransactionService.applyNotificationPayload(eq(transaction), any())).thenReturn(transaction);
+        when(paymentTransactionService.save(transaction)).thenReturn(transaction);
 
         PaymentCallbackResponse response = paymentService.handlePayHereNotify(buildPayload("ORD-006", "0"));
 
-        assertEquals(OrderStatus.PENDING, order.getStatus());
+        assertEquals(OrderStatus.PENDING,   order.getStatus());
         assertEquals(PaymentStatus.INITIATED, transaction.getStatus());
         assertTrue(response.isProcessed());
         assertFalse(response.isConfirmedPaid());
-        verify(paymentTransactionRepository).save(transaction);
+        verify(paymentTransactionService).save(transaction);
         verify(orderRepository).save(order);
     }
 
@@ -138,8 +165,10 @@ class PaymentServiceImplTest {
         Order order = buildOrder(13L, OrderStatus.PAID);
         PaymentTransaction transaction = buildTransaction(13L, "ORD-004", PaymentStatus.SUCCESS);
 
-        when(paymentTransactionRepository.findByMerchantReference("ORD-004")).thenReturn(Optional.of(transaction));
+        when(paymentTransactionService.findByMerchantReference("ORD-004")).thenReturn(Optional.of(transaction));
         when(orderRepository.findById(13L)).thenReturn(Optional.of(order));
+        when(paymentTransactionService.applyNotificationPayload(eq(transaction), any())).thenReturn(transaction);
+        when(paymentTransactionService.save(transaction)).thenReturn(transaction);
 
         PaymentCallbackResponse response = paymentService.handlePayHereNotify(buildPayload("ORD-004", "-1"));
 
@@ -147,7 +176,7 @@ class PaymentServiceImplTest {
         assertEquals(PaymentStatus.SUCCESS, transaction.getStatus());
         assertFalse(response.isProcessed());
         assertTrue(response.isConfirmedPaid());
-        verify(paymentTransactionRepository).save(transaction);
+        verify(paymentTransactionService).save(transaction);
         verify(orderRepository, never()).save(any(Order.class));
     }
 
@@ -156,21 +185,24 @@ class PaymentServiceImplTest {
         Order order = buildOrder(16L, OrderStatus.PENDING);
         order.setOrderNumber("ORD-007");
 
-        when(paymentTransactionRepository.findByMerchantReference("ORD-007")).thenReturn(Optional.empty());
+        when(paymentTransactionService.findByMerchantReference("ORD-007")).thenReturn(Optional.empty());
         when(orderRepository.findByOrderNumber("ORD-007")).thenReturn(Optional.of(order));
-        when(paymentTransactionRepository.findTopByOrderIdOrderByCreatedAtDesc(16L)).thenReturn(Optional.empty());
+        when(paymentTransactionService.findLatestByOrderId(16L)).thenReturn(Optional.empty());
+        when(paymentTransactionService.applyNotificationPayload(any(), any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(paymentTransactionService.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         PaymentCallbackResponse response = paymentService.handlePayHereNotify(buildPayload("ORD-007", "2"));
 
         assertTrue(response.isProcessed());
         assertTrue(response.isConfirmedPaid());
-        verify(paymentTransactionRepository).save(any(PaymentTransaction.class));
+        verify(paymentTransactionService).save(any(PaymentTransaction.class));
         verify(orderRepository).save(order);
     }
 
     @Test
     void handlePayHereNotify_invalidOrderReference_throwsIllegalArgumentException() {
-        when(paymentTransactionRepository.findByMerchantReference("UNKNOWN-ORDER")).thenReturn(Optional.empty());
+        when(paymentTransactionService.findByMerchantReference("UNKNOWN-ORDER")).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
@@ -186,14 +218,16 @@ class PaymentServiceImplTest {
         Order order = buildOrder(14L, OrderStatus.PENDING);
         PaymentTransaction transaction = buildTransaction(14L, "ORD-005", PaymentStatus.INITIATED);
 
-        when(paymentTransactionRepository.findByMerchantReference("14")).thenReturn(Optional.empty());
-        when(paymentTransactionRepository.findTopByOrderIdOrderByCreatedAtDesc(eq(14L))).thenReturn(Optional.of(transaction));
+        when(paymentTransactionService.findByMerchantReference("14")).thenReturn(Optional.empty());
+        when(paymentTransactionService.findLatestByOrderId(eq(14L))).thenReturn(Optional.of(transaction));
         when(orderRepository.findById(14L)).thenReturn(Optional.of(order));
+        when(paymentTransactionService.applyNotificationPayload(eq(transaction), any())).thenReturn(transaction);
+        when(paymentTransactionService.save(transaction)).thenReturn(transaction);
 
         PaymentCallbackResponse response = paymentService.handlePayHereNotify(buildPayload("14", "2"));
 
         assertTrue(response.isConfirmedPaid());
-        assertEquals(OrderStatus.PAID, order.getStatus());
+        assertEquals(OrderStatus.PAID,      order.getStatus());
         assertEquals(PaymentStatus.SUCCESS, transaction.getStatus());
     }
 
