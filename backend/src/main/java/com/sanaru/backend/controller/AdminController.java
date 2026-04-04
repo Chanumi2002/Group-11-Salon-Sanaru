@@ -114,4 +114,18 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    /**
+     * Admin manually approves an order
+     * PUT /api/admin/orders/{orderId}/approve
+     */
+    @PutMapping("/orders/{orderId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> approveOrder(@PathVariable Long orderId, Authentication authentication) {
+        try {
+            return ResponseEntity.ok(orderService.adminApproveOrder(orderId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }

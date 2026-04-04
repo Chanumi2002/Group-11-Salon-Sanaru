@@ -22,4 +22,7 @@ public interface OrderService {
 
     /** Admin: reject a cancellation request → reverts order to CONFIRMED */
     OrderResponse adminRejectCancellation(Long orderId);
+
+    /** Admin: manually approve an order regardless of payment state → sets order to CONFIRMED */
+    OrderResponse adminApproveOrder(Long orderId);
 }

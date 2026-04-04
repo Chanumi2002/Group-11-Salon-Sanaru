@@ -31,6 +31,7 @@ public class OrderServiceImpl implements OrderService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final PaymentTransactionService paymentTransactionService;
+    private final com.sanaru.backend.repository.ProductRepository productRepository;
 
     @Override
     @Transactional
@@ -149,6 +150,32 @@ public class OrderServiceImpl implements OrderService {
 
         // Revert to CONFIRMED (the typical status before a customer requests cancellation)
         order.setStatus(OrderStatus.CONFIRMED);
+        return mapToOrderResponse(orderRepository.save(order));
+    }
+
+    @Override
+    public OrderResponse adminApproveOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.CONFIRMED) {
+            throw new RuntimeException("Order is already " + order.getStatus().name());
+        }
+
+        order.setStatus(OrderStatus.CONFIRMED);
+
+        // Story 1: Automatically reduce stock when admin manually approves
+        for (OrderItem item : order.getItems()) {
+            productRepository.findById(item.getProduct().getId()).ifPresent(product -> {
+                int newStock = product.getStockQuantity() - item.getQuantity();
+                if (newStock < 0) {
+                     newStock = 0; // Prevent negative stock numbers if already over-ordered
+                }
+                product.setStockQuantity(newStock);
+                productRepository.save(product);
+            });
+        }
+        
         return mapToOrderResponse(orderRepository.save(order));
     }
 

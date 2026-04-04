@@ -103,6 +103,11 @@ export const adminService = {
     return await api.put(`/admin/orders/${orderId}/reject-cancel`);
   },
 
+  // Admin manually approves an order
+  approveOrder: async (orderId) => {
+    return await api.put(`/admin/orders/${orderId}/approve`);
+  },
+
   // ==================== CATEGORY OPERATIONS ====================
 
   // Get all categories
