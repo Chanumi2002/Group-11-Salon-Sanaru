@@ -89,6 +89,12 @@ export default function ProductDetails({
             {product.description || 'No description available for this product.'}
           </p>
 
+          {((product.lowStock || product.stockQuantity <= product.lowStockThreshold) && product.stockQuantity > 0) && (
+            <p className="mt-4 inline-flex w-fit items-center rounded bg-[#FDF2F2] px-3 py-1.5 text-sm font-medium text-[#D92D20] border border-[#FEE4E2]">
+              Only {product.stockQuantity} item{product.stockQuantity === 1 ? '' : 's'} left in stock!
+            </p>
+          )}
+
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <QuantitySelector
               quantity={quantity}
@@ -100,8 +106,8 @@ export default function ProductDetails({
             <motion.button
               type="button"
               onClick={onAddToCart}
-              disabled={isAddingToCart || isBuyingNow}
-              whileTap={{ scale: isAddingToCart || isBuyingNow ? 1 : 0.98 }}
+              disabled={isAddingToCart || isBuyingNow || product?.outOfStock || product?.stockQuantity === 0}
+              whileTap={{ scale: isAddingToCart || isBuyingNow || product?.outOfStock || product?.stockQuantity === 0 ? 1 : 0.98 }}
               className="inline-flex min-w-[165px] items-center justify-center gap-2 rounded-full border border-[#8B1A1A]/35 bg-[#A31A11] px-6 py-2.5 text-sm font-semibold text-[#FDFDFD] transition-all duration-300 hover:bg-[#E34F4F] hover:shadow-[0_10px_20px_-12px_rgba(227,79,79,0.8)] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isAddingToCart ? (
@@ -117,8 +123,8 @@ export default function ProductDetails({
             <motion.button
               type="button"
               onClick={onBuyNow}
-              disabled={isBuyingNow || isAddingToCart}
-              whileTap={{ scale: isBuyingNow || isAddingToCart ? 1 : 0.98 }}
+              disabled={isBuyingNow || isAddingToCart || product?.outOfStock || product?.stockQuantity === 0}
+              whileTap={{ scale: isBuyingNow || isAddingToCart || product?.outOfStock || product?.stockQuantity === 0 ? 1 : 0.98 }}
               className="inline-flex min-w-[165px] items-center justify-center gap-2 rounded-full border border-[#8B1A1A]/30 bg-[#FDFDFD] px-6 py-2.5 text-sm font-semibold text-[#8B1A1A] transition-all duration-300 hover:bg-[#F9ECEC] hover:shadow-[0_10px_20px_-12px_rgba(227,79,79,0.45)] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isBuyingNow ? (

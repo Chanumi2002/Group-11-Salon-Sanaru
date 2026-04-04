@@ -50,6 +50,11 @@ export default function CartPage() {
       return;
     }
 
+    if (item.stockQuantity !== undefined && nextQuantity > item.stockQuantity) {
+      toast.error(`Only ${item.stockQuantity} items left in stock`);
+      return;
+    }
+
     try {
       setUpdatingItemId(item.cartItemId);
       await updateItemQuantity(item.cartItemId, nextQuantity);

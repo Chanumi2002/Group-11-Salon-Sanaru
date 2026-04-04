@@ -130,6 +130,7 @@ public class CartServiceImpl implements CartService {
             response.setImagePath(item.getProduct().getImagePath());
             response.setUnitPrice(item.getUnitPrice());
             response.setQuantity(item.getQuantity());
+            response.setStockQuantity(item.getProduct().getStockQuantity());
             response.setSubTotal(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
             return response;
         }).toList();

@@ -93,6 +93,11 @@ export default function ProductCard({ product, selectedCategoryId, detailsPath }
         <div className="space-y-1.5 p-4 pb-2">
           <h3 className="line-clamp-1 text-[1rem] font-medium text-[#1A1717]">{product.name}</h3>
           <p className="text-[1.05rem] font-semibold text-[#A31A11]">Rs. {Number(product.price || 0).toFixed(2)}</p>
+          {((product.lowStock || product.stockQuantity <= product.lowStockThreshold) && product.stockQuantity > 0) && (
+            <p className="text-[0.8rem] font-medium text-[#D92D20]">
+              Only {product.stockQuantity} left
+            </p>
+          )}
         </div>
       </Link>
 

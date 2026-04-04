@@ -51,6 +51,10 @@ export default function ShopProductDetails() {
   };
 
   const handleQuantityIncrease = () => {
+    if (product?.stockQuantity && quantity >= product.stockQuantity) {
+      toast.error(`Only ${product.stockQuantity} items left in stock`);
+      return;
+    }
     setQuantity((prev) => prev + 1);
   };
 
