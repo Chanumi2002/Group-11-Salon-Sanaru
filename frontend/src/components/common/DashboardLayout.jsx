@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+   Sparkles,
 } from "lucide-react";
 import logoImage from "@/assets/logo.jpeg";
 
@@ -23,6 +24,7 @@ const sidebarLinks = [
   { label: "Booking a Service", to: "/customer_dashboard/services", icon: Briefcase },
   { label: "Book Appointment", to: "/customer_dashboard/book", icon: CalendarPlus },
   { label: "My Bookings", to: "/customer_dashboard/bookings", icon: CalendarCheck },
+  { label: "AI Advisor", to: "/customer_dashboard/ai-recommendation", icon: Sparkles },
 ];
 
 export function DashboardLayout({ children }) {

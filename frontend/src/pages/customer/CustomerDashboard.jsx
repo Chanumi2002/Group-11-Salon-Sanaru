@@ -27,12 +27,6 @@ const cards = [
     to: "/customer_dashboard/profile",
     cta: "Edit profile",
   },
-  {
-    title: "AI Beauty Advisor",
-    desc: "Get personalized product & service recommendations.",
-    to: "/customer_dashboard/ai-recommendation",
-    cta: "Ask AI",
-  },
 ];
 
 export default function CustomerDashboard() {
