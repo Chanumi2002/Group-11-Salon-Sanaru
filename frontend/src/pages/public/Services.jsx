@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { Star } from 'lucide-react';
 import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
 import { shopService } from '@/services/shopApi';
@@ -10,6 +11,7 @@ import { resolveImageUrl } from '@/utils/resolveImageUrl';
 export default function Services() {
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [serviceStats, setServiceStats] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,6 +23,19 @@ export default function Services() {
           ? data.filter((service) => service?.active !== false)
           : [];
         setServices(normalizedServices);
+
+        // Fetch stats for each service
+        const stats = {};
+        for (const service of normalizedServices) {
+          try {
+            const serviceStats = await shopService.getReviewStats(service.id, 'SERVICE');
+            stats[service.id] = serviceStats;
+          } catch (err) {
+            // Stats might not exist yet, that's fine
+            stats[service.id] = null;
+          }
+        }
+        setServiceStats(stats);
       } catch (error) {
         console.error('Failed to fetch services:', error);
         toast.error('Failed to load services');
@@ -101,6 +116,24 @@ export default function Services() {
                   <div className="space-y-2 p-4">
                     <h2 className="text-[1.05rem] font-medium text-[#1A1717]">{service.name}</h2>
                     <p className="text-sm text-[#6E6662] line-clamp-2">{service.description}</p>
+                    
+                    {serviceStats[service.id]?.averageRating ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              size={14}
+                              className={i < Math.round(serviceStats[service.id].averageRating) ? 'fill-[#FFA500] text-[#FFA500]' : 'text-gray-300'}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-[#7D746F]">
+                          {serviceStats[service.id].averageRating.toFixed(1)} ({serviceStats[service.id].count} review{serviceStats[service.id].count !== 1 ? 's' : ''})
+                        </span>
+                      </div>
+                    ) : null}
+                    
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-[1.1rem] font-semibold text-[#A31A11]">
                         Rs. {Number(service.price || 0).toFixed(2)}

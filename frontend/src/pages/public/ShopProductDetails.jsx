@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import ProductDetails from '@/components/ProductDetails';
+import ReviewsDisplay from '@/components/ReviewsDisplay';
 import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
 import { shopService } from '@/services/shopApi';
@@ -160,6 +161,14 @@ export default function ShopProductDetails() {
           onBuyNow={handleBuyNow}
           isBuyingNow={isBuyingNow}
         />
+
+        {product && (
+          <ReviewsDisplay
+            targetId={product.id}
+            feedbackType="PRODUCT"
+            title="Customer Reviews for This Product"
+          />
+        )}
       </main>
 
       <Footer />

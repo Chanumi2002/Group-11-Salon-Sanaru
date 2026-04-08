@@ -218,6 +218,60 @@ export const adminService = {
   deleteService: async (serviceId) => {
     return await api.delete(`/admin/services/${serviceId}`);
   },
+
+  // ==================== FEEDBACK/REVIEW OPERATIONS ====================
+
+  // Get all feedbacks for admin moderation
+  getAllFeedbacks: async () => {
+    return await api.get('/admin/feedbacks');
+  },
+
+  // Get feedbacks by type
+  getFeedbacksByType: async (feedbackType) => {
+    return await api.get('/admin/feedbacks/type', { params: { type: feedbackType } });
+  },
+
+  // Get feedbacks for a specific target
+  getFeedbacksForTarget: async (targetId, feedbackType) => {
+    return await api.get(`/admin/feedbacks/target/${targetId}`, { params: { type: feedbackType } });
+  },
+
+  // Get feedback statistics
+  getFeedbackStats: async () => {
+    return await api.get('/admin/feedbacks/stats/general');
+  },
+
+  // Delete feedback (admin moderation)
+  deleteFeedback: async (feedbackId) => {
+    return await api.delete(`/admin/feedback/${feedbackId}`);
+  },
+
+  // Mark feedback as read
+  markFeedbackAsRead: async (feedbackId) => {
+    return await api.put(`/admin/feedback/${feedbackId}/mark-read`);
+  },
+
+  // Get unread feedbacks count
+  getUnreadFeedbackCount: async () => {
+    return await api.get('/admin/feedbacks/unread/count');
+  },
+};
+
+export const customerService = {
+  // Submit feedback/review
+  submitFeedback: async (feedbackData) => {
+    return await api.post('/customer/feedback', feedbackData);
+  },
+
+  // Get customer's feedbacks
+  getMyFeedbacks: async () => {
+    return await api.get('/customer/feedbacks');
+  },
+
+  // Delete customer's own feedback
+  deleteMyFeedback: async (feedbackId) => {
+    return await api.delete(`/customer/feedback/${feedbackId}`);
+  },
 };
 
 export default api;

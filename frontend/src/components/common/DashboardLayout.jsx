@@ -13,17 +13,19 @@ import {
   Menu,
   X,
    Sparkles,
+  Star,
 } from "lucide-react";
 import logoImage from "@/assets/logo.jpeg";
 
 const sidebarLinks = [
   { label: "Dashboard", to: "/customer_dashboard", icon: LayoutDashboard },
   { label: "Manage Profile", to: "/customer_profile", icon: User },
-  { label: "Shop Products", to: "/products", icon: ShoppingCart },
+  { label: "Shop Products", to: "/customer_dashboard/shop", icon: ShoppingCart },
   { label: "My Orders", to: "/customer_dashboard/orders", icon: ReceiptText },
   { label: "Booking a Service", to: "/customer_dashboard/services", icon: Briefcase },
   { label: "Book Appointment", to: "/customer_dashboard/book", icon: CalendarPlus },
   { label: "My Bookings", to: "/customer_dashboard/bookings", icon: CalendarCheck },
+  { label: "Reviews & Ratings", to: "/customer_dashboard/reviews", icon: Star },
   { label: "AI Advisor", to: "/customer_dashboard/ai-recommendation", icon: Sparkles },
 ];
 

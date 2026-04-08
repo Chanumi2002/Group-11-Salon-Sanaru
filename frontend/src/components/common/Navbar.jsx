@@ -139,19 +139,21 @@ export function Navbar() {
 
         <div className="hidden md:flex items-center gap-3 ml-auto">
           {isCustomerLoggedIn ? (
-            <button
-              type="button"
-              onClick={handleCartClick}
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#E8D4D4] bg-[#FFF8F7] text-[#3D2F2F] transition-colors hover:text-[#8E1616]"
-              aria-label="Open cart"
-            >
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 ? (
-                <span className="absolute -right-1.5 -top-1.5 inline-flex min-w-[20px] items-center justify-center rounded-full bg-[#D84040] px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                  {cartCount > 99 ? "99+" : cartCount}
-                </span>
-              ) : null}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleCartClick}
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#E8D4D4] bg-[#FFF8F7] text-[#3D2F2F] transition-colors hover:text-[#8E1616]"
+                aria-label="Open cart"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 ? (
+                  <span className="absolute -right-1.5 -top-1.5 inline-flex min-w-[20px] items-center justify-center rounded-full bg-[#D84040] px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                ) : null}
+              </button>
+            </>
           ) : null}
 
           {isCustomerLoggedIn ? (

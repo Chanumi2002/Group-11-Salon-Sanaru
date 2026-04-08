@@ -14,6 +14,7 @@ import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.PaymentService;
 import com.sanaru.backend.service.PaymentTransactionService;
 import com.sanaru.backend.service.ProductService;
+import com.sanaru.backend.service.EmailService;
 import com.sanaru.backend.util.PayHereHashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentTransactionService paymentTransactionService;
     private final PayHereConfig payHereConfig;
     private final ProductService productService;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -274,6 +276,12 @@ public class PaymentServiceImpl implements PaymentService {
 
     private void updateStatusesForCallback(Order order, PaymentTransaction transaction,
             PaymentStatus incomingPaymentStatus) {
+        User customer = order.getUser();
+        String customerName = (customer != null && customer.getFirstName() != null) 
+            ? customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : "")
+            : "Valued Customer";
+        String customerEmail = customer != null ? customer.getEmail() : "";
+        
         switch (incomingPaymentStatus) {
             case SUCCESS -> {
                 // Story 5: order is CONFIRMED automatically on successful payment
@@ -284,14 +292,67 @@ public class PaymentServiceImpl implements PaymentService {
                 for (com.sanaru.backend.model.OrderItem item : order.getItems()) {
                     productService.deductStock(item.getProduct().getId(), item.getQuantity());
                 }
+                
+                // Send payment success emails
+                try {
+                    if (!customerEmail.isBlank()) {
+                        emailService.sendPaymentSuccessEmail(
+                            customerEmail,
+                            customerName,
+                            order.getOrderNumber(),
+                            transaction.getAmount().doubleValue(),
+                            transaction.getPaymentProvider()
+                        );
+                    }
+                    emailService.sendAdminPaymentNotification(
+                        transaction.getMerchantReference(),
+                        transaction.getAmount().doubleValue(),
+                        "SUCCESS",
+                        transaction.getPaymentProvider()
+                    );
+                } catch (Exception e) {
+                    log.error("Failed to send payment success emails for order: {}", order.getId(), e);
+                }
             }
             case FAILED -> {
                 transaction.setStatus(PaymentStatus.FAILED);
                 order.setStatus(OrderStatus.FAILED);
+                
+                // Send payment failure emails
+                try {
+                    if (!customerEmail.isBlank()) {
+                        emailService.sendPaymentFailureEmail(
+                            customerEmail,
+                            customerName,
+                            order.getOrderNumber(),
+                            "Payment processing failed. Please try again."
+                        );
+                    }
+                    emailService.sendAdminPaymentNotification(
+                        transaction.getMerchantReference(),
+                        transaction.getAmount().doubleValue(),
+                        "FAILED",
+                        transaction.getPaymentProvider()
+                    );
+                } catch (Exception e) {
+                    log.error("Failed to send payment failure emails for order: {}", order.getId(), e);
+                }
             }
             case CANCELLED -> {
                 transaction.setStatus(PaymentStatus.CANCELLED);
                 order.setStatus(OrderStatus.CANCELLED);
+                
+                // Send cancellation notification
+                try {
+                    emailService.sendAdminPaymentNotification(
+                        transaction.getMerchantReference(),
+                        transaction.getAmount().doubleValue(),
+                        "CANCELLED",
+                        transaction.getPaymentProvider()
+                    );
+                } catch (Exception e) {
+                    log.error("Failed to send payment cancellation notification for order: {}", order.getId(), e);
+                }
             }
             case INITIATED -> {
                 transaction.setStatus(PaymentStatus.INITIATED);

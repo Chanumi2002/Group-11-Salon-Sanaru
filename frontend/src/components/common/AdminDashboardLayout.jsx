@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -15,6 +15,7 @@ import {
   Folder,
 } from "lucide-react";
 import logoImage from "@/assets/logo.jpeg";
+import { shopService } from "@/services/shopApi";
 
 const adminSidebarLinks = [
   { label: "Dashboard", to: "/admin_dashboard", icon: LayoutDashboard },
@@ -24,13 +25,34 @@ const adminSidebarLinks = [
   { label: "Manage Services", to: "/admin_dashboard/services", icon: Briefcase },
   { label: "Manage Orders", to: "/admin_dashboard/orders", icon: Package },
   { label: "Manage Payments", to: "/admin_dashboard/payments", icon: DollarSign },
-  { label: "Reviews & Ratings", to: "/admin_dashboard/reviews", icon: Star },
+  { label: "Review Moderation", to: "/admin_dashboard/feedback", icon: Star },
 ];
 
 export function AdminDashboardLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [feedbackCount, setFeedbackCount] = useState(0);
+
+  // Fetch feedback count on mount and set up polling
+  useEffect(() => {
+    const fetchFeedbackCount = async () => {
+      try {
+        const data = await shopService.getUnreadFeedbackCount();
+        setFeedbackCount(data.unreadCount || 0);
+      } catch (error) {
+        console.error('Error fetching feedback count:', error);
+      }
+    };
+
+    // Fetch immediately
+    fetchFeedbackCount();
+
+    // Poll every 10 seconds for live updates
+    const interval = setInterval(fetchFeedbackCount, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -81,12 +103,13 @@ export function AdminDashboardLayout({ children }) {
           {adminSidebarLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to;
+            const isFeedbackLink = link.label === "Review Moderation";
             return (
               <Link
                 key={link.to}
                 to={link.to}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors relative ${
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -94,6 +117,11 @@ export function AdminDashboardLayout({ children }) {
               >
                 <Icon className="h-5 w-5" />
                 {link.label}
+                {isFeedbackLink && feedbackCount > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    {feedbackCount}
+                  </span>
+                )}
               </Link>
             );
           })}

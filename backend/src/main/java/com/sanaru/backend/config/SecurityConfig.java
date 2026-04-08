@@ -82,7 +82,7 @@ public class SecurityConfig {
                                 "/api/auth/oauth2/google", "/error",
                                 "/oauth2/**", "/login/oauth2/**").permitAll()
                         // Public endpoints for customers / guests
-                    .requestMatchers("/api/products/**", "/api/categories/**", "/api/services/**", "/uploads/**").permitAll()
+                    .requestMatchers("/api/products/**", "/api/categories/**", "/api/services/**", "/api/reviews/stats/**", "/uploads/**").permitAll()
                     // Public payment provider callback endpoint
                     .requestMatchers("/api/v1/payments/payhere/notify", "/api/v1/payments/payhere/cancel").permitAll()
                         // Authenticated endpoints

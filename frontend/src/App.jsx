@@ -29,6 +29,9 @@ import CustomerServices from "./pages/customer/CustomerServices";
 import BookAppointment from "./pages/customer/BookAppointment";
 import CustomerOrders from "./pages/customer/CustomerOrders";
 import AiRecommendation from "./pages/customer/AiRecommendation";
+import CustomerShop from "./pages/customer/CustomerShop";
+import CustomerReviews from "./pages/customer/CustomerReviews";
+import CustomerBookings from "./pages/customer/CustomerBookings";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -40,6 +43,7 @@ import ServicePage from "./pages/admin/ServicePage";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminInventory from "./pages/admin/AdminInventory";
+import AdminFeedback from "./pages/admin/AdminFeedback";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -122,6 +126,30 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredRole="CUSTOMER">
                     <AiRecommendation />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer_dashboard/shop"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <CustomerShop />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer_dashboard/reviews"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <CustomerReviews />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer_dashboard/bookings"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <CustomerBookings />
                   </ProtectedRoute>
                 }
               />
@@ -215,6 +243,16 @@ const App = () => (
                   </AdminProtectedRoute>
                 }
               />
+
+              <Route
+                path="/admin_dashboard/feedback"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminFeedback />
+                  </AdminProtectedRoute>
+                }
+              />
+
               <Route path="/not-found" element={<NotFound />} />
               <Route path="*" element={<Navigate to="/not-found" replace />} />
             </Routes>

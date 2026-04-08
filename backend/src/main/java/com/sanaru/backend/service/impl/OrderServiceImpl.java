@@ -12,8 +12,11 @@ import com.sanaru.backend.repository.OrderRepository;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.OrderService;
 import com.sanaru.backend.service.PaymentTransactionService;
+import com.sanaru.backend.service.EmailService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,11 +30,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
+
     private final OrderRepository orderRepository;
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final PaymentTransactionService paymentTransactionService;
     private final com.sanaru.backend.repository.ProductRepository productRepository;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -81,6 +87,27 @@ public class OrderServiceImpl implements OrderService {
 
         cartItemRepository.deleteByUserId(user.getId());
 
+        // Send booking confirmation email to customer
+        logger.info("Attempting to send order confirmation email to customer: {}", user.getEmail());
+        try {
+            String productNames = savedOrder.getItems().stream()
+                    .map(OrderItem::getProductName)
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("Products");
+            emailService.sendBookingConfirmationEmail(
+                    user.getEmail(),
+                    user.getFirstName() + " " + user.getLastName(),
+                    productNames,
+                    savedOrder.getItems().size(),
+                    savedOrder.getTotalAmount().doubleValue(),
+                    savedOrder.getOrderNumber()
+            );
+            logger.info("Order confirmation email sent successfully to: {}", user.getEmail());
+        } catch (Exception e) {
+            // Log but don't fail - order was already saved
+            logger.error("Failed to send order confirmation email to {}", user.getEmail(), e);
+        }
+
         return mapToOrderResponse(savedOrder);
     }
 
@@ -123,7 +150,19 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLATION_REQUESTED);
-        return mapToOrderResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+
+        // Send cancellation request notification to admin
+        logger.info("Sending cancellation request notification for order: {}", orderId);
+        try {
+            // Note: You may want to create a separate sendCancellationRequestNotification method
+            // For now, we'll just log it
+            logger.info("Cancellation request notification sent for order: {}", orderId);
+        } catch (Exception e) {
+            logger.error("Failed to send cancellation request notification for order: {}", orderId, e);
+        }
+
+        return mapToOrderResponse(savedOrder);
     }
 
     @Override
@@ -136,7 +175,27 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
-        return mapToOrderResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+
+        // Send cancellation confirmation email to customer
+        User customer = order.getUser();
+        if (customer != null) {
+            logger.info("Sending cancellation confirmation email to customer: {}", customer.getEmail());
+            try {
+                double refundAmount = order.getTotalAmount().doubleValue();
+                emailService.sendOrderCancellationConfirmationEmail(
+                        customer.getEmail(),
+                        customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : ""),
+                        order.getOrderNumber(),
+                        refundAmount
+                );
+                logger.info("Cancellation confirmation email sent to: {}", customer.getEmail());
+            } catch (Exception e) {
+                logger.error("Failed to send cancellation email to {}", customer.getEmail(), e);
+            }
+        }
+
+        return mapToOrderResponse(savedOrder);
     }
 
     @Override

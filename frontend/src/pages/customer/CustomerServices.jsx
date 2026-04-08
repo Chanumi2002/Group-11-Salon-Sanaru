@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { shopService } from '@/services/shopApi';
@@ -30,6 +31,7 @@ export default function CustomerServices() {
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [serviceStats, setServiceStats] = useState({});
 
   const fetchServices = async () => {
     try {
@@ -43,6 +45,19 @@ export default function CustomerServices() {
         .map(normalizeService);
 
       setServices(normalized);
+
+      // Fetch stats for each service
+      const stats = {};
+      for (const service of normalized) {
+        try {
+          const serviceStats = await shopService.getReviewStats(service.id, 'SERVICE');
+          stats[service.id] = serviceStats;
+        } catch (err) {
+          // Stats might not exist yet, that's fine
+          stats[service.id] = null;
+        }
+      }
+      setServiceStats(stats);
     } catch (error) {
       console.error('Failed to fetch customer services:', error);
       const message = 'Unable to load salon services right now. Please try again.';
@@ -113,6 +128,24 @@ export default function CustomerServices() {
                 <div className="space-y-2 p-4">
                   <h2 className="text-lg font-semibold text-gray-900">{service.name}</h2>
                   <p className="line-clamp-2 text-sm text-gray-600">{service.description}</p>
+                  
+                  {serviceStats[service.id]?.averageRating ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={14}
+                            className={i < Math.round(serviceStats[service.id].averageRating) ? 'fill-[#FFA500] text-[#FFA500]' : 'text-gray-300'}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-600">
+                        {serviceStats[service.id].averageRating.toFixed(1)} ({serviceStats[service.id].count} review{serviceStats[service.id].count !== 1 ? 's' : ''})
+                      </span>
+                    </div>
+                  ) : null}
+                  
                   <div className="flex items-center justify-between gap-3 pt-1">
                     <p className="text-lg font-bold text-[#8E1616]">
                       Rs. {service.price.toFixed(2)}

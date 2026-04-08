@@ -20,7 +20,9 @@ export function resolveImageUrl(rawPath) {
 
   if (uploadsIndex >= 0) {
     const uploadsPath = normalized.slice(uploadsIndex);
-    return `/${uploadsPath}`;
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+    const baseUrl = backendUrl.replace('/api', '');
+    return `${baseUrl}/${uploadsPath}`;
   }
 
   // If already app-relative path, ensure it starts with '/'.

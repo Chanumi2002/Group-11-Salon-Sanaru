@@ -5,6 +5,20 @@ const shopApi = axios.create({
   timeout: 10000,
 });
 
+// Add request interceptor to include auth token
+shopApi.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export const shopService = {
   getCategories: async () => {
     const response = await shopApi.get('/categories');
@@ -31,6 +45,24 @@ export const shopService = {
   getServiceById: async (serviceId) => {
     const response = await shopApi.get(`/services/${serviceId}`);
     return response.data;
+  },
+
+  // Get reviews for a product
+  getReviewsForTarget: async (targetId, feedbackType) => {
+    const response = await shopApi.get(`/reviews/${feedbackType.toLowerCase()}/${targetId}`);
+    return response.data?.data || response.data || [];
+  },
+
+  // Get review statistics for a product/service
+  getReviewStats: async (targetId, feedbackType) => {
+    const response = await shopApi.get(`/reviews/stats/${feedbackType.toLowerCase()}/${targetId}`);
+    return response.data?.data || response.data || null;
+  },
+
+  // Get unread feedback count for admin badge
+  getUnreadFeedbackCount: async () => {
+    const response = await shopApi.get('/admin/feedbacks/count');
+    return response.data?.data || { unreadCount: 0, hasUnread: false };
   },
 };
 

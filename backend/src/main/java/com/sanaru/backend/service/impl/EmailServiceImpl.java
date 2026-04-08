@@ -182,6 +182,115 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    @Override
+    public void sendReviewNotificationToAdmin(com.sanaru.backend.dto.FeedbackResponse feedback) {
+        try {
+            String subject = "New Review/Feedback Submitted - Salon Sanaru ⭐";
+            String htmlContent = buildReviewNotificationHtml(feedback);
+            sendHtmlEmail(supportEmail, subject, htmlContent);
+            logger.info("Review notification email sent successfully to admin");
+        } catch (Exception e) {
+            logger.error("Failed to send review notification email to admin", e);
+            // Don't throw - feedback was already saved, email failure shouldn't block the process
+        }
+    }
+
+    @Override
+    public void sendPaymentSuccessEmail(String toEmail, String customerName, String orderId, double amount, String paymentMethod) {
+        try {
+            String subject = "Payment Successful - Order #" + orderId + " 💳✓";
+            String htmlContent = buildPaymentSuccessHtml(customerName, orderId, amount, paymentMethod);
+            sendHtmlEmail(toEmail, subject, htmlContent);
+            logger.info("Payment success email sent to: " + toEmail);
+        } catch (Exception e) {
+            logger.error("Failed to send payment success email to " + toEmail, e);
+        }
+    }
+
+    @Override
+    public void sendPaymentFailureEmail(String toEmail, String customerName, String orderId, String reason) {
+        try {
+            String subject = "Payment Failed - Order #" + orderId + " ❌";
+            String htmlContent = buildPaymentFailureHtml(customerName, orderId, reason);
+            sendHtmlEmail(toEmail, subject, htmlContent);
+            logger.info("Payment failure email sent to: " + toEmail);
+        } catch (Exception e) {
+            logger.error("Failed to send payment failure email to " + toEmail, e);
+        }
+    }
+
+    @Override
+    public void sendRefundConfirmationEmail(String toEmail, String customerName, String orderId, double refundAmount) {
+        try {
+            String subject = "Refund Processed - Order #" + orderId + " ✓";
+            String htmlContent = buildRefundConfirmationHtml(customerName, orderId, refundAmount);
+            sendHtmlEmail(toEmail, subject, htmlContent);
+            logger.info("Refund confirmation email sent to: " + toEmail);
+        } catch (Exception e) {
+            logger.error("Failed to send refund confirmation email to " + toEmail, e);
+        }
+    }
+
+    @Override
+    public void sendAdminPaymentNotification(String merchantReference, double amount, String status, String paymentMethod) {
+        try {
+            String subject = "Payment Transaction Notification - " + status + " 💰";
+            String htmlContent = buildAdminPaymentNotificationHtml(merchantReference, amount, status, paymentMethod);
+            sendHtmlEmail(supportEmail, subject, htmlContent);
+            logger.info("Admin payment notification sent for reference: " + merchantReference);
+        } catch (Exception e) {
+            logger.error("Failed to send admin payment notification", e);
+        }
+    }
+
+    @Override
+    public void sendOrderStatusUpdateEmail(String toEmail, String customerName, String orderId, String newStatus) {
+        try {
+            String subject = "Order Status Update - Order #" + orderId + " 📦";
+            String htmlContent = buildOrderStatusUpdateHtml(customerName, orderId, newStatus);
+            sendHtmlEmail(toEmail, subject, htmlContent);
+            logger.info("Order status update email sent to: " + toEmail);
+        } catch (Exception e) {
+            logger.error("Failed to send order status update email to " + toEmail, e);
+        }
+    }
+
+    @Override
+    public void sendOrderCancellationConfirmationEmail(String toEmail, String customerName, String orderId, double refundAmount) {
+        try {
+            String subject = "Order Cancelled - Refund #" + orderId + " ✓";
+            String htmlContent = buildOrderCancellationHtml(customerName, orderId, refundAmount);
+            sendHtmlEmail(toEmail, subject, htmlContent);
+            logger.info("Order cancellation email sent to: " + toEmail);
+        } catch (Exception e) {
+            logger.error("Failed to send order cancellation email to " + toEmail, e);
+        }
+    }
+
+    @Override
+    public void sendServiceBookingConfirmationEmail(String toEmail, String customerName, String serviceName, double price, String bookingReference) {
+        try {
+            String subject = "Service Booking Confirmed - " + bookingReference + " 💅";
+            String htmlContent = buildServiceBookingConfirmationHtml(customerName, serviceName, price, bookingReference);
+            sendHtmlEmail(toEmail, subject, htmlContent);
+            logger.info("Service booking confirmation email sent to: " + toEmail);
+        } catch (Exception e) {
+            logger.error("Failed to send service booking confirmation email to " + toEmail, e);
+        }
+    }
+
+    @Override
+    public void sendRefundRequestNotificationEmail(String toEmail, String customerName, String orderId, double refundAmount, String reason) {
+        try {
+            String subject = "Refund Request Received - Order #" + orderId;
+            String htmlContent = buildRefundRequestHtml(customerName, orderId, refundAmount, reason);
+            sendHtmlEmail(toEmail, subject, htmlContent);
+            logger.info("Refund request notification email sent to: " + toEmail);
+        } catch (Exception e) {
+            logger.error("Failed to send refund request email to " + toEmail, e);
+        }
+    }
+
     private void sendHtmlEmail(String toEmail, String subject, String htmlContent)
             throws MessagingException {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
@@ -379,6 +488,176 @@ public class EmailServiceImpl implements EmailService {
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">Your order is being prepared and will be shipped soon. You'll receive a tracking number via email.</p>"
                 + "<p style=\"text-align: center; margin: 30px 0;\">"
                 + "<a href=\"http://localhost:3000/orders\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Track My Order</a>"
+                + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildReviewNotificationHtml(com.sanaru.backend.dto.FeedbackResponse feedback) {
+        String ratingStars = "⭐".repeat(feedback.getRating()) + "☆".repeat(5 - feedback.getRating());
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #d946a6;\">New Review/Feedback Received ⭐</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">A new review has been submitted on your Salon Sanaru platform.</p>"
+                + "<div style=\"background-color: #f9f0f6; padding: 20px; border-radius: 5px; margin: 20px 0;\">"
+                + "<p><strong>Customer:</strong> " + (feedback.getUserName() != null ? feedback.getUserName() : "Anonymous") + "</p>"
+                + "<p><strong>Feedback Type:</strong> " + feedback.getFeedbackType() + "</p>"
+                + "<p><strong>Rating:</strong> " + ratingStars + " (" + feedback.getRating() + "/5)</p>"
+                + "<p><strong>Comment:</strong></p>"
+                + "<p style=\"font-style: italic; background-color: white; padding: 15px; border-left: 4px solid #d946a6;\">" + feedback.getComment() + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666;\"><strong>Feedback ID:</strong> " + feedback.getId() + "</p>"
+                + "<p style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"http://localhost:5174/admin_dashboard/feedback?id=" + feedback.getId() + "\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View in Dashboard</a>"
+                + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildPaymentSuccessHtml(String customerName, String orderId, double amount, String paymentMethod) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #22c55e;\">Payment Successful! 💳✓</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hello " + customerName + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Your payment has been processed successfully. Your order is being prepared.</p>"
+                + "<div style=\"background-color: #f0fdf4; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #22c55e;\">"
+                + "<p><strong>Order ID:</strong> #" + orderId + "</p>"
+                + "<p><strong>Amount Paid:</strong> Rs. " + String.format("%.2f", amount) + "</p>"
+                + "<p><strong>Payment Method:</strong> " + paymentMethod + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">You can track your order status in your Salon Sanaru dashboard.</p>"
+                + "<p style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View Your Orders</a>"
+                + "</p>"
+                + "<p style=\"font-size: 12px; color: #999; text-align: center; margin-top: 30px;\">Thank you for shopping at Salon Sanaru!</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildPaymentFailureHtml(String customerName, String orderId, String reason) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #ef4444;\">Payment Failed ❌</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hello " + customerName + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Unfortunately, your payment could not be processed. Please try again or contact support.</p>"
+                + "<div style=\"background-color: #fef2f2; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ef4444;\">"
+                + "<p><strong>Order ID:</strong> #" + orderId + "</p>"
+                + "<p><strong>Reason:</strong> " + reason + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">Your order is still saved. You can retry the payment whenever you're ready.</p>"
+                + "<p style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #ef4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Retry Payment</a>"
+                + "</p>"
+                + "<p style=\"font-size: 12px; color: #999; text-align: center; margin-top: 30px;\">Need help? Contact " + supportEmail + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildRefundConfirmationHtml(String customerName, String orderId, double refundAmount) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #3b82f6;\">Refund Processed ✓</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hello " + customerName + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Your refund has been processed and will be credited back to your original payment method.</p>"
+                + "<div style=\"background-color: #eff6ff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #3b82f6;\">"
+                + "<p><strong>Order ID:</strong> #" + orderId + "</p>"
+                + "<p><strong>Refund Amount:</strong> Rs. " + String.format("%.2f", refundAmount) + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">The refund may take 3-5 business days to appear in your account depending on your bank.</p>"
+                + "<p style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View Orders</a>"
+                + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildAdminPaymentNotificationHtml(String merchantReference, double amount, String status, String paymentMethod) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #8b5cf6;\">Payment Transaction Notification 💰</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">A payment transaction has been recorded on your Salon Sanaru platform.</p>"
+                + "<div style=\"background-color: #faf5ff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #8b5cf6;\">"
+                + "<p><strong>Merchant Reference:</strong> " + merchantReference + "</p>"
+                + "<p><strong>Amount:</strong> Rs. " + String.format("%.2f", amount) + "</p>"
+                + "<p><strong>Status:</strong> <span style=\"background-color: " + (status.equals("COMPLETED") ? "#22c55e" : status.equals("FAILED") ? "#ef4444" : "#f59e0b") + "; color: white; padding: 5px 10px; border-radius: 3px;\">" + status + "</span></p>"
+                + "<p><strong>Payment Method:</strong> " + paymentMethod + "</p>"
+                + "</div>"
+                + "<p style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"http://localhost:3000/admin_dashboard/transactions\" style=\"background-color: #8b5cf6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View in Dashboard</a>"
+                + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildOrderStatusUpdateHtml(String customerName, String orderId, String newStatus) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #06b6d4;\">Order Status Updated 📦</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hello " + customerName + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Your order status has been updated!</p>"
+                + "<div style=\"background-color: #ecf9ff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #06b6d4;\">"
+                + "<p><strong>Order ID:</strong> #" + orderId + "</p>"
+                + "<p><strong>New Status:</strong> <strong>" + newStatus + "</strong></p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">We're working hard to prepare your order. You'll receive further updates soon.</p>"
+                + "<p style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #06b6d4; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Track Order</a>"
+                + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildOrderCancellationHtml(String customerName, String orderId, double refundAmount) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #f97316;\">Order Cancelled ✓</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hello " + customerName + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Your order has been successfully cancelled.</p>"
+                + "<div style=\"background-color: #fff7ed; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #f97316;\">"
+                + "<p><strong>Order ID:</strong> #" + orderId + "</p>"
+                + "<p><strong>Refund Amount:</strong> Rs. " + String.format("%.2f", refundAmount) + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">The refund will be processed within 3-5 business days.</p>"
+                + "<p style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #f97316; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View Orders</a>"
+                + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildServiceBookingConfirmationHtml(String customerName, String serviceName, double price, String bookingReference) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #d946a6;\">Service Booking Confirmed 💅</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hello " + customerName + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Your service booking has been confirmed! We're excited to serve you.</p>"
+                + "<div style=\"background-color: #fdf4ff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #d946a6;\">"
+                + "<p><strong>Service:</strong> " + serviceName + "</p>"
+                + "<p><strong>Booking Reference:</strong> " + bookingReference + "</p>"
+                + "<p><strong>Price:</strong> Rs. " + String.format("%.2f", price) + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">You will receive a confirmation email with appointment details shortly. If you have any questions, please contact us.</p>"
+                + "<p style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"http://localhost:3000/customer_dashboard/bookings\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View My Bookings</a>"
+                + "</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildRefundRequestHtml(String customerName, String orderId, double refundAmount, String reason) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #3b82f6;\">Refund Request Received 📋</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Hello " + customerName + ",</p>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">We have received your refund request and it is now under review by our team.</p>"
+                + "<div style=\"background-color: #eff6ff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #3b82f6;\">"
+                + "<p><strong>Order ID:</strong> #" + orderId + "</p>"
+                + "<p><strong>Requested Refund Amount:</strong> Rs. " + String.format("%.2f", refundAmount) + "</p>"
+                + "<p><strong>Reason:</strong> " + reason + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">Our team will review your request and process the refund within 3-5 business days. You'll receive an email once the refund is processed.</p>"
+                + "<p style=\"text-align: center; margin: 30px 0;\">"
+                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Track Refund Status</a>"
                 + "</p>"
                 + "</div>"
                 + "</body></html>";
