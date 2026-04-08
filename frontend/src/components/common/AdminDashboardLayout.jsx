@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import logoImage from "@/assets/logo.jpeg";
 import { shopService } from "@/services/shopApi";
+import { useFeedback } from "@/context/FeedbackContext";
 
 const adminSidebarLinks = [
   { label: "Dashboard", to: "/admin_dashboard", icon: LayoutDashboard },
@@ -32,27 +33,7 @@ export function AdminDashboardLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [feedbackCount, setFeedbackCount] = useState(0);
-
-  // Fetch feedback count on mount and set up polling
-  useEffect(() => {
-    const fetchFeedbackCount = async () => {
-      try {
-        const data = await shopService.getUnreadFeedbackCount();
-        setFeedbackCount(data.unreadCount || 0);
-      } catch (error) {
-        console.error('Error fetching feedback count:', error);
-      }
-    };
-
-    // Fetch immediately
-    fetchFeedbackCount();
-
-    // Poll every 10 seconds for live updates
-    const interval = setInterval(fetchFeedbackCount, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const { unreadCount } = useFeedback();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -117,9 +98,9 @@ export function AdminDashboardLayout({ children }) {
               >
                 <Icon className="h-5 w-5" />
                 {link.label}
-                {isFeedbackLink && feedbackCount > 0 && (
+                {isFeedbackLink && unreadCount > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    {feedbackCount}
+                    {unreadCount}
                   </span>
                 )}
               </Link>

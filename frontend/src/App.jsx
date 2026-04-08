@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
 import { CartProvider } from "./context/CartContext";
+import { FeedbackProvider } from "./context/FeedbackContext";
 
 // Public pages
 import Index from "./pages/public/Index";
@@ -56,7 +57,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <CartProvider>
+          <FeedbackProvider>
+            <CartProvider>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -257,6 +259,7 @@ const App = () => (
               <Route path="*" element={<Navigate to="/not-found" replace />} />
             </Routes>
           </CartProvider>
+            </FeedbackProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

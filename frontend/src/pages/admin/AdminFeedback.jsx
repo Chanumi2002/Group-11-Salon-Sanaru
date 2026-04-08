@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Trash2, Star, Loader, AlertCircle, Filter, Check } from 'lucide-react';
 import { AdminDashboardLayout } from '@/components/common/AdminDashboardLayout';
 import { Button } from '@/components/ui/button';
+import { useFeedback } from '@/context/FeedbackContext';
 
 export default function AdminFeedback() {
   const [searchParams] = useSearchParams();
@@ -14,6 +15,7 @@ export default function AdminFeedback() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [filterType, setFilterType] = useState('ALL');
   const [stats, setStats] = useState(null);
+  const { decrementUnreadCount } = useFeedback();
 
   const feedbackTypes = [
     { value: 'ALL', label: 'All Reviews' },
@@ -116,6 +118,7 @@ export default function AdminFeedback() {
             f.id === feedbackId ? { ...f, isRead: true } : f
           )
         );
+        decrementUnreadCount();
         fetchStats();
       }
     } catch (error) {
@@ -201,6 +204,8 @@ export default function AdminFeedback() {
             <div className="flex items-center gap-3">
               <Filter size={20} className="text-[#7D746F]" />
               <select
+                id="feedbackType"
+                name="feedbackType"
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
                 className="rounded-lg border border-[#DED6D2] bg-white px-4 py-2 text-[#1A1717] focus:border-[#A31A11] focus:outline-none"
