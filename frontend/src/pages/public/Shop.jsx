@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import CategoryBar from '@/components/CategoryBar';
 import ProductList from '@/components/ProductList';
-import { Navbar } from '@/components/common/Navbar';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { Footer } from '@/components/common/Footer';
 import { shopService } from '@/services/shopApi';
 
@@ -113,9 +113,7 @@ export default function Shop() {
   };
 
   return (
-    <div className="min-h-screen bg-[#EBEBEB] flex flex-col">
-      <Navbar />
-
+    <DashboardLayout>
       <motion.main
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -177,6 +175,6 @@ export default function Shop() {
       </motion.main>
 
       <Footer />
-    </div>
+    </DashboardLayout>
   );
 }

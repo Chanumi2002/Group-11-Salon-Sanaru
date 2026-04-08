@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import { toast } from 'sonner';
 import ProductDetails from '@/components/ProductDetails';
 import ReviewsDisplay from '@/components/ReviewsDisplay';
-import { Navbar } from '@/components/common/Navbar';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { Footer } from '@/components/common/Footer';
 import { shopService } from '@/services/shopApi';
 import { useCart } from '@/context/CartContext';
@@ -140,15 +140,8 @@ export default function ShopProductDetails() {
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{
-        background: 'linear-gradient(130deg, #2A2323 0%, #3B2A2A 45%, #6B2A2A 100%)',
-      }}
-    >
-      <Navbar />
-
-      <main className="mx-auto w-full max-w-[1380px] flex-1 px-4 py-8 md:px-6 lg:px-10">
+    <DashboardLayout>
+      <div className="mx-auto w-full max-w-[1380px] flex-1 px-4 py-8 md:px-6 lg:px-10">
         <ProductDetails
           product={product}
           isLoading={isLoading}
@@ -169,9 +162,9 @@ export default function ShopProductDetails() {
             title="Customer Reviews for This Product"
           />
         )}
-      </main>
+      </div>
 
       <Footer />
-    </div>
+    </DashboardLayout>
   );
 }
