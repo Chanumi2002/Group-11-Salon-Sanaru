@@ -6,6 +6,11 @@ import com.sanaru.backend.dto.UserResponse;
 import com.sanaru.backend.enums.Role;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.UserRepository;
+import com.sanaru.backend.repository.FeedbackRepository;
+import com.sanaru.backend.repository.CartItemRepository;
+import com.sanaru.backend.repository.OrderRepository;
+import com.sanaru.backend.repository.OrderItemRepository;
+import com.sanaru.backend.repository.PaymentTransactionRepository;
 import com.sanaru.backend.exception.InvalidEmailException;
 import com.sanaru.backend.util.EmailValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -24,6 +30,20 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private FeedbackRepository feedbackRepository;
+
+    @Autowired
+    private CartItemRepository cartItemRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private PaymentTransactionRepository paymentTransactionRepository;
 
     @Autowired
     private EmailService emailService;
@@ -155,12 +175,37 @@ public class UserService {
         emailService.sendPasswordChangedEmailAsync(user.getEmail(), name);
     }
 
+    @Transactional
     public void deleteUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
         String userEmail = user.getEmail();
         String name = user.getFirstName() + (user.getLastName() != null ? " " + user.getLastName() : "");
+        Long userId = user.getId();
+        
+        // Delete all data related to this user in correct order to avoid FK constraint violations
+        // 1. Delete feedbacks
+        feedbackRepository.deleteAll(feedbackRepository.findByUserId(userId));
+        
+        // 2. Delete cart items
+        cartItemRepository.deleteByUserId(userId);
+        
+        // 3. Get all orders and delete related payment transactions and order items
+        List<com.sanaru.backend.model.Order> userOrders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        for (com.sanaru.backend.model.Order order : userOrders) {
+            // Delete payment transactions for this order
+            paymentTransactionRepository.findByOrderId(order.getId()).ifPresent(paymentTransactionRepository::delete);
+            
+            // Delete order items for this order
+            orderItemRepository.deleteAll(orderItemRepository.findByOrderId(order.getId()));
+        }
+        
+        // 4. Delete orders
+        orderRepository.deleteAll(userOrders);
+        
+        // 5. Finally delete the user
         userRepository.delete(user);
+        
         // Send email asynchronously - failure won't affect this operation
         emailService.sendAccountDeletedEmailAsync(userEmail, name);
     }
@@ -234,12 +279,35 @@ public class UserService {
         return UserResponse.from(unblocked);
     }
 
+    @Transactional
     public void deleteCustomer(Long customerId) {
         User user = userRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
         if (!user.getRole().equals(Role.CUSTOMER)) {
             throw new RuntimeException("Only customers can be deleted");
         }
+        
+        // Delete all data related to this customer in correct order to avoid FK constraint violations
+        // 1. Delete feedbacks
+        feedbackRepository.deleteAll(feedbackRepository.findByUserId(customerId));
+        
+        // 2. Delete cart items
+        cartItemRepository.deleteByUserId(customerId);
+        
+        // 3. Get all orders and delete related payment transactions and order items
+        List<com.sanaru.backend.model.Order> userOrders = orderRepository.findByUserIdOrderByCreatedAtDesc(customerId);
+        for (com.sanaru.backend.model.Order order : userOrders) {
+            // Delete payment transactions for this order
+            paymentTransactionRepository.findByOrderId(order.getId()).ifPresent(paymentTransactionRepository::delete);
+            
+            // Delete order items for this order
+            orderItemRepository.deleteAll(orderItemRepository.findByOrderId(order.getId()));
+        }
+        
+        // 4. Delete orders
+        orderRepository.deleteAll(userOrders);
+        
+        // 5. Finally delete the user
         userRepository.delete(user);
     }
 
