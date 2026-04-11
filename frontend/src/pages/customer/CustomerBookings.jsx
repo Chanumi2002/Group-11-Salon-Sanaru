@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { customerService } from '@/services/api';
 import { toast } from 'sonner';
-import { Calendar, Clock, User, Loader, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, User, Loader, AlertCircle, MessageSquare } from 'lucide-react';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 
 export default function CustomerBookings() {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -97,6 +99,15 @@ export default function CustomerBookings() {
                         )}
                       </div>
                     </div>
+                    {booking.status === 'COMPLETED' && (
+                      <button
+                        onClick={() => navigate(`/customer_dashboard/write-review?serviceId=${booking.serviceId}&serviceName=${encodeURIComponent(booking.serviceName)}`)}
+                        className="flex items-center gap-2 rounded-full bg-[#8E1616] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#741212] whitespace-nowrap"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Write Review
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

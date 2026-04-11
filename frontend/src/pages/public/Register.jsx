@@ -184,6 +184,7 @@ export default function Register() {
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   className="mt-1.5 h-12 rounded-xl border border-[#d9be95] bg-white/86 text-[#2b211b] placeholder:text-[#9f8f80] pl-10 pr-10 transition-all duration-200 hover:border-[#c8a979] focus-visible:ring-2 focus-visible:ring-[#b99767]/35 focus-visible:border-[#b99767]"
                 />
                 <button
@@ -207,6 +208,7 @@ export default function Register() {
                   value={form.confirmPassword}
                   onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   className="mt-1.5 h-12 rounded-xl border border-[#d9be95] bg-white/86 text-[#2b211b] placeholder:text-[#9f8f80] pl-10 pr-10 transition-all duration-200 hover:border-[#c8a979] focus-visible:ring-2 focus-visible:ring-[#b99767]/35 focus-visible:border-[#b99767]"
                 />
                 <button

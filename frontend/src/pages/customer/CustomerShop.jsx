@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import CategoryBar from '@/components/CategoryBar';
 import ProductList from '@/components/ProductList';
+import AllReviewsDisplay from '@/components/AllReviewsDisplay';
 import { Footer } from '@/components/common/Footer';
 import { shopService } from '@/services/shopApi';
 
@@ -172,6 +173,16 @@ export default function CustomerShop() {
               selectedCategoryId={selectedCategoryId}
               selectedCategoryName={selectedCategoryName}
             />
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="mt-8 pt-8 border-t border-[#E4D8D2]"
+            >
+              <h2 className="mb-6 text-2xl font-medium text-[#1A1717]">All Product Reviews</h2>
+              <AllReviewsDisplay feedbackType="PRODUCT" />
+            </motion.div>
           </motion.section>
         </motion.div>
       </div>

@@ -183,6 +183,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async("taskExecutor")
     public void sendReviewNotificationToAdmin(com.sanaru.backend.dto.FeedbackResponse feedback) {
         try {
             String subject = "New Review/Feedback Submitted - Salon Sanaru ⭐";
@@ -191,7 +192,7 @@ public class EmailServiceImpl implements EmailService {
             logger.info("Review notification email sent successfully to admin");
         } catch (Exception e) {
             logger.error("Failed to send review notification email to admin", e);
-            // Don't throw - feedback was already saved, email failure shouldn't block the process
+            // Async task failure - logged but doesn't affect user experience
         }
     }
 

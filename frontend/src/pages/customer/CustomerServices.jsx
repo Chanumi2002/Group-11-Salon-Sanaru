@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
+import AllReviewsDisplay from '@/components/AllReviewsDisplay';
 import { shopService } from '@/services/shopApi';
 import { resolveImageUrl } from '@/utils/resolveImageUrl';
 
@@ -165,6 +166,11 @@ export default function CustomerServices() {
             ))}
           </div>
         )}
+
+        <div className="mt-12 border-t border-gray-200 pt-8">
+          <h2 className="mb-6 text-2xl font-semibold text-gray-900">All Service Reviews</h2>
+          <AllReviewsDisplay feedbackType="SERVICE" />
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -3,12 +3,13 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import { toast } from 'sonner';
 import ProductDetails from '@/components/ProductDetails';
 import ReviewsDisplay from '@/components/ReviewsDisplay';
-import { DashboardLayout } from '@/components/common/DashboardLayout';
+import { Navbar } from '@/components/common/Navbar';
+import { Footer } from '@/components/common/Footer';
 import { shopService } from '@/services/shopApi';
 import { useCart } from '@/context/CartContext';
 import { getStoredToken } from '@/utils/authState';
 
-export default function ShopProductDetails() {
+export default function GuestProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,7 +43,7 @@ export default function ShopProductDetails() {
 
   const handleBack = () => {
     const categoryId = searchParams.get('categoryId');
-    const target = categoryId ? `/shop?categoryId=${encodeURIComponent(categoryId)}` : '/shop';
+    const target = categoryId ? `/products?categoryId=${encodeURIComponent(categoryId)}` : '/products';
     navigate(target);
   };
 
@@ -139,31 +140,33 @@ export default function ShopProductDetails() {
   };
 
   return (
-    <>
-      <DashboardLayout>
-        <div className="mx-auto w-full max-w-[1380px] flex-1 px-4 py-8 md:px-6 lg:px-10">
-          <ProductDetails
-            product={product}
-            isLoading={isLoading}
-            onBack={handleBack}
-            quantity={quantity}
-            onQuantityDecrease={handleQuantityDecrease}
-            onQuantityIncrease={handleQuantityIncrease}
-            onAddToCart={handleAddToCart}
-            isAddingToCart={isAddingToCart}
-            onBuyNow={handleBuyNow}
-            isBuyingNow={isBuyingNow}
-          />
+    <div className="min-h-screen bg-[#EBEBEB] flex flex-col">
+      <Navbar />
+      
+      <main className="mx-auto w-full max-w-[1380px] flex-1 px-4 py-8 md:px-6 lg:px-10">
+        <ProductDetails
+          product={product}
+          isLoading={isLoading}
+          onBack={handleBack}
+          quantity={quantity}
+          onQuantityDecrease={handleQuantityDecrease}
+          onQuantityIncrease={handleQuantityIncrease}
+          onAddToCart={handleAddToCart}
+          isAddingToCart={isAddingToCart}
+          onBuyNow={handleBuyNow}
+          isBuyingNow={isBuyingNow}
+        />
 
-          {product && (
-            <ReviewsDisplay
-              targetId={product.id}
-              feedbackType="PRODUCT"
-              title="Customer Reviews for This Product"
-            />
-          )}
-        </div>
-      </DashboardLayout>
-    </>
+        {product && (
+          <ReviewsDisplay
+            targetId={product.id}
+            feedbackType="PRODUCT"
+            title="Customer Reviews for This Product"
+          />
+        )}
+      </main>
+
+      <Footer />
+    </div>
   );
 }

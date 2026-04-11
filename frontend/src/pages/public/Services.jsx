@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
+import AllReviewsDisplay from '@/components/AllReviewsDisplay';
 import { shopService } from '@/services/shopApi';
 import { resolveImageUrl } from '@/utils/resolveImageUrl';
 
@@ -46,6 +47,10 @@ export default function Services() {
 
     fetchServices();
   }, []);
+
+  const handleViewDetails = (serviceId) => {
+    navigate(`/services/${serviceId}`);
+  };
 
   const handleBookNow = (serviceId) => {
     const token = localStorage.getItem('token');
@@ -144,16 +149,31 @@ export default function Services() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleBookNow(service.id)}
+                      onClick={() => handleViewDetails(service.id)}
                       className="mt-1 inline-flex w-full items-center justify-center rounded-[10px] bg-[#8E1616] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#741212]"
                     >
-                      Book Now
+                      View Details
                     </button>
                   </div>
                 </motion.article>
               );
             })}
           </div>
+        )}
+
+        {/* Customer Reviews Section - Show ALL reviews across all services */}
+        {!isLoading && services.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2, ease: 'easeOut' }}
+            className="mt-12"
+          >
+            <AllReviewsDisplay
+              feedbackType="SERVICE"
+              title="All Service Reviews"
+            />
+          </motion.div>
         )}
       </main>
 

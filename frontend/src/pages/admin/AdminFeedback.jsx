@@ -13,6 +13,7 @@ export default function AdminFeedback() {
   const [loading, setLoading] = useState(false);
   const [selectedFeedbackId, setSelectedFeedbackId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [markingAsReadId, setMarkingAsReadId] = useState(null);
   const [filterType, setFilterType] = useState('ALL');
   const [stats, setStats] = useState(null);
   const { decrementUnreadCount } = useFeedback();
@@ -58,6 +59,8 @@ export default function AdminFeedback() {
 
       if (response.data?.success) {
         setFeedbacks(response.data.data || []);
+        // Refresh the unread count in sidebar
+        await fetchUnreadCount();
       } else {
         toast.error(response.data?.message || 'Failed to load feedbacks');
       }
@@ -111,18 +114,28 @@ export default function AdminFeedback() {
 
   const handleMarkAsRead = async (feedbackId) => {
     try {
+      setMarkingAsReadId(feedbackId);
       const response = await adminService.markFeedbackAsRead(feedbackId);
       if (response.data?.success) {
+        // Update local state
         setFeedbacks(
           feedbacks.map((f) =>
             f.id === feedbackId ? { ...f, isRead: true } : f
           )
         );
+        // Decrement the unread count in sidebar
         decrementUnreadCount();
-        fetchStats();
+        // Refresh stats
+        await fetchStats();
+        toast.success('Marked as read');
+      } else {
+        toast.error(response.data?.message || 'Failed to mark as read');
       }
     } catch (error) {
       console.error('Error marking as read:', error);
+      toast.error('Failed to mark as read');
+    } finally {
+      setMarkingAsReadId(null);
     }
   };
 
@@ -289,11 +302,21 @@ export default function AdminFeedback() {
                       {!feedback.isRead && (
                         <Button
                           onClick={() => handleMarkAsRead(feedback.id)}
+                          disabled={markingAsReadId === feedback.id}
                           size="sm"
-                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                          <Check size={16} />
-                          Mark as Read
+                          {markingAsReadId === feedback.id ? (
+                            <>
+                              <Loader className="h-4 w-4 animate-spin" />
+                              Marking...
+                            </>
+                          ) : (
+                            <>
+                              <Check size={16} />
+                              Mark as Read
+                            </>
+                          )}
                         </Button>
                       )}
                       <Button

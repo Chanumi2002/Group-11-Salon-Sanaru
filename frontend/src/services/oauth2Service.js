@@ -3,6 +3,9 @@ import axios from 'axios';
 const BACKEND_BASE_URL = '' || 'http://localhost:8080';
 const FRONTEND_BASE_URL = 'http://localhost:5173';
 
+// Flag to prevent multiple Google Sign-In initializations
+let googleInitialized = false;
+
 /**
  * OAuth2 Service for Google and Facebook authentication
  */
@@ -82,13 +85,24 @@ export const oauth2Service = {
    * Initialize Google Sign-In
    */
   initializeGoogle: (clientId) => {
+    if (googleInitialized) {
+      return true; // Already initialized
+    }
+    
     if (window.google && window.google.accounts) {
+      // Check if already initialized by checking for internal state
+      if (window.google.accounts.id?._initialized) {
+        googleInitialized = true;
+        return true;
+      }
+      
       window.google.accounts.id.initialize({
         client_id: clientId || 'YOUR_GOOGLE_CLIENT_ID',
         callback: (response) => {
           // Callback handled by component
         },
       });
+      googleInitialized = true;
       return true;
     }
     console.warn('Google Sign-In SDK not loaded');

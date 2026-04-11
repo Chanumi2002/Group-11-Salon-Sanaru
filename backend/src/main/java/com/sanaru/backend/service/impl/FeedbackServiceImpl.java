@@ -54,17 +54,10 @@ public class FeedbackServiceImpl implements FeedbackService {
         Feedback saved = feedbackRepository.save(feedback);
         FeedbackResponse response = mapToResponse(saved);
 
-        // Send email notification to admin
-        logger.info("Attempting to send email notification for feedback ID: {}", saved.getId());
-        try {
-            emailService.sendReviewNotificationToAdmin(response);
-            logger.info("Email notification triggered for feedback ID: {}", saved.getId());
-        } catch (Exception e) {
-            // Log but don't fail - feedback was already saved
-            logger.error("Failed to send review notification email for feedback ID: {}", saved.getId(), e);
-            System.err.println("Failed to send review notification email: " + e.getMessage());
-            e.printStackTrace();
-        }
+        // Send email notification to admin asynchronously (non-blocking)
+        logger.info("Submitting async email notification for feedback ID: {}", saved.getId());
+        emailService.sendReviewNotificationToAdmin(response);
+        // Email will be sent in background - doesn't block user response
 
         return response;
     }

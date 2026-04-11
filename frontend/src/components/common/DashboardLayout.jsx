@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { authService } from "@/services/api";
+import { useCart } from "@/context/CartContext";
 import {
   LayoutDashboard,
   User,
@@ -33,6 +34,8 @@ export function DashboardLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { cart } = useCart();
+  const cartItemCount = cart?.items?.length || 0;
 
   return (
     <div className="flex min-h-screen bg-[#f4f2ef] text-slate-900 [--background:36_22%_94%] [--foreground:222_47%_11%] [--card:0_0%_100%] [--card-foreground:222_47%_11%] [--muted:36_24%_91%] [--muted-foreground:215_16%_36%] [--accent:0_0%_97%] [--accent-foreground:222_47%_11%] [--border:30_14%_84%]">
@@ -119,6 +122,18 @@ export function DashboardLayout({ children }) {
             Customer Portal
           </h2>
           <div className="flex items-center gap-3">
+            <Link
+              to="/cart"
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors relative"
+              title="My Cart"
+            >
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-[#8E1616] rounded-full">
+                  {cartItemCount}
+                </span>
+              )}
+            </Link>
             <Link
               to="/customer_profile"
               className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"

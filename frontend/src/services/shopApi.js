@@ -19,6 +19,18 @@ shopApi.interceptors.request.use(
   }
 );
 
+// Add response interceptor to silently handle 401 for feedbacks/count endpoint
+shopApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Silently handle 401 for unread feedback count endpoint (user may not be logged in)
+    if (error.response?.status === 401 && error.config?.url?.includes('/admin/feedbacks/count')) {
+      return Promise.resolve({ data: { data: { unreadCount: 0, hasUnread: false } } });
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const shopService = {
   getCategories: async () => {
     const response = await shopApi.get('/categories');
@@ -63,6 +75,18 @@ export const shopService = {
   getUnreadFeedbackCount: async () => {
     const response = await shopApi.get('/admin/feedbacks/count');
     return response.data?.data || { unreadCount: 0, hasUnread: false };
+  },
+
+  // Get all product reviews
+  getAllProductReviews: async () => {
+    const response = await shopApi.get('/reviews/product');
+    return response.data?.data || [];
+  },
+
+  // Get all service reviews
+  getAllServiceReviews: async () => {
+    const response = await shopApi.get('/reviews/service');
+    return response.data?.data || [];
   },
 };
 

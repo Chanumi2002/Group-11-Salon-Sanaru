@@ -15,6 +15,9 @@ import OAuthCallback from "./pages/public/OAuthCallback";
 import NotFound from "./pages/public/NotFound";
 import Shop from "./pages/public/Shop";
 import Services from "./pages/public/Services";
+import GuestProducts from "./pages/public/GuestProducts";
+import GuestProductDetails from "./pages/public/GuestProductDetails";
+import GuestServiceDetails from "./pages/public/GuestServiceDetails";
 import ProductsByCategory from "./pages/public/ProductsByCategory";
 import ShopProductDetails from "./pages/public/ShopProductDetails";
 import About from "./pages/public/About";
@@ -33,6 +36,7 @@ import AiRecommendation from "./pages/customer/AiRecommendation";
 import CustomerShop from "./pages/customer/CustomerShop";
 import CustomerReviews from "./pages/customer/CustomerReviews";
 import CustomerBookings from "./pages/customer/CustomerBookings";
+import WriteReview from "./pages/customer/WriteReview";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -64,8 +68,11 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/oauth/callback" element={<OAuthCallback />} />
-              <Route path="/products" element={<Shop />} />
+              <Route path="/products" element={<GuestProducts />} />
+              <Route path="/products/:id" element={<GuestProductDetails />} />
+              <Route path="/guest-products" element={<GuestProducts />} />
               <Route path="/services" element={<Services />} />
+              <Route path="/services/:id" element={<GuestServiceDetails />} />
               <Route path="/about-us" element={<About />} />
               <Route path="/products/category/:categoryId" element={<ProductsByCategory />} />
               <Route path="/products/category/:categoryId/product/:id" element={<ShopProductDetails />} />
@@ -152,6 +159,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredRole="CUSTOMER">
                     <CustomerBookings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer_dashboard/write-review"
+                element={
+                  <ProtectedRoute requiredRole="CUSTOMER">
+                    <WriteReview />
                   </ProtectedRoute>
                 }
               />

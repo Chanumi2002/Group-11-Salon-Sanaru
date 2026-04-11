@@ -1,18 +1,34 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { resolveImageUrl } from '@/utils/resolveImageUrl';
 import { useCart } from '@/context/CartContext';
 import { getStoredToken } from '@/utils/authState';
+import { shopService } from '@/services/shopApi';
 
 export default function ProductCard({ product, selectedCategoryId, detailsPath }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { addItemToCart } = useCart();
   const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const [reviewStats, setReviewStats] = useState(null);
+
+  useEffect(() => {
+    const fetchReviewStats = async () => {
+      try {
+        const stats = await shopService.getReviewStats(product.id, 'PRODUCT');
+        setReviewStats(stats);
+      } catch (error) {
+        // Silently fail - stats are optional
+      }
+    };
+    if (product?.id) {
+      fetchReviewStats();
+    }
+  }, [product?.id]);
 
   const imagePath = product?.imageUrl || product?.image || product?.imagePath;
   const categoryQuery = selectedCategoryId ? `?categoryId=${encodeURIComponent(selectedCategoryId)}` : '';
@@ -93,6 +109,26 @@ export default function ProductCard({ product, selectedCategoryId, detailsPath }
         <div className="space-y-1.5 p-4 pb-2">
           <h3 className="line-clamp-1 text-[1rem] font-medium text-[#1A1717]">{product.name}</h3>
           <p className="text-[1.05rem] font-semibold text-[#A31A11]">Rs. {Number(product.price || 0).toFixed(2)}</p>
+          {reviewStats && reviewStats.averageRating > 0 && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={14}
+                    className={
+                      star <= Math.round(reviewStats.averageRating)
+                        ? 'fill-yellow-400 text-yellow-400'
+                        : 'text-gray-300'
+                    }
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-[#7D746F]">
+                {reviewStats.averageRating.toFixed(1)} ({reviewStats.totalFeedbacks || 0})
+              </span>
+            </div>
+          )}
           {((product.lowStock || product.stockQuantity <= product.lowStockThreshold) && product.stockQuantity > 0) && (
             <p className="text-[0.8rem] font-medium text-[#D92D20]">
               Only {product.stockQuantity} left

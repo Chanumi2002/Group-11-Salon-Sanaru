@@ -134,6 +134,54 @@ public class FeedbackController {
     // ==================== PUBLIC ENDPOINTS (Guest & Customer Access) ====================
 
     /**
+     * Get all reviews for all products (Public)
+     * GET /api/reviews/product
+     */
+    @GetMapping("/reviews/product")
+    public ResponseEntity<Map<String, Object>> getAllProductReviews() {
+        try {
+            // Fetch all product reviews
+            List<FeedbackResponse> allReviews = feedbackService.getFeedbacksByType("PRODUCT");
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "All product reviews retrieved successfully",
+                    "data", allReviews
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "Error retrieving reviews: " + e.getMessage()
+                    ));
+        }
+    }
+
+    /**
+     * Get all reviews for all services (Public)
+     * GET /api/reviews/service
+     */
+    @GetMapping("/reviews/service")
+    public ResponseEntity<Map<String, Object>> getAllServiceReviews() {
+        try {
+            // Fetch all service reviews
+            List<FeedbackResponse> allReviews = feedbackService.getFeedbacksByType("SERVICE");
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "All service reviews retrieved successfully",
+                    "data", allReviews
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "Error retrieving reviews: " + e.getMessage()
+                    ));
+        }
+    }
+
+    /**
      * Get reviews for a product (Public)
      * GET /api/reviews/product/{productId}
      * Scenario 1: View Product Reviews - accessible to all users including guests

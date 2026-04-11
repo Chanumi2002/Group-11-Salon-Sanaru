@@ -4,12 +4,12 @@ import { toast } from 'sonner';
 import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function ReviewForm({ onReviewAdded, onCancel }) {
+export default function ReviewForm({ onReviewAdded, onCancel, productId, serviceId, itemName }) {
   const [formData, setFormData] = useState({
     rating: 5,
     comment: '',
-    feedbackType: 'PRODUCT',
-    targetId: null,
+    feedbackType: productId ? 'PRODUCT' : (serviceId ? 'SERVICE' : 'PRODUCT'),
+    targetId: productId || serviceId || null,
   });
   const [loading, setLoading] = useState(false);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -44,7 +44,13 @@ export default function ReviewForm({ onReviewAdded, onCancel }) {
 
     try {
       setLoading(true);
-      const response = await customerService.submitFeedback(formData);
+      // Add a timeout of 30 seconds for the request
+      const submitPromise = customerService.submitFeedback(formData);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout - taking too long')), 30000)
+      );
+      
+      const response = await Promise.race([submitPromise, timeoutPromise]);
       
       if (response.data.success) {
         toast.success('Review submitted successfully!');
@@ -62,7 +68,11 @@ export default function ReviewForm({ onReviewAdded, onCancel }) {
       }
     } catch (error) {
       console.error('Error submitting review:', error);
-      toast.error(error.response?.data?.message || 'Failed to submit review');
+      if (error.message === 'Request timeout - taking too long') {
+        toast.error('Request is taking too long. Please try again.');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to submit review');
+      }
     } finally {
       setLoading(false);
     }
@@ -70,6 +80,14 @@ export default function ReviewForm({ onReviewAdded, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Item name display if provided */}
+      {itemName && (
+        <div className="rounded-lg bg-[#F8F5F3] p-4 border border-[#E4D8D2]">
+          <p className="text-sm text-[#7D746F]">Reviewing:</p>
+          <p className="text-lg font-semibold text-[#1A1717]">{itemName}</p>
+        </div>
+      )}
+
       {/* Feedback Type */}
       <div>
         <label className="block text-sm font-semibold text-[#1A1717] mb-2">
@@ -79,7 +97,8 @@ export default function ReviewForm({ onReviewAdded, onCancel }) {
           name="feedbackType"
           value={formData.feedbackType}
           onChange={handleChange}
-          className="w-full rounded-lg border border-[#DED6D2] bg-[#FDFDFD] px-4 py-3 text-[#1A1717] focus:border-[#A31A11] focus:outline-none transition"
+          disabled={!!productId || !!serviceId}
+          className="w-full rounded-lg border border-[#DED6D2] bg-[#FDFDFD] px-4 py-3 text-[#1A1717] focus:border-[#A31A11] focus:outline-none transition disabled:opacity-60"
         >
           {feedbackTypes.map((type) => (
             <option key={type.value} value={type.value}>

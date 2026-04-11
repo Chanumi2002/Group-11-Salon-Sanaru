@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, ReceiptText, ShoppingBag, XCircle } from 'lucide-react';
+import { Loader2, ReceiptText, ShoppingBag, XCircle, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { cartService } from '@/services/cartService';
@@ -167,11 +167,22 @@ export default function CustomerOrders() {
                   {/* Items summary */}
                   {Array.isArray(order.items) && order.items.length > 0 && (
                     <div className="mt-3 border-t border-gray-100 pt-3">
-                      <ul className="space-y-1">
+                      <ul className="space-y-2">
                         {order.items.map((item) => (
-                          <li key={item.orderItemId ?? item.productId} className="flex justify-between text-xs text-gray-600">
-                            <span>{item.productName} × {item.quantity}</span>
-                            <span className="font-medium">Rs. {toMoney(item.subTotal)}</span>
+                          <li key={item.orderItemId ?? item.productId} className="flex items-center justify-between gap-3">
+                            <div className="flex flex-1 flex-col gap-1">
+                              <span className="text-xs text-gray-600">{item.productName} × {item.quantity}</span>
+                              <span className="text-xs font-medium text-gray-500">Rs. {toMoney(item.subTotal)}</span>
+                            </div>
+                            {(status === 'CONFIRMED' || status === 'PAID') && (
+                              <button
+                                onClick={() => navigate(`/customer_dashboard/write-review?productId=${item.productId}&productName=${encodeURIComponent(item.productName)}`)}
+                                className="flex items-center gap-1 rounded-full bg-[#8E1616] px-3 py-1 text-xs font-semibold text-white transition hover:bg-[#741212] whitespace-nowrap"
+                              >
+                                <MessageSquare className="h-3 w-3" />
+                                Review
+                              </button>
+                            )}
                           </li>
                         ))}
                       </ul>

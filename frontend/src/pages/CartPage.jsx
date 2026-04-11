@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2, ShoppingCart, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Navbar } from '@/components/common/Navbar';
-import { Footer } from '@/components/common/Footer';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import CartItemRow from '@/components/CartItemRow';
 import { useCart } from '@/context/CartContext';
 import { paymentService } from '@/services/paymentService';
@@ -137,11 +136,8 @@ export default function CartPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#EBEBEB]">
-      <Navbar />
-
-      <main className="mx-auto w-full max-w-[1380px] flex-1 px-4 py-8 md:px-6 lg:px-10">
-        <section className="rounded-[20px] border border-[#DED6D2] bg-[#FDFDFD] p-5 shadow-[0_16px_30px_-22px_rgba(73,61,61,0.4)] md:p-7">
+    <DashboardLayout>
+      <section className="rounded-[20px] border border-[#DED6D2] bg-[#FDFDFD] p-5 shadow-[0_16px_30px_-22px_rgba(73,61,61,0.4)] md:p-7">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E7DEDB] pb-4">
             <div className="flex items-center gap-2.5">
               <div className="rounded-full bg-[#F7E4E2] p-2 text-[#8B1A1A]">
@@ -190,7 +186,7 @@ export default function CartPage() {
               <p className="mt-2 text-sm text-[#7D746F]">Add products from the shop to see them here.</p>
               <button
                 type="button"
-                onClick={() => navigate('/products')}
+                onClick={() => navigate('/customer_dashboard/shop')}
                 className="mt-5 rounded-full bg-[#8E1616] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#D84040]"
               >
                 Continue shopping
@@ -237,9 +233,6 @@ export default function CartPage() {
             </div>
           )}
         </section>
-      </main>
-
-      <Footer />
-    </div>
+    </DashboardLayout>
   );
 }

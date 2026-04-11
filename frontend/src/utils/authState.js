@@ -11,17 +11,29 @@ const normalizeRole = (role) => {
 };
 
 export const getStoredToken = () => {
-  for (const key of TOKEN_KEYS) {
-    const value = localStorage.getItem(key);
-    if (value && value.trim()) {
-      return value;
+  try {
+    for (const key of TOKEN_KEYS) {
+      const value = localStorage.getItem(key);
+      if (value && value.trim()) {
+        return value;
+      }
     }
+  } catch (error) {
+    // Handle Tracking Prevention or private mode localStorage access
+    console.debug('localStorage access restricted');
   }
-
   return null;
 };
 
-export const getStoredRole = () => normalizeRole(localStorage.getItem('role'));
+export const getStoredRole = () => {
+  try {
+    return normalizeRole(localStorage.getItem('role'));
+  } catch (error) {
+    // Handle Tracking Prevention or private mode localStorage access
+    console.debug('localStorage access restricted');
+    return '';
+  }
+};
 
 export const readAuthState = () => {
   const token = getStoredToken();
