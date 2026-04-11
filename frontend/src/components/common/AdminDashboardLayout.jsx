@@ -59,9 +59,9 @@ export function AdminDashboardLayout({ children }) {
         }`}
       >
         {/* Header */}
-        <div className="flex items-center gap-2 px-6 h-16 border-b border-border">
-          <img src={logoImage} alt="Salon Sanaru Logo" className="h-9 w-9 object-cover rounded-full" />
-          <span className="font-display text-lg font-bold text-foreground">
+        <div className="flex items-center gap-3 px-6 h-20 border-b border-border">
+          <img src={logoImage} alt="Salon Sanaru Logo" className="h-11 w-11 object-cover rounded-full" />
+          <span className="font-display text-xl font-bold text-foreground">
             Salon Sanaru
           </span>
           <button
@@ -123,7 +123,7 @@ export function AdminDashboardLayout({ children }) {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Top Bar */}
-        <header className="h-16 border-b border-border bg-white flex items-center justify-between px-6 lg:px-8">
+        <header className="h-20 border-b border-border bg-white flex items-center justify-between px-6 lg:px-12">
           <div className="flex items-center">
             <button
               className="lg:hidden text-muted-foreground"
@@ -131,17 +131,17 @@ export function AdminDashboardLayout({ children }) {
             >
               <Menu className="h-6 w-6" />
             </button>
-            <h1 className="ml-4 lg:ml-0 text-lg font-semibold text-foreground">
+            <h1 className="ml-4 lg:ml-0 text-2xl font-semibold text-foreground">
               Admin Dashboard
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link
               to="/admin_dashboard/profile"
-              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
+              className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
               title="My Account"
             >
-              <User className="h-5 w-5 text-muted-foreground" />
+              <User className="h-6 w-6 text-muted-foreground" />
             </Link>
           </div>
         </header>

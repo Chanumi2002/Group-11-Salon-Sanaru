@@ -21,7 +21,7 @@ export default function ProductPage() {
     description: '',
     price: '',
     categoryId: '',
-    stockQuantity: 0,
+    stockQuantity: 10,
     lowStockThreshold: 5,
   });
   const [selectedFile, setSelectedFile] = useState(null);
@@ -88,7 +88,11 @@ export default function ProductPage() {
       return;
     }
     if (!formData.price || isNaN(formData.price) || parseFloat(formData.price) <= 0) {
-      toast.error('Valid price is required');
+      toast.error('Price must be a positive number');
+      return;
+    }
+    if (parseFloat(formData.price) > 99999999.99) {
+      toast.error('Price cannot exceed 99,999,999.99');
       return;
     }
     if (!formData.categoryId) {
@@ -100,20 +104,37 @@ export default function ProductPage() {
       return;
     }
 
+    if (isNaN(formData.stockQuantity) || parseInt(formData.stockQuantity, 10) < 0) {
+      toast.error('Stock quantity cannot be negative');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const form = new FormData();
-      form.append('name', formData.name);
-      form.append('description', formData.description);
-      form.append('price', parseFloat(formData.price));
-      const selectedCategoryId = String(parseInt(formData.categoryId, 10));
-      // Keep both keys for backend compatibility.
-      form.append('categoryIds', selectedCategoryId);
-      form.append('categoryId', selectedCategoryId);
-      form.append('stockQuantity', formData.stockQuantity);
-      form.append('lowStockThreshold', formData.lowStockThreshold);
-      if (selectedFile) {
-        form.append('image', selectedFile);
+      form.append('name', formData.name.trim());
+      form.append('description', formData.description.trim());
+      form.append('price', parseFloat(formData.price).toString());
+      
+      // Backend expects categoryIds as List<Long> - append as individual values
+      const categoryId = parseInt(formData.categoryId, 10);
+      form.append('categoryIds', categoryId);
+      
+      form.append('stockQuantity', parseInt(formData.stockQuantity || 0, 10));
+      form.append('lowStockThreshold', parseInt(formData.lowStockThreshold || 5, 10));
+      
+      // Image is REQUIRED by backend
+      if (!selectedFile) {
+        toast.error('Image is required for all products');
+        setIsSubmitting(false);
+        return;
+      }
+      form.append('image', selectedFile);
+
+      // Debug: Log FormData contents
+      console.log('FormData contents:');
+      for (let [key, value] of form.entries()) {
+        console.log(`${key}:`, value instanceof File ? `File (${value.name}, ${value.size} bytes)` : value);
       }
 
       if (editingId) {
@@ -125,7 +146,7 @@ export default function ProductPage() {
       }
 
       // Reset form
-      setFormData({ name: '', description: '', price: '', categoryId: '', stockQuantity: 0, lowStockThreshold: 5 });
+      setFormData({ name: '', description: '', price: '', categoryId: '', stockQuantity: 10, lowStockThreshold: 5 });
       setSelectedFile(null);
       setPreviewUrl('');
       setEditingId(null);
@@ -135,6 +156,10 @@ export default function ProductPage() {
       await fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      console.error('Full response:', JSON.stringify(error.response?.data, null, 2));
+      console.error('Error message chain:', error.message);
       toast.error(error.response?.data?.message || `Failed to save product. Maximum photo size is ${MAX_PRODUCT_PHOTO_MB}MB.`);
     } finally {
       setIsSubmitting(false);
@@ -151,10 +176,10 @@ export default function ProductPage() {
     setFormData({
       name: product.name,
       description: product.description,
-      price: product.price,
+      price: product.price || '',
       categoryId: selectedCategoryId ? String(selectedCategoryId) : '',
-      stockQuantity: product.stockQuantity ?? 0,
-      lowStockThreshold: product.lowStockThreshold ?? 5,
+      stockQuantity: parseInt(product.stockQuantity ?? 10, 10),
+      lowStockThreshold: parseInt(product.lowStockThreshold ?? 5, 10),
     });
     setPreviewUrl(resolveImageUrl(product.imageUrl || product.image || product.imagePath || ''));
     setSelectedFile(null);
@@ -287,9 +312,11 @@ export default function ProductPage() {
                     placeholder="0.00"
                     step="0.01"
                     min="0"
+                    max="99999999.99"
                     disabled={isSubmitting}
                     className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Maximum price: 99,999,999.99</p>
                 </div>
 
                 {/* Stock Quantity */}

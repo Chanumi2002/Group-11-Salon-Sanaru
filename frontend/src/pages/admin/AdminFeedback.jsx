@@ -4,7 +4,7 @@ import { adminService } from '@/services/api';
 import { toast } from 'sonner';
 import { Trash2, Star, Loader, AlertCircle, Filter, Check } from 'lucide-react';
 import { AdminDashboardLayout } from '@/components/common/AdminDashboardLayout';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { useFeedback } from '@/context/FeedbackContext';
 
 export default function AdminFeedback() {
@@ -16,7 +16,7 @@ export default function AdminFeedback() {
   const [markingAsReadId, setMarkingAsReadId] = useState(null);
   const [filterType, setFilterType] = useState('ALL');
   const [stats, setStats] = useState(null);
-  const { decrementUnreadCount } = useFeedback();
+  const { decrementUnreadCount, fetchUnreadCount } = useFeedback();
 
   const feedbackTypes = [
     { value: 'ALL', label: 'All Reviews' },

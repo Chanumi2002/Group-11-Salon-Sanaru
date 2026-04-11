@@ -34,8 +34,8 @@ export function DashboardLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { cart } = useCart();
-  const cartItemCount = cart?.items?.length || 0;
+  const { cartCount } = useCart();
+  const cartItemCount = cartCount || 0;
 
   return (
     <div className="flex min-h-screen bg-[#f4f2ef] text-slate-900 [--background:36_22%_94%] [--foreground:222_47%_11%] [--card:0_0%_100%] [--card-foreground:222_47%_11%] [--muted:36_24%_91%] [--muted-foreground:215_16%_36%] [--accent:0_0%_97%] [--accent-foreground:222_47%_11%] [--border:30_14%_84%]">
@@ -53,9 +53,9 @@ export function DashboardLayout({ children }) {
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="flex items-center gap-2 px-6 h-16 border-b border-border">
-          <img src={logoImage} alt="Salon Sanaru Logo" className="h-9 w-9 object-cover rounded-full" />
-          <span className="font-display text-lg font-bold text-foreground">
+        <div className="flex items-center gap-3 px-6 h-20 border-b border-border">
+          <img src={logoImage} alt="Salon Sanaru Logo" className="h-11 w-11 object-cover rounded-full" />
+          <span className="font-display text-xl font-bold text-foreground">
             Salon Sanaru
           </span>
           <button
@@ -111,23 +111,23 @@ export function DashboardLayout({ children }) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-border bg-white flex items-center px-4 lg:px-8 gap-4">
+        <header className="h-20 border-b border-border bg-white flex items-center px-4 lg:px-12 gap-6">
           <button
             className="lg:hidden text-foreground"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-5 w-5" />
           </button>
-          <h2 className="font-display text-lg font-semibold text-foreground flex-1">
+          <h2 className="font-display text-2xl font-semibold text-foreground">
             Customer Portal
           </h2>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 ml-auto">
             <Link
               to="/cart"
-              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors relative"
+              className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors relative"
               title="My Cart"
             >
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              <ShoppingCart className="h-6 w-6 text-muted-foreground" />
               {cartItemCount > 0 && (
                 <span className="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-[#8E1616] rounded-full">
                   {cartItemCount}
@@ -136,10 +136,10 @@ export function DashboardLayout({ children }) {
             </Link>
             <Link
               to="/customer_profile"
-              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
+              className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
               title="My Account"
             >
-              <User className="h-4 w-4 text-muted-foreground" />
+              <User className="h-6 w-6 text-muted-foreground" />
             </Link>
           </div>
         </header>
