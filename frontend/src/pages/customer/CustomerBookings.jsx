@@ -17,9 +17,10 @@ export default function CustomerBookings() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      // Assuming there's an endpoint for getting customer bookings
-      // If not, we'll show this as a placeholder
-      toast.info('Loading your bookings...');
+      const response = await customerService.getMyBookings();
+      // Backend returns a list of AppointmentResponse objects
+      // mapping directly to what the component expects!
+      setBookings(response.data);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast.error('Failed to load bookings');
