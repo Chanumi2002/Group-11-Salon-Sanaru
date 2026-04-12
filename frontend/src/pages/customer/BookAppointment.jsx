@@ -80,8 +80,13 @@ export default function BookAppointment() {
       navigate('/customer_dashboard/bookings');
     } catch (error) {
       console.error(error);
-      const msg = error.response?.data?.message || typeof error.response?.data === 'string' ? error.response?.data : 'Time slot unavailable.';
-      toast.error(msg || 'An error occurred while booking.');
+      let msg = 'Time slot unavailable.';
+      if (error.response?.data?.message) {
+        msg = error.response.data.message;
+      } else if (typeof error.response?.data === 'string') {
+        msg = error.response.data;
+      }
+      toast.error(msg);
     } finally {
       setIsBooking(false);
     }
