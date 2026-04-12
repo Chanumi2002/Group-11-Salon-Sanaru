@@ -14,4 +14,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     boolean existsByAppointmentDateAndAppointmentTimeAndStatusIn(LocalDate date, LocalTime time, List<AppointmentStatus> statuses);
 
     List<Appointment> findByAppointmentDateAndStatusIn(LocalDate date, List<AppointmentStatus> statuses);
+
+    List<Appointment> findByCustomerOrderByAppointmentDateDescAppointmentTimeDesc(com.sanaru.backend.model.User customer);
 }
