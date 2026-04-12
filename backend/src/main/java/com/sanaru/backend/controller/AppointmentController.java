@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/appointments")
@@ -24,5 +25,13 @@ public class AppointmentController {
         String userEmail = principal.getName();
         AppointmentResponse response = appointmentService.createAppointment(request, userEmail);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<List<AppointmentResponse>> getMyAppointments(Principal principal) {
+        String userEmail = principal.getName();
+        List<AppointmentResponse> response = appointmentService.getAppointmentsByUser(userEmail);
+        return ResponseEntity.ok(response);
     }
 }
