@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -70,5 +71,26 @@ public class AppointmentServiceImpl implements AppointmentService {
         response.setStatus(savedAppointment.getStatus());
 
         return response;
+    }
+
+    @Override
+    public List<AppointmentResponse> getAppointmentsByUser(String userEmail) {
+        User customer = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+
+        List<Appointment> appointments = appointmentRepository.findByCustomerOrderByAppointmentDateDescAppointmentTimeDesc(customer);
+
+        return appointments.stream().map(appointment -> {
+            AppointmentResponse response = new AppointmentResponse();
+            response.setId(appointment.getId());
+            response.setCustomerId(appointment.getCustomer().getId());
+            response.setCustomerName(appointment.getCustomer().getFirstName() + " " + appointment.getCustomer().getLastName());
+            response.setServiceId(appointment.getService().getId());
+            response.setServiceName(appointment.getService().getName());
+            response.setDate(appointment.getAppointmentDate());
+            response.setTime(appointment.getAppointmentTime());
+            response.setStatus(appointment.getStatus());
+            return response;
+        }).collect(Collectors.toList());
     }
 }
