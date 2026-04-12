@@ -272,6 +272,11 @@ export const customerService = {
   deleteMyFeedback: async (feedbackId) => {
     return await api.delete(`/customer/feedback/${feedbackId}`);
   },
+
+  // Book an appointment (Story 1)
+  bookAppointment: async (appointmentData) => {
+    return await api.post('/appointments', appointmentData);
+  },
 };
 
 export default api;

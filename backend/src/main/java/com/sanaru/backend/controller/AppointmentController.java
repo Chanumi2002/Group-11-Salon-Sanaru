@@ -1,0 +1,28 @@
+package com.sanaru.backend.controller;
+
+import com.sanaru.backend.dto.AppointmentRequest;
+import com.sanaru.backend.dto.AppointmentResponse;
+import com.sanaru.backend.service.AppointmentService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
+
+@RestController
+@RequestMapping("/api/appointments")
+@RequiredArgsConstructor
+public class AppointmentController {
+
+    private final AppointmentService appointmentService;
+
+    @PostMapping
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<AppointmentResponse> bookAppointment(@RequestBody AppointmentRequest request, Principal principal) {
+        String userEmail = principal.getName();
+        AppointmentResponse response = appointmentService.createAppointment(request, userEmail);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+}
