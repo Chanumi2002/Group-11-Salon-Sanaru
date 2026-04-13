@@ -282,6 +282,11 @@ export const customerService = {
   getMyBookings: async () => {
     return await api.get('/appointments');
   },
+
+  // Cancel an appointment
+  cancelAppointment: async (appointmentId) => {
+    return await api.put(`/appointments/${appointmentId}/cancel`);
+  },
 };
 
 export default api;
