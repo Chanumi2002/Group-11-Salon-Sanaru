@@ -42,4 +42,24 @@ public class AppointmentController {
         AppointmentResponse response = appointmentService.cancelAppointment(id, userEmail);
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<AppointmentResponse>> getAllAppointments() {
+        List<AppointmentResponse> response = appointmentService.getAllAppointments();
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AppointmentResponse> approveAppointment(@PathVariable Long id) {
+        AppointmentResponse response = appointmentService.approveAppointment(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AppointmentResponse> rejectAppointment(@PathVariable Long id) {
+        AppointmentResponse response = appointmentService.rejectAppointment(id);
+        return ResponseEntity.ok(response);
+    }
 }
