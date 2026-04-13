@@ -34,4 +34,12 @@ public class AppointmentController {
         List<AppointmentResponse> response = appointmentService.getAppointmentsByUser(userEmail);
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<AppointmentResponse> cancelAppointment(@PathVariable Long id, Principal principal) {
+        String userEmail = principal.getName();
+        AppointmentResponse response = appointmentService.cancelAppointment(id, userEmail);
+        return ResponseEntity.ok(response);
+    }
 }
