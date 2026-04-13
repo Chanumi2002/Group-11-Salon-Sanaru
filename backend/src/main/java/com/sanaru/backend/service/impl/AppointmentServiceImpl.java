@@ -93,4 +93,36 @@ public class AppointmentServiceImpl implements AppointmentService {
             return response;
         }).collect(Collectors.toList());
     }
+
+    @Override
+    public AppointmentResponse cancelAppointment(Long appointmentId, String userEmail) {
+        User customer = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new NoSuchElementException("Appointment not found"));
+
+        if (!appointment.getCustomer().getId().equals(customer.getId())) {
+            throw new IllegalArgumentException("You are not authorized to cancel this appointment");
+        }
+
+        if (appointment.getStatus() != AppointmentStatus.PENDING && appointment.getStatus() != AppointmentStatus.CONFIRMED) {
+            throw new IllegalStateException("Only pending or confirmed appointments can be cancelled");
+        }
+
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        Appointment updatedAppointment = appointmentRepository.save(appointment);
+
+        AppointmentResponse response = new AppointmentResponse();
+        response.setId(updatedAppointment.getId());
+        response.setCustomerId(updatedAppointment.getCustomer().getId());
+        response.setCustomerName(updatedAppointment.getCustomer().getFirstName() + " " + updatedAppointment.getCustomer().getLastName());
+        response.setServiceId(updatedAppointment.getService().getId());
+        response.setServiceName(updatedAppointment.getService().getName());
+        response.setDate(updatedAppointment.getAppointmentDate());
+        response.setTime(updatedAppointment.getAppointmentTime());
+        response.setStatus(updatedAppointment.getStatus());
+
+        return response;
+    }
 }

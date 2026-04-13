@@ -8,4 +8,5 @@ import java.util.List;
 public interface AppointmentService {
     AppointmentResponse createAppointment(AppointmentRequest request, String userEmail);
     List<AppointmentResponse> getAppointmentsByUser(String userEmail);
+    AppointmentResponse cancelAppointment(Long appointmentId, String userEmail);
 }
