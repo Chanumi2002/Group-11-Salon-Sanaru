@@ -49,6 +49,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminFeedback from "./pages/admin/AdminFeedback";
+import BookingManagement from "./pages/admin/BookingManagement";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -266,6 +267,15 @@ const App = () => (
                 element={
                   <AdminProtectedRoute>
                     <AdminFeedback />
+                  </AdminProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin_dashboard/appointments"
+                element={
+                  <AdminProtectedRoute>
+                    <BookingManagement />
                   </AdminProtectedRoute>
                 }
               />

@@ -13,6 +13,7 @@ import {
   X,
   User,
   Folder,
+  Calendar,
 } from "lucide-react";
 import logoImage from "@/assets/logo.jpeg";
 import { shopService } from "@/services/shopApi";
@@ -26,6 +27,7 @@ const adminSidebarLinks = [
   { label: "Manage Services", to: "/admin_dashboard/services", icon: Briefcase },
   { label: "Manage Orders", to: "/admin_dashboard/orders", icon: Package },
   { label: "Manage Payments", to: "/admin_dashboard/payments", icon: DollarSign },
+  { label: "Booking Management", to: "/admin_dashboard/appointments", icon: Calendar },
   { label: "Review Moderation", to: "/admin_dashboard/feedback", icon: Star },
 ];
 
@@ -54,9 +56,8 @@ export function AdminDashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border flex flex-col transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          }`}
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-6 h-20 border-b border-border">
@@ -90,11 +91,10 @@ export function AdminDashboardLayout({ children }) {
                 key={link.to}
                 to={link.to}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors relative ${
-                  isActive
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors relative ${isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
+                  }`}
               >
                 <Icon className="h-5 w-5" />
                 {link.label}
