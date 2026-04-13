@@ -108,6 +108,23 @@ export const adminService = {
     return await api.put(`/admin/orders/${orderId}/approve`);
   },
 
+  // ==================== APPOINTMENT OPERATIONS ====================
+
+  // Get all appointments
+  getAllAppointments: async () => {
+    return await api.get('/appointments/all');
+  },
+
+  // Approve an appointment
+  approveAppointment: async (appointmentId) => {
+    return await api.put(`/appointments/${appointmentId}/approve`);
+  },
+
+  // Reject an appointment
+  rejectAppointment: async (appointmentId) => {
+    return await api.put(`/appointments/${appointmentId}/reject`);
+  },
+
   // ==================== CATEGORY OPERATIONS ====================
 
   // Get all categories
