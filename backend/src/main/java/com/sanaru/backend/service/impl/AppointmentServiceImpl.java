@@ -60,17 +60,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        AppointmentResponse response = new AppointmentResponse();
-        response.setId(savedAppointment.getId());
-        response.setCustomerId(customer.getId());
-        response.setCustomerName(customer.getFirstName() + " " + customer.getLastName());
-        response.setServiceId(service.getId());
-        response.setServiceName(service.getName());
-        response.setDate(savedAppointment.getAppointmentDate());
-        response.setTime(savedAppointment.getAppointmentTime());
-        response.setStatus(savedAppointment.getStatus());
-
-        return response;
+        return mapToResponse(savedAppointment);
     }
 
     @Override
@@ -80,18 +70,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         List<Appointment> appointments = appointmentRepository.findByCustomerOrderByAppointmentDateDescAppointmentTimeDesc(customer);
 
-        return appointments.stream().map(appointment -> {
-            AppointmentResponse response = new AppointmentResponse();
-            response.setId(appointment.getId());
-            response.setCustomerId(appointment.getCustomer().getId());
-            response.setCustomerName(appointment.getCustomer().getFirstName() + " " + appointment.getCustomer().getLastName());
-            response.setServiceId(appointment.getService().getId());
-            response.setServiceName(appointment.getService().getName());
-            response.setDate(appointment.getAppointmentDate());
-            response.setTime(appointment.getAppointmentTime());
-            response.setStatus(appointment.getStatus());
-            return response;
-        }).collect(Collectors.toList());
+        return appointments.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     @Override
@@ -113,16 +92,53 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setStatus(AppointmentStatus.CANCELLED);
         Appointment updatedAppointment = appointmentRepository.save(appointment);
 
-        AppointmentResponse response = new AppointmentResponse();
-        response.setId(updatedAppointment.getId());
-        response.setCustomerId(updatedAppointment.getCustomer().getId());
-        response.setCustomerName(updatedAppointment.getCustomer().getFirstName() + " " + updatedAppointment.getCustomer().getLastName());
-        response.setServiceId(updatedAppointment.getService().getId());
-        response.setServiceName(updatedAppointment.getService().getName());
-        response.setDate(updatedAppointment.getAppointmentDate());
-        response.setTime(updatedAppointment.getAppointmentTime());
-        response.setStatus(updatedAppointment.getStatus());
+        return mapToResponse(updatedAppointment);
+    }
 
+    @Override
+    public List<AppointmentResponse> getAllAppointments() {
+        List<Appointment> appointments = appointmentRepository.findAllByOrderByAppointmentDateDescAppointmentTimeDesc();
+        return appointments.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public AppointmentResponse approveAppointment(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new NoSuchElementException("Appointment not found"));
+
+        if (appointment.getStatus() != AppointmentStatus.PENDING) {
+            throw new IllegalStateException("Only pending appointments can be approved");
+        }
+
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
+        Appointment updatedAppointment = appointmentRepository.save(appointment);
+        return mapToResponse(updatedAppointment);
+    }
+
+    @Override
+    public AppointmentResponse rejectAppointment(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new NoSuchElementException("Appointment not found"));
+
+        if (appointment.getStatus() != AppointmentStatus.PENDING) {
+            throw new IllegalStateException("Only pending appointments can be rejected");
+        }
+
+        appointment.setStatus(AppointmentStatus.REJECTED);
+        Appointment updatedAppointment = appointmentRepository.save(appointment);
+        return mapToResponse(updatedAppointment);
+    }
+
+    private AppointmentResponse mapToResponse(Appointment appointment) {
+        AppointmentResponse response = new AppointmentResponse();
+        response.setId(appointment.getId());
+        response.setCustomerId(appointment.getCustomer().getId());
+        response.setCustomerName(appointment.getCustomer().getFirstName() + " " + appointment.getCustomer().getLastName());
+        response.setServiceId(appointment.getService().getId());
+        response.setServiceName(appointment.getService().getName());
+        response.setDate(appointment.getAppointmentDate());
+        response.setTime(appointment.getAppointmentTime());
+        response.setStatus(appointment.getStatus());
         return response;
     }
 }

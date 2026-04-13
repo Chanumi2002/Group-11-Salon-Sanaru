@@ -9,4 +9,7 @@ public interface AppointmentService {
     AppointmentResponse createAppointment(AppointmentRequest request, String userEmail);
     List<AppointmentResponse> getAppointmentsByUser(String userEmail);
     AppointmentResponse cancelAppointment(Long appointmentId, String userEmail);
+    List<AppointmentResponse> getAllAppointments();
+    AppointmentResponse approveAppointment(Long appointmentId);
+    AppointmentResponse rejectAppointment(Long appointmentId);
 }
