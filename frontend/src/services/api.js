@@ -108,6 +108,23 @@ export const adminService = {
     return await api.put(`/admin/orders/${orderId}/approve`);
   },
 
+  // ==================== APPOINTMENT OPERATIONS ====================
+
+  // Get all appointments
+  getAllAppointments: async () => {
+    return await api.get('/appointments/all');
+  },
+
+  // Approve an appointment
+  approveAppointment: async (appointmentId) => {
+    return await api.put(`/appointments/${appointmentId}/approve`);
+  },
+
+  // Reject an appointment
+  rejectAppointment: async (appointmentId) => {
+    return await api.put(`/appointments/${appointmentId}/reject`);
+  },
+
   // ==================== CATEGORY OPERATIONS ====================
 
   // Get all categories
@@ -271,6 +288,21 @@ export const customerService = {
   // Delete customer's own feedback
   deleteMyFeedback: async (feedbackId) => {
     return await api.delete(`/customer/feedback/${feedbackId}`);
+  },
+
+  // Book an appointment
+  bookAppointment: async (appointmentData) => {
+    return await api.post('/appointments', appointmentData);
+  },
+
+  // Get my appointments
+  getMyBookings: async () => {
+    return await api.get('/appointments');
+  },
+
+  // Cancel an appointment
+  cancelAppointment: async (appointmentId) => {
+    return await api.put(`/appointments/${appointmentId}/cancel`);
   },
 };
 
