@@ -27,9 +27,11 @@ export default function Register() {
     const e = {};
     if (!form.name.trim()) e.name = "Name is required";
     if (!form.email.includes("@")) e.email = "Enter a valid email";
-    if (form.phone.length < 8) e.phone = "Enter a valid phone number";
-    if (form.password.length < 6) e.password = "Password must be at least 6 characters";
-    if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match";
+    if (!/^[0-9]{10}$/.test(form.phone)) e.phone = "Phone number must be exactly 10 digits";
+    if (!form.password) e.password = "Password is required";
+    else if (form.password.length < 6) e.password = "Password must be at least 6 characters";
+    if (!form.confirmPassword) e.confirmPassword = "Confirm password is required";
+    else if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match";
     if (!form.gender) e.gender = "Gender is required";
     setErrors(e);
     return Object.keys(e).length === 0;

@@ -56,8 +56,8 @@ export function AdminDashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 h-screen bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:translate-x-0`}
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-6 h-20 border-b border-border">
@@ -81,7 +81,7 @@ export function AdminDashboardLayout({ children }) {
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-hidden">
           {adminSidebarLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to;
@@ -109,7 +109,7 @@ export function AdminDashboardLayout({ children }) {
         </nav>
 
         {/* Logout Button */}
-        <div className="px-4 py-4 border-t border-border">
+        <div className="mt-auto px-4 py-4 border-t border-border">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
@@ -121,7 +121,7 @@ export function AdminDashboardLayout({ children }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col lg:ml-64">
         {/* Top Bar */}
         <header className="h-20 border-b border-border bg-white flex items-center justify-between px-6 lg:px-12">
           <div className="flex items-center">
