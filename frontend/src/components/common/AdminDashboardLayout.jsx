@@ -14,6 +14,7 @@ import {
   User,
   Folder,
   Calendar,
+  Clock,
 } from "lucide-react";
 import logoImage from "@/assets/logo.jpeg";
 import { shopService } from "@/services/shopApi";
@@ -25,6 +26,7 @@ const adminSidebarLinks = [
   { label: "Manage Categories", to: "/admin_dashboard/categories", icon: Folder },
   { label: "Manage Products", to: "/admin_dashboard/products", icon: ShoppingCart },
   { label: "Manage Services", to: "/admin_dashboard/services", icon: Briefcase },
+  { label: "Time Slot Management", to: "/admin_dashboard/time-slots", icon: Clock },
   { label: "Manage Orders", to: "/admin_dashboard/orders", icon: Package },
   { label: "Manage Payments", to: "/admin_dashboard/payments", icon: DollarSign },
   { label: "Booking Management", to: "/admin_dashboard/appointments", icon: Calendar },

@@ -50,6 +50,7 @@ import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminFeedback from "./pages/admin/AdminFeedback";
 import BookingManagement from "./pages/admin/BookingManagement";
+import AdminTimeSlots from "./pages/admin/AdminTimeSlots";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -231,6 +232,15 @@ const App = () => (
                 element={
                   <AdminProtectedRoute>
                     <ServicePage />
+                  </AdminProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin_dashboard/time-slots"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminTimeSlots />
                   </AdminProtectedRoute>
                 }
               />

@@ -4,9 +4,11 @@ import com.sanaru.backend.dto.AppointmentRequest;
 import com.sanaru.backend.dto.AppointmentResponse;
 import com.sanaru.backend.enums.AppointmentStatus;
 import com.sanaru.backend.model.Appointment;
+import com.sanaru.backend.model.TimeSlot;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.AppointmentRepository;
 import com.sanaru.backend.repository.ServiceRepository;
+import com.sanaru.backend.repository.TimeSlotRepository;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
     private final ServiceRepository serviceRepository;
+    private final TimeSlotRepository timeSlotRepository;
 
     @Override
     public AppointmentResponse createAppointment(AppointmentRequest request, String userEmail) {
@@ -36,19 +39,39 @@ public class AppointmentServiceImpl implements AppointmentService {
         LocalTime requestedStartTime = request.getTime();
         LocalTime requestedEndTime = requestedStartTime.plusMinutes(service.getDurationMinutes());
 
+        // Validate that the requested time falls within an active time slot for the day
+        List<TimeSlot> activeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(request.getDate().getDayOfWeek());
+        TimeSlot matchingSlot = null;
+        
+        for (TimeSlot slot : activeSlots) {
+            if (!requestedStartTime.isBefore(slot.getStartTime()) && 
+                !requestedEndTime.isAfter(slot.getEndTime())) {
+                matchingSlot = slot;
+                break;
+            }
+        }
+
+        if (matchingSlot == null) {
+            throw new IllegalArgumentException("The selected time is outside operating hours");
+        }
+
+        // Check capacity: count existing overlapping appointments at the requested time
         List<Appointment> existingAppointments = appointmentRepository.findByAppointmentDateAndStatusIn(
                 request.getDate(),
                 List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
         );
 
-        for (Appointment existing : existingAppointments) {
-            LocalTime existingStartTime = existing.getAppointmentTime();
-            LocalTime existingEndTime = existingStartTime.plusMinutes(existing.getService().getDurationMinutes());
+        long overlappingCount = existingAppointments.stream()
+                .filter(existing -> {
+                    LocalTime existingStartTime = existing.getAppointmentTime();
+                    LocalTime existingEndTime = existingStartTime.plusMinutes(existing.getService().getDurationMinutes());
+                    // Check if the time ranges overlap
+                    return requestedStartTime.isBefore(existingEndTime) && requestedEndTime.isAfter(existingStartTime);
+                })
+                .count();
 
-            // Check if the time ranges overlap
-            if (requestedStartTime.isBefore(existingEndTime) && requestedEndTime.isAfter(existingStartTime)) {
-                throw new IllegalArgumentException("Time slot is unavailable");
-            }
+        if (overlappingCount >= matchingSlot.getCapacity()) {
+            throw new IllegalArgumentException("Time slot is fully booked. No available spots for this time.");
         }
 
         Appointment appointment = new Appointment();

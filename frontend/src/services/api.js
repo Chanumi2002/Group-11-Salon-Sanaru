@@ -125,7 +125,37 @@ export const adminService = {
     return await api.put(`/appointments/${appointmentId}/reject`);
   },
 
-  // ==================== CATEGORY OPERATIONS ====================
+  // ==================== TIME SLOT OPERATIONS ====================
+
+  // Get all time slots
+  getAllTimeSlots: async () => {
+    return await api.get('/time-slots');
+  },
+
+  // Get available time slots for a specific day
+  getAvailableSlots: async (dayOfWeek) => {
+    return await api.get(`/time-slots/available/${dayOfWeek}`);
+  },
+
+  // Create new time slot
+  createTimeSlot: async (timeSlotData) => {
+    return await api.post('/time-slots', timeSlotData);
+  },
+
+  // Update time slot
+  updateTimeSlot: async (timeSlotId, timeSlotData) => {
+    return await api.put(`/time-slots/${timeSlotId}`, timeSlotData);
+  },
+
+  // Delete time slot
+  deleteTimeSlot: async (timeSlotId) => {
+    return await api.delete(`/time-slots/${timeSlotId}`);
+  },
+
+  // Toggle time slot active/inactive
+  toggleTimeSlot: async (timeSlotId) => {
+    return await api.put(`/time-slots/${timeSlotId}/toggle`);
+  },
 
   // Get all categories
   getCategories: async () => {
