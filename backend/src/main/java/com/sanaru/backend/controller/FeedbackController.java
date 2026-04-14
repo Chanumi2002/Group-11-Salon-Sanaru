@@ -147,6 +147,12 @@ public class FeedbackController {
                     "success", true,
                     "message", "Feedback deleted successfully"
             ));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "success", false,
+                            "message", e.getMessage()
+                    ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
@@ -522,6 +528,12 @@ public class FeedbackController {
                     "success", true,
                     "message", "Feedback deleted successfully"
             ));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "success", false,
+                            "message", e.getMessage()
+                    ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
