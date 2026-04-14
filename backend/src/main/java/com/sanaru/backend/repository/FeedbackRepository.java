@@ -32,12 +32,20 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
     @Query("SELECT f FROM Feedback f ORDER BY f.createdAt DESC")
     List<Feedback> findAllOrderByCreatedAtDesc();
 
-    // Find all unread feedbacks
+    // Find all unread/unapproved feedbacks
     List<Feedback> findByIsReadFalse();
 
-    // Count unread feedbacks
+    // Count unread/unapproved feedbacks
     long countByIsReadFalse();
 
     // Find unread feedbacks by type
     List<Feedback> findByIsReadFalseAndFeedbackType(String feedbackType);
+    
+    // ========== APPROVED FEEDBACKS (for public display) ==========
+    
+    // Find all approved feedbacks of a specific type
+    List<Feedback> findByFeedbackTypeAndIsReadTrue(String feedbackType);
+    
+    // Find all approved feedbacks for a target of a specific type
+    List<Feedback> findByTargetIdAndFeedbackTypeAndIsReadTrue(Long targetId, String feedbackType);
 }

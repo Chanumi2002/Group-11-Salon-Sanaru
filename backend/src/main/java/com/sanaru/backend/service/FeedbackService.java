@@ -28,12 +28,17 @@ public interface FeedbackService {
 
     Map<String, Object> getTargetStats(Long targetId, String feedbackType);
 
-    // Mark feedback as read
-    FeedbackResponse markFeedbackAsRead(Long feedbackId);
+    // Approve feedback (formerly markFeedbackAsRead)
+    FeedbackResponse approveFeedback(Long feedbackId);
 
-    // Get count of unread feedbacks
-    long getUnreadFeedbackCount();
+    // Get count of unread/unapproved feedbacks
+    long getUnapprovedFeedbackCount();
 
-    // Get list of unread feedbacks
-    List<FeedbackResponse> getUnreadFeedbacks();
+    // Get list of unread/unapproved feedbacks
+    List<FeedbackResponse> getUnapprovedFeedbacks();
+    
+    // Get only approved feedbacks for public display
+    List<FeedbackResponse> getApprovedFeedbacksByType(String feedbackType);
+    
+    List<FeedbackResponse> getApprovedFeedbacksForTarget(Long targetId, String feedbackType);
 }

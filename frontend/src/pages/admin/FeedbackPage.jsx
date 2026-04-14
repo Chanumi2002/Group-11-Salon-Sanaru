@@ -13,8 +13,8 @@ export default function FeedbackPage() {
   const [filteredFeedbacks, setFilteredFeedbacks] = useState([]);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isMarkingAsRead, setIsMarkingAsRead] = useState(null);
-  const { decrementUnreadCount } = useFeedback();
+  const [isApproving, setIsApproving] = useState(null);
+  const { decrementUnapprovedCount } = useFeedback();
 
   useEffect(() => {
     fetchFeedbacks();
@@ -82,26 +82,26 @@ export default function FeedbackPage() {
     }
   };
 
-  const handleMarkAsRead = async (feedbackId) => {
+  const handleApproveFeedback = async (feedbackId) => {
     try {
-      setIsMarkingAsRead(feedbackId);
-      const response = await adminService.markFeedbackAsRead(feedbackId);
+      setIsApproving(feedbackId);
+      const response = await adminService.approveFeedback(feedbackId);
       if (response.data.success) {
-        toast.success('Feedback marked as read');
+        toast.success('Feedback approved successfully');
         // Update the feedback in the list
         setFeedbacks(feedbacks.map((f) => 
           f.id === feedbackId ? { ...f, isRead: true } : f
         ));
         // Immediately decrement the sidebar badge count
-        decrementUnreadCount();
+        decrementUnapprovedCount();
       } else {
-        toast.error(response.data.message || 'Failed to mark as read');
+        toast.error(response.data.message || 'Failed to approve feedback');
       }
     } catch (error) {
-      console.error('Error marking as read:', error);
-      toast.error(error.response?.data?.message || 'Failed to mark as read');
+      console.error('Error approving feedback:', error);
+      toast.error(error.response?.data?.message || 'Failed to approve feedback');
     } finally {
-      setIsMarkingAsRead(null);
+      setIsApproving(null);
     }
   };
 
@@ -249,15 +249,15 @@ export default function FeedbackPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleMarkAsRead(feedback.id);
+                          handleApproveFeedback(feedback.id);
                         }}
-                        disabled={isMarkingAsRead === feedback.id || feedback.isRead}
+                        disabled={isApproving === feedback.id || feedback.isRead}
                         className={`p-2 rounded-lg transition-colors ${
                           feedback.isRead
                             ? 'text-green-600 bg-green-50 cursor-default'
                             : 'text-[#8E1616] hover:text-[#A01C1C] hover:bg-amber-50'
                         } disabled:opacity-50`}
-                        title={feedback.isRead ? 'Already marked as read' : 'Mark as read'}
+                        title={feedback.isRead ? 'Already approved' : 'Approve review'}
                       >
                         <Check size={20} />
                       </button>

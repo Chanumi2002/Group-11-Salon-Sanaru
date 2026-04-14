@@ -35,7 +35,7 @@ export function AdminDashboardLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { unreadCount } = useFeedback();
+  const { unapprovedCount } = useFeedback();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -98,9 +98,9 @@ export function AdminDashboardLayout({ children }) {
               >
                 <Icon className="h-5 w-5" />
                 {link.label}
-                {isFeedbackLink && unreadCount > 0 && (
+                {isFeedbackLink && unapprovedCount > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    {unreadCount}
+                    {unapprovedCount}
                   </span>
                 )}
               </Link>

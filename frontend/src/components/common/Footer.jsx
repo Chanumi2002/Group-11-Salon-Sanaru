@@ -1,4 +1,5 @@
 import { Mail, Phone } from "lucide-react";
+import { Link } from "react-router-dom";
 import logoImage from "@/assets/logo.jpeg";
 
 export function Footer() {
@@ -58,9 +59,9 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a className="transition-colors duration-300 hover:text-[#D84040]" href="#">
+                <Link className="transition-colors duration-300 hover:text-[#D84040]" to="/login">
                   Book Appointment
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

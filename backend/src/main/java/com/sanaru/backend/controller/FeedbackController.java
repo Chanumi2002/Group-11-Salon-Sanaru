@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.Map;
@@ -33,9 +35,32 @@ public class FeedbackController {
      */
     @PostMapping("/customer/feedback")
     public ResponseEntity<Map<String, Object>> submitFeedback(
-            @RequestBody FeedbackRequest request,
+            @Valid @RequestBody FeedbackRequest request,
+            BindingResult bindingResult,
             Authentication authentication
     ) {
+        // Check for validation errors
+        if (bindingResult.hasErrors()) {
+            String validationError = bindingResult.getFieldErrors().stream()
+                    .findFirst()
+                    .map(error -> {
+                        String fieldName = error.getField();
+                        String message = error.getDefaultMessage();
+                        // Customize error message for specific fields
+                        if ("comment".equals(fieldName)) {
+                            return "validation error for comment length";
+                        }
+                        return message;
+                    })
+                    .orElse("Validation error");
+            
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "success", false,
+                            "message", validationError
+                    ));
+        }
+        
         // Scenario 4: Check if user is authenticated (guest attempt)
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -136,12 +161,13 @@ public class FeedbackController {
     /**
      * Get all reviews for all products (Public)
      * GET /api/reviews/product
+     * Only shows APPROVED reviews (isRead = true)
      */
     @GetMapping("/reviews/product")
     public ResponseEntity<Map<String, Object>> getAllProductReviews() {
         try {
-            // Fetch all product reviews
-            List<FeedbackResponse> allReviews = feedbackService.getFeedbacksByType("PRODUCT");
+            // Fetch all approved product reviews
+            List<FeedbackResponse> allReviews = feedbackService.getApprovedFeedbacksByType("PRODUCT");
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -160,12 +186,13 @@ public class FeedbackController {
     /**
      * Get all reviews for all services (Public)
      * GET /api/reviews/service
+     * Only shows APPROVED reviews (isRead = true)
      */
     @GetMapping("/reviews/service")
     public ResponseEntity<Map<String, Object>> getAllServiceReviews() {
         try {
-            // Fetch all service reviews
-            List<FeedbackResponse> allReviews = feedbackService.getFeedbacksByType("SERVICE");
+            // Fetch all approved service reviews
+            List<FeedbackResponse> allReviews = feedbackService.getApprovedFeedbacksByType("SERVICE");
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -185,11 +212,12 @@ public class FeedbackController {
      * Get reviews for a product (Public)
      * GET /api/reviews/product/{productId}
      * Scenario 1: View Product Reviews - accessible to all users including guests
+     * Only shows APPROVED reviews (isRead = true)
      */
     @GetMapping("/reviews/product/{productId}")
     public ResponseEntity<Map<String, Object>> getProductReviews(@PathVariable Long productId) {
         try {
-            List<FeedbackResponse> reviews = feedbackService.getFeedbacksForTarget(productId, "PRODUCT");
+            List<FeedbackResponse> reviews = feedbackService.getApprovedFeedbacksForTarget(productId, "PRODUCT");
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -209,11 +237,12 @@ public class FeedbackController {
      * Get reviews for a service (Public)
      * GET /api/reviews/service/{serviceId}
      * Scenario 2: View Service Reviews - accessible to all users including guests
+     * Only shows APPROVED reviews (isRead = true)
      */
     @GetMapping("/reviews/service/{serviceId}")
     public ResponseEntity<Map<String, Object>> getServiceReviews(@PathVariable Long serviceId) {
         try {
-            List<FeedbackResponse> reviews = feedbackService.getFeedbacksForTarget(serviceId, "SERVICE");
+            List<FeedbackResponse> reviews = feedbackService.getApprovedFeedbacksForTarget(serviceId, "SERVICE");
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -548,7 +577,7 @@ public class FeedbackController {
     /**
      * Get total feedback count (Admin)
      * GET /api/admin/feedbacks/count
-     * Used for displaying live badge on sidebar - shows UNREAD count
+     * Used for displaying live badge on sidebar - shows UNAPPROVED count
      */
     @GetMapping("/admin/feedbacks/count")
     public ResponseEntity<Map<String, Object>> getFeedbackCount(Authentication authentication) {
@@ -573,14 +602,14 @@ public class FeedbackController {
                         ));
             }
 
-            long unreadCount = feedbackService.getUnreadFeedbackCount();
+            long unapprovedCount = feedbackService.getUnapprovedFeedbackCount();
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Feedback count retrieved successfully",
                     "data", Map.of(
-                            "unreadCount", unreadCount,
-                            "hasUnread", unreadCount > 0
+                            "unapprovedCount", unapprovedCount,
+                            "hasUnapproved", unapprovedCount > 0
                     )
             ));
         } catch (Exception e) {
@@ -593,11 +622,12 @@ public class FeedbackController {
     }
 
     /**
-     * Mark feedback as read (Admin)
-     * PUT /api/admin/feedback/{feedbackId}/mark-read
+     * Approve feedback (Admin)
+     * PUT /api/admin/feedback/{feedbackId}/approve
+     * Makes the feedback visible to customers and guests
      */
-    @PutMapping("/admin/feedback/{feedbackId}/mark-read")
-    public ResponseEntity<Map<String, Object>> markFeedbackAsRead(
+    @PutMapping("/admin/feedback/{feedbackId}/approve")
+    public ResponseEntity<Map<String, Object>> approveFeedback(
             @PathVariable Long feedbackId,
             Authentication authentication
     ) {
@@ -618,15 +648,15 @@ public class FeedbackController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of(
                                 "success", false,
-                                "message", "Forbidden - Only admins can mark feedback as read"
+                                "message", "Forbidden - Only admins can approve feedback"
                         ));
             }
 
-            FeedbackResponse feedback = feedbackService.markFeedbackAsRead(feedbackId);
+            FeedbackResponse feedback = feedbackService.approveFeedback(feedbackId);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "Feedback marked as read successfully",
+                    "message", "Feedback approved successfully",
                     "data", feedback
             ));
         } catch (NoSuchElementException e) {
@@ -639,7 +669,7 @@ public class FeedbackController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "success", false,
-                            "message", "Error marking feedback as read: " + e.getMessage()
+                            "message", "Error approving feedback: " + e.getMessage()
                     ));
         }
     }

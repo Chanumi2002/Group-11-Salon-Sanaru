@@ -263,14 +263,14 @@ export const adminService = {
     return await api.delete(`/admin/feedback/${feedbackId}`);
   },
 
-  // Mark feedback as read
-  markFeedbackAsRead: async (feedbackId) => {
-    return await api.put(`/admin/feedback/${feedbackId}/mark-read`);
+  // Approve feedback (make it visible to customers and guests)
+  approveFeedback: async (feedbackId) => {
+    return await api.put(`/admin/feedback/${feedbackId}/approve`);
   },
 
-  // Get unread feedbacks count
-  getUnreadFeedbackCount: async () => {
-    return await api.get('/admin/feedbacks/unread/count');
+  // Get unapproved feedbacks count
+  getUnapprovedFeedbackCount: async () => {
+    return await api.get('/admin/feedbacks/count');
   },
 };
 
