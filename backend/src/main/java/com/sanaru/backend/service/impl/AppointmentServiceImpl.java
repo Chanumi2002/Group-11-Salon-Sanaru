@@ -115,6 +115,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AppointmentResponse> getAppointmentsByUser(String userEmail) {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
