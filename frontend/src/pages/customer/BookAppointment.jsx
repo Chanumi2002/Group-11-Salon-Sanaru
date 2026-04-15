@@ -3,13 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { shopService } from '@/services/shopApi';
-import { customerService, closedDateService } from '@/services/api';
-
-const TIME_SLOTS = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-  "15:00", "15:30", "16:00", "16:30", "17:00"
-];
+import { customerService, closedDateService, adminService } from '@/services/api';
 
 export default function BookAppointment() {
   const [searchParams] = useSearchParams();
@@ -20,9 +14,12 @@ export default function BookAppointment() {
   const [errorMessage, setErrorMessage] = useState('');
   const [closedDates, setClosedDates] = useState([]);
   const [dateMessage, setDateMessage] = useState('');
-  const [bookedSlots, setBookedSlots] = useState([]);
+  const [slotAvailability, setSlotAvailability] = useState({}); // Map of time -> {available, capacity, booked}
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [availabilityInfo, setAvailabilityInfo] = useState('');
+  const [timeSlots, setTimeSlots] = useState([]); // Dynamically fetched time slots
+  const [showAvailable, setShowAvailable] = useState(true); // Legend filter: show available slots
+  const [showBooked, setShowBooked] = useState(true); // Legend filter: show booked slots
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -83,35 +80,81 @@ export default function BookAppointment() {
   const fetchBookedSlots = async (selectedDate) => {
     try {
       setSlotsLoading(true);
-      // Fetch all bookings for the current user
-      const response = await customerService.getMyBookings();
-      const allBookings = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
+      // Fetch slot availability info (booked count, capacity, available spots)
+      const response = await customerService.getSlotAvailability(selectedDate);
+      const availabilityData = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
       
-      // Filter bookings for the selected date
-      const dateBookings = allBookings.filter(apt => apt.appointmentDate === selectedDate);
+      // Create a map of time -> availability info
+      const availabilityMap = {};
+      let totalAvailable = 0;
+      let totalCapacity = 0;
       
-      // Extract booked times
-      const booked = dateBookings.map(apt => apt.appointmentTime.substring(0, 5)); // Get HH:MM format
-      setBookedSlots(booked);
+      availabilityData.forEach(slot => {
+        availabilityMap[slot.time] = {
+          available: slot.available,
+          capacity: slot.capacity,
+          booked: slot.booked,
+          isFull: slot.isFull
+        };
+        totalAvailable += slot.available;
+        totalCapacity += slot.capacity;
+      });
       
-      // Calculate availability
-      const totalSlots = TIME_SLOTS.length;
-      const bookedCount = booked.length;
-      const availableCount = totalSlots - bookedCount;
+      setSlotAvailability(availabilityMap);
       
-      if (bookedCount === 0) {
-        setAvailabilityInfo(`All ${totalSlots} time slots available`);
-      } else if (availableCount === 0) {
-        setAvailabilityInfo('No time slots available for this date');
+      // Calculate availability summary
+      const totalBooked = totalCapacity - totalAvailable;
+      if (totalBooked === 0) {
+        setAvailabilityInfo(`All ${totalCapacity} spots available`);
+      } else if (totalAvailable === 0) {
+        setAvailabilityInfo('No spots available for this date');
       } else {
-        setAvailabilityInfo(`${availableCount} of ${totalSlots} slots available`);
+        setAvailabilityInfo(`${totalAvailable} of ${totalCapacity} spots available`);
       }
     } catch (error) {
-      console.error('Error fetching booked slots:', error);
-      setBookedSlots([]);
+      console.error('Error fetching slot availability:', error);
+      console.error('Response:', error?.response?.data);
+      setSlotAvailability({});
       setAvailabilityInfo('');
     } finally {
       setSlotsLoading(false);
+    }
+  };
+
+  const fetchTimeSlots = async (selectedDate) => {
+    try {
+      // Get day of week from date
+      const dateObj = new Date(selectedDate + 'T00:00:00');
+      const jsDay = dateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      
+      const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+      const dayOfWeek = dayNames[jsDay];
+
+      const response = await adminService.getAvailableSlots(dayOfWeek);
+      const slots = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
+      
+      // Extract time strings from slot objects
+      // TimeSlot has startTime: "HH:MM:SS", extract just "HH:MM"
+      const timeStrings = slots
+        .map(slot => {
+          if (typeof slot === 'string') return slot;
+          // Handle both {time: "HH:MM"} and {startTime: "HH:MM:SS"}
+          const timeStr = slot.time || slot.startTime;
+          if (timeStr && timeStr.length > 5) {
+            // Format is "HH:MM:SS", extract "HH:MM"
+            return timeStr.substring(0, 5);
+          }
+          return timeStr;
+        })
+        .filter(time => time);
+      
+      // Deduplicate times using Set and sort
+      const uniqueTimeStrings = Array.from(new Set(timeStrings)).sort();
+      
+      setTimeSlots(uniqueTimeStrings);
+    } catch (error) {
+      console.error('Error fetching time slots:', error);
+      setTimeSlots([]); // Fallback to empty list
     }
   };
 
@@ -125,12 +168,27 @@ export default function BookAppointment() {
     if (isClosed) {
       const closedDateInfo = closedDates.find(cd => cd.closedDate === selectedDate);
       setDateMessage(`⚠️ Salon is closed on this date${closedDateInfo?.reason ? ` (${closedDateInfo.reason})` : ''}`);
-      setBookedSlots([]);
+      setSlotAvailability({});
       setAvailabilityInfo('');
+      setTimeSlots([]);
     } else {
       setDateMessage('');
+      // First fetch the time slots for this day of week, then fetch availability
+      fetchTimeSlots(selectedDate);
       fetchBookedSlots(selectedDate);
     }
+  };
+
+  // Helper function to filter time slots based on legend toggle selections
+  const getFilteredSlots = (slotsToFilter) => {
+    return slotsToFilter.filter(slot => {
+      const availability = slotAvailability[slot];
+      const isBooked = availability?.isFull;
+      
+      // Show slot if: (it's available and showAvailable is true) OR (it's booked and showBooked is true)
+      if (isBooked) return showBooked;
+      return showAvailable;
+    });
   };
 
   const handleBook = async () => {
@@ -156,13 +214,22 @@ export default function BookAppointment() {
       toast.success('Appointment booked successfully!');
       navigate('/customer_dashboard/bookings');
     } catch (error) {
-      console.error(error);
-      let msg = 'Time slot unavailable.';
+      console.error('Booking error details:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      
+      let msg = 'Unable to book appointment. Please try again.';
+      
       if (error.response?.data?.message) {
         msg = error.response.data.message;
       } else if (typeof error.response?.data === 'string') {
         msg = error.response.data;
+      } else if (error.response?.data?.error) {
+        msg = error.response.data.error;
+      } else if (error.message) {
+        msg = error.message;
       }
+      
       toast.error(msg);
     } finally {
       setIsBooking(false);
@@ -170,6 +237,50 @@ export default function BookAppointment() {
   };
 
   const todayDateStr = new Date().toLocaleDateString('en-CA'); // Gets YYYY-MM-DD reliably
+
+  // Helper component for time slot button
+  const TimeSlotButton = ({ slot, availability, isSelected, onSelect }) => {
+    const isBooked = availability?.isFull;
+    const available = availability?.available || 0;
+    const capacity = availability?.capacity || 0;
+    
+    return (
+      <button
+        type="button"
+        disabled={isBooked}
+        onClick={() => !isBooked && onSelect(slot)}
+        title={isBooked ? '❌ Fully booked' : `${available} spots available`}
+        className={`py-3 px-2 text-sm font-semibold rounded-lg border-2 transition-all duration-200 relative group ${
+          isSelected
+            ? 'bg-[#8E1616] text-white border-[#8E1616] shadow-md shadow-red-200'
+            : isBooked
+            ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-60'
+            : 'bg-white text-gray-700 border-green-400 hover:border-[#8E1616] hover:text-[#8E1616] hover:bg-red-50 hover:shadow-md'
+        }`}
+      >
+        <div className="flex flex-col items-center">
+          <span>{slot}</span>
+          <span className={`text-xs mt-1 font-medium ${
+            isSelected ? 'text-white' 
+            : isBooked ? 'text-gray-500' 
+            : 'text-green-600'
+          }`}>
+            {isSelected 
+              ? '✓ Selected' 
+              : isBooked 
+              ? '✗ Full' 
+              : `${available}/${capacity}`
+            }
+          </span>
+        </div>
+        {isBooked && (
+          <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Fully booked
+          </span>
+        )}
+      </button>
+    );
+  };
 
   return (
     <DashboardLayout>
@@ -226,7 +337,7 @@ export default function BookAppointment() {
 
               {/* Time Slots Grid */}
               {date && (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="block text-sm font-semibold text-gray-900">
                       Select Time
@@ -237,40 +348,108 @@ export default function BookAppointment() {
                       <span className="text-xs font-medium text-green-600">{availabilityInfo}</span>
                     )}
                   </div>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                    {TIME_SLOTS.map((slot) => {
-                      const isBooked = bookedSlots.includes(slot);
-                      const isSelected = time === slot;
-                      
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          disabled={isBooked}
-                          onClick={() => !isBooked && setTime(slot)}
-                          title={isBooked ? '❌ Already booked' : 'Available'}
-                          className={`py-2 px-3 text-sm font-medium rounded-md border transition-colors relative group ${
-                            isSelected
-                              ? 'bg-[#8E1616] text-white border-[#8E1616]'
-                              : isBooked
-                              ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
-                              : 'bg-white text-gray-700 border-gray-300 hover:border-[#8E1616] hover:text-[#8E1616] hover:bg-red-50'
-                          }`}
-                        >
-                          {slot}
-                          {isBooked && (
-                            <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                              Booked
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
+
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-4 text-xs p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showAvailable}
+                        onChange={(e) => setShowAvailable(e.target.checked)}
+                        className="w-4 h-4 border-green-400 rounded cursor-pointer"
+                      />
+                      <div className="w-4 h-4 bg-white border-2 border-green-400 rounded"></div>
+                      <span>Available</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showBooked}
+                        onChange={(e) => setShowBooked(e.target.checked)}
+                        className="w-4 h-4 border-gray-300 rounded cursor-pointer"
+                      />
+                      <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded"></div>
+                      <span>Booked</span>
+                    </label>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    <span className="inline-block w-3 h-3 bg-gray-100 border border-gray-300 rounded mr-1"></span>
-                    Booked slots are greyed out
-                  </p>
+
+                  {/* Time Slots Grid with Row Labels */}
+                  <div className="space-y-3">
+                    {timeSlots.length === 0 ? (
+                      <p className="text-center text-gray-500 py-6">No time slots available for this day</p>
+                    ) : (
+                      <>
+                        {/* Morning slots (9:00 - 11:59) */}
+                        {getFilteredSlots(timeSlots.filter(t => {
+                          const hour = parseInt(t.split(':')[0]);
+                          return hour >= 9 && hour < 12;
+                        })).length > 0 && (
+                          <div>
+                            <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Morning</h3>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                              {getFilteredSlots(timeSlots.filter(t => {
+                                const hour = parseInt(t.split(':')[0]);
+                                return hour >= 9 && hour < 12;
+                              })).map((slot) => (
+                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Afternoon slots (12:00 - 14:59) */}
+                        {getFilteredSlots(timeSlots.filter(t => {
+                          const hour = parseInt(t.split(':')[0]);
+                          return hour >= 12 && hour < 15;
+                        })).length > 0 && (
+                          <div>
+                            <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Afternoon</h3>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                              {getFilteredSlots(timeSlots.filter(t => {
+                                const hour = parseInt(t.split(':')[0]);
+                                return hour >= 12 && hour < 15;
+                              })).map((slot) => (
+                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Evening slots (15:00 onwards) */}
+                        {getFilteredSlots(timeSlots.filter(t => {
+                          const hour = parseInt(t.split(':')[0]);
+                          return hour >= 15;
+                        })).length > 0 && (
+                          <div>
+                            <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Evening</h3>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                              {getFilteredSlots(timeSlots.filter(t => {
+                                const hour = parseInt(t.split(':')[0]);
+                                return hour >= 15;
+                              })).map((slot) => (
+                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Detailed Availability Info */}
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-900">
+                      {Object.values(slotAvailability).length > 0 ? (
+                        <>
+                          <span className="font-semibold">Total Capacity:</span> {Object.values(slotAvailability).reduce((sum, s) => sum + (s?.capacity || 0), 0)} | 
+                          <span className="font-semibold ml-2">Available Spots:</span> {Object.values(slotAvailability).reduce((sum, s) => sum + (s?.available || 0), 0)} | 
+                          <span className="font-semibold ml-2">Booked:</span> {Object.values(slotAvailability).reduce((sum, s) => sum + (s?.booked || 0), 0)}
+                        </>
+                      ) : (
+                        <span>Select a date to see availability</span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               )}
 

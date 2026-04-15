@@ -15,9 +15,12 @@ import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -118,6 +121,15 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    public List<AppointmentResponse> getAppointmentsByDate(LocalDate date) {
+        List<Appointment> appointments = appointmentRepository.findByAppointmentDateAndStatusIn(
+                date,
+                List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
+        );
+        return appointments.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Override
     public AppointmentResponse cancelAppointment(Long appointmentId, String userEmail) {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
@@ -171,6 +183,49 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setStatus(AppointmentStatus.REJECTED);
         Appointment updatedAppointment = appointmentRepository.save(appointment);
         return mapToResponse(updatedAppointment);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getSlotAvailability(LocalDate date) {
+        // Get day of week for the requested date
+        java.time.DayOfWeek dayOfWeek = date.getDayOfWeek();
+        
+        // Get all time slots for this day of week
+        List<TimeSlot> timeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(dayOfWeek);
+        
+        // Get all appointments for this date
+        List<Appointment> appointments = appointmentRepository.findByAppointmentDateAndStatusIn(
+                date,
+                List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
+        );
+        
+        // Build availability info for each time slot
+        List<Map<String, Object>> availabilityList = new java.util.ArrayList<>();
+        
+        for (TimeSlot slot : timeSlots) {
+            // Count appointments that overlap with this time slot
+            long bookedCount = appointments.stream()
+                    .filter(apt -> {
+                        LocalTime aptStart = apt.getAppointmentTime();
+                        LocalTime aptEnd = aptStart.plusMinutes(apt.getService().getDurationMinutes());
+                        return aptStart.isBefore(slot.getEndTime()) && aptEnd.isAfter(slot.getStartTime());
+                    })
+                    .count();
+            
+            int availableSpots = Math.max(0, slot.getCapacity() - (int) bookedCount);
+            
+            Map<String, Object> info = new java.util.HashMap<>();
+            info.put("time", slot.getStartTime().toString().substring(0, 5)); // HH:MM format
+            info.put("booked", bookedCount);
+            info.put("capacity", slot.getCapacity());
+            info.put("available", availableSpots);
+            info.put("isFull", availableSpots == 0);
+            
+            availabilityList.add(info);
+        }
+        
+        return availabilityList;
     }
 
     private AppointmentResponse mapToResponse(Appointment appointment) {

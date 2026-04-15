@@ -352,6 +352,16 @@ export const customerService = {
     return await api.get('/appointments');
   },
 
+  // Get all appointments for a specific date (for availability check)
+  getAppointmentsByDate: async (date) => {
+    return await api.get(`/appointments/by-date/${date}`);
+  },
+
+  // Get slot availability info for a specific date
+  getSlotAvailability: async (date) => {
+    return await api.get(`/appointments/availability/${date}`);
+  },
+
   // Cancel an appointment
   cancelAppointment: async (appointmentId) => {
     return await api.put(`/appointments/${appointmentId}/cancel`);
