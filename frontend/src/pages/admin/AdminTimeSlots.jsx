@@ -1,8 +1,8 @@
 import { AdminDashboardLayout } from "@/components/common/AdminDashboardLayout";
-import { adminService } from "@/services/api";
+import { adminService, closedDateService } from "@/services/api";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Edit2, Trash2, Loader2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Edit2, Trash2, Loader2, ToggleLeft, ToggleRight, Calendar } from "lucide-react";
 
 const DAYS_OF_WEEK = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
@@ -38,6 +38,13 @@ export default function AdminTimeSlots() {
   const [selectedSlotId, setSelectedSlotId] = useState(null);
   const [showBreakForm, setShowBreakForm] = useState(false);
   const [showCommonBreakForm, setShowCommonBreakForm] = useState(false);
+  const [closedDates, setClosedDates] = useState([]);
+  const [showClosedDateForm, setShowClosedDateForm] = useState(false);
+  const [closedDateFormData, setClosedDateFormData] = useState({
+    closedDate: "",
+    reason: "",
+    isActive: true,
+  });
   const [breakData, setBreakData] = useState({
     breakName: "Lunch",
     startTime: "13:00",
@@ -61,7 +68,22 @@ export default function AdminTimeSlots() {
 
   useEffect(() => {
     fetchTimeSlots();
+    fetchClosedDates();
   }, []);
+
+  const fetchClosedDates = async () => {
+    try {
+      const response = await closedDateService.getAllClosedDates();
+      // Sort by date
+      const sorted = (response.data || []).sort((a, b) => {
+        return new Date(a.closedDate) - new Date(b.closedDate);
+      });
+      setClosedDates(sorted);
+    } catch (error) {
+      console.error("Error fetching closed dates:", error);
+      toast.error("Failed to load closed dates");
+    }
+  };
 
   const fetchTimeSlots = async () => {
     try {
@@ -295,6 +317,81 @@ export default function AdminTimeSlots() {
       endTime: "17:00",
       capacity: 1,
       isActive: true,
+    });
+  };
+
+  const handleClosedDateFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setClosedDateFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleAddClosedDate = async (e) => {
+    e.preventDefault();
+
+    if (!closedDateFormData.closedDate) {
+      toast.error("Please select a date");
+      return;
+    }
+
+    // Check if date is in the past (safely comparing dates without timezone issues)
+    const [year, month, day] = closedDateFormData.closedDate.split('-').map(Number);
+    const selectedDate = new Date(year, month - 1, day); // month is 0-indexed in JS
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < today) {
+      toast.error("Cannot add closed date in the past");
+      return;
+    }
+
+    try {
+      setActionId("addClosedDate");
+      await closedDateService.addClosedDate({
+        closedDate: closedDateFormData.closedDate,
+        reason: closedDateFormData.reason.trim() || "Closed",
+        isActive: closedDateFormData.isActive,
+      });
+
+      toast.success("Closed date added successfully");
+      setClosedDateFormData({ closedDate: "", reason: "", isActive: true });
+      setShowClosedDateForm(false);
+      await fetchClosedDates();
+    } catch (error) {
+      console.error("Error adding closed date:", error);
+      const errorMessage = error.response?.data?.message || error.response?.data || "Failed to add closed date";
+      toast.error(typeof errorMessage === 'string' ? errorMessage : "Failed to add closed date");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleDeleteClosedDate = async (dateId) => {
+    if (!window.confirm("Are you sure you want to remove this closed date?")) return;
+
+    try {
+      setActionId(`deleteClosedDate-${dateId}`);
+      await closedDateService.deleteClosedDate(dateId);
+      toast.success("Closed date removed successfully");
+      await fetchClosedDates();
+    } catch (error) {
+      console.error("Error deleting closed date:", error);
+      toast.error(error.response?.data?.message || "Failed to delete closed date");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "—";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -869,6 +966,148 @@ export default function AdminTimeSlots() {
                     </button>
                   </div>
                 </form>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Closed Dates Management Section */}
+        {!showForm && (
+          <div className="mb-8">
+            <div className="bg-rose-50 border border-rose-200 rounded-lg p-6">
+              <h2 className="text-lg font-semibold text-rose-900 mb-4 flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Closed Dates & Holidays
+              </h2>
+              <p className="text-sm text-rose-700 mb-4">
+                Mark specific dates when your salon is closed (holidays, special events, maintenance, etc.).
+              </p>
+
+              {!showClosedDateForm ? (
+                <button
+                  onClick={() => setShowClosedDateForm(true)}
+                  className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition font-medium text-sm"
+                >
+                  + Add Closed Date
+                </button>
+              ) : (
+                <form onSubmit={handleAddClosedDate} className="space-y-4 bg-white p-4 rounded-lg border border-rose-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="closedDate" className="block text-sm font-medium text-foreground mb-2">
+                        Date <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="closedDate"
+                        type="date"
+                        name="closedDate"
+                        value={closedDateFormData.closedDate}
+                        onChange={handleClosedDateFormChange}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-rose-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="closedIsActive" className="block text-sm font-medium text-foreground mb-2">
+                        Status
+                      </label>
+                      <div className="flex items-center h-10">
+                        <input
+                          id="closedIsActive"
+                          type="checkbox"
+                          name="isActive"
+                          checked={closedDateFormData.isActive}
+                          onChange={handleClosedDateFormChange}
+                          className="w-4 h-4 rounded border-input accent-rose-600"
+                        />
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {closedDateFormData.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="closedReason" className="block text-sm font-medium text-foreground mb-2">
+                      Reason <span className="text-gray-500">(Optional)</span>
+                    </label>
+                    <input
+                      id="closedReason"
+                      type="text"
+                      name="reason"
+                      value={closedDateFormData.reason}
+                      onChange={handleClosedDateFormChange}
+                      placeholder="e.g., Public Holiday, Maintenance"
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-rose-600"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="submit"
+                      disabled={!!actionId}
+                      className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition disabled:opacity-50 font-medium text-sm"
+                    >
+                      {actionId === "addClosedDate" ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4" />
+                          Add Closed Date
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowClosedDateForm(false)}
+                      className="px-4 py-2 bg-rose-100 text-rose-700 rounded-lg hover:bg-rose-200 transition font-medium text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Closed Dates List */}
+              {closedDates.length > 0 ? (
+                <div className="mt-4 space-y-2">
+                  {closedDates.map((closedDate) => (
+                    <div
+                      key={closedDate.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        closedDate.isActive
+                          ? "bg-rose-100 border-rose-300"
+                          : "bg-gray-50 border-gray-300"
+                      }`}
+                    >
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {formatDate(closedDate.closedDate)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {closedDate.reason ? `Reason: ${closedDate.reason}` : "—"}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteClosedDate(closedDate.id)}
+                        disabled={!!actionId}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-red-50 transition disabled:opacity-50"
+                        title="Delete"
+                      >
+                        {actionId === `deleteClosedDate-${closedDate.id}` ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-rose-600 italic mt-3">No closed dates added yet.</p>
               )}
             </div>
           </div>

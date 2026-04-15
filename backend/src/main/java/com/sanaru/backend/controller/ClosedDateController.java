@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/closed-dates")
@@ -19,12 +21,14 @@ public class ClosedDateController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ClosedDateResponse> addClosedDate(@RequestBody ClosedDateRequest request) {
+    public ResponseEntity<?> addClosedDate(@RequestBody ClosedDateRequest request) {
         try {
             ClosedDateResponse response = closedDateService.addClosedDate(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
 
@@ -42,25 +46,29 @@ public class ClosedDateController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ClosedDateResponse> updateClosedDate(
+    public ResponseEntity<?> updateClosedDate(
             @PathVariable Long id,
             @RequestBody ClosedDateRequest request) {
         try {
             ClosedDateResponse response = closedDateService.updateClosedDate(id, request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteClosedDate(@PathVariable Long id) {
+    public ResponseEntity<?> deleteClosedDate(@PathVariable Long id) {
         try {
             closedDateService.deleteClosedDate(id);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
     }
 }
