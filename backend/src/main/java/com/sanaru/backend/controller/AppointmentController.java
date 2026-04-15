@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/appointments")
@@ -21,10 +22,9 @@ import java.util.NoSuchElementException;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
-
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<AppointmentResponse> bookAppointment(@RequestBody AppointmentRequest request, Principal principal) {
+    public ResponseEntity<AppointmentResponse> bookAppointment(@Valid @RequestBody AppointmentRequest request, Principal principal) {
         String userEmail = principal.getName();
         AppointmentResponse response = appointmentService.createAppointment(request, userEmail);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
