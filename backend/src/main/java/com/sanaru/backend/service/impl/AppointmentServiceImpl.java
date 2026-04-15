@@ -36,6 +36,10 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentResponse createAppointment(AppointmentRequest request, String userEmail) {
+        if (request.getServiceId() == null) {
+            throw new IllegalArgumentException("Service ID is required");
+        }
+
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
