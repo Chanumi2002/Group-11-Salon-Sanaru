@@ -20,6 +20,9 @@ export default function BookAppointment() {
   const [errorMessage, setErrorMessage] = useState('');
   const [closedDates, setClosedDates] = useState([]);
   const [dateMessage, setDateMessage] = useState('');
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [availabilityInfo, setAvailabilityInfo] = useState('');
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -77,6 +80,41 @@ export default function BookAppointment() {
     return () => { isActive = false; };
   }, [serviceId]);
 
+  const fetchBookedSlots = async (selectedDate) => {
+    try {
+      setSlotsLoading(true);
+      // Fetch all bookings for the current user
+      const response = await customerService.getMyBookings();
+      const allBookings = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
+      
+      // Filter bookings for the selected date
+      const dateBookings = allBookings.filter(apt => apt.appointmentDate === selectedDate);
+      
+      // Extract booked times
+      const booked = dateBookings.map(apt => apt.appointmentTime.substring(0, 5)); // Get HH:MM format
+      setBookedSlots(booked);
+      
+      // Calculate availability
+      const totalSlots = TIME_SLOTS.length;
+      const bookedCount = booked.length;
+      const availableCount = totalSlots - bookedCount;
+      
+      if (bookedCount === 0) {
+        setAvailabilityInfo(`All ${totalSlots} time slots available`);
+      } else if (availableCount === 0) {
+        setAvailabilityInfo('No time slots available for this date');
+      } else {
+        setAvailabilityInfo(`${availableCount} of ${totalSlots} slots available`);
+      }
+    } catch (error) {
+      console.error('Error fetching booked slots:', error);
+      setBookedSlots([]);
+      setAvailabilityInfo('');
+    } finally {
+      setSlotsLoading(false);
+    }
+  };
+
   const handleDateChange = (e) => {
     const selectedDate = e.target.value;
     setDate(selectedDate);
@@ -87,8 +125,11 @@ export default function BookAppointment() {
     if (isClosed) {
       const closedDateInfo = closedDates.find(cd => cd.closedDate === selectedDate);
       setDateMessage(`⚠️ Salon is closed on this date${closedDateInfo?.reason ? ` (${closedDateInfo.reason})` : ''}`);
+      setBookedSlots([]);
+      setAvailabilityInfo('');
     } else {
       setDateMessage('');
+      fetchBookedSlots(selectedDate);
     }
   };
 
@@ -186,25 +227,50 @@ export default function BookAppointment() {
               {/* Time Slots Grid */}
               {date && (
                 <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-gray-900">
-                    Select Time
-                  </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                    {TIME_SLOTS.map((slot) => (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => setTime(slot)}
-                        className={`py-2 px-3 text-sm font-medium rounded-md border transition-colors ${
-                          time === slot
-                            ? 'bg-[#8E1616] text-white border-[#8E1616]'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-[#8E1616] hover:text-[#8E1616]'
-                        }`}
-                      >
-                        {slot}
-                      </button>
-                    ))}
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-semibold text-gray-900">
+                      Select Time
+                    </label>
+                    {slotsLoading ? (
+                      <span className="text-xs text-gray-500">Loading availability...</span>
+                    ) : availabilityInfo && (
+                      <span className="text-xs font-medium text-green-600">{availabilityInfo}</span>
+                    )}
                   </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {TIME_SLOTS.map((slot) => {
+                      const isBooked = bookedSlots.includes(slot);
+                      const isSelected = time === slot;
+                      
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          disabled={isBooked}
+                          onClick={() => !isBooked && setTime(slot)}
+                          title={isBooked ? '❌ Already booked' : 'Available'}
+                          className={`py-2 px-3 text-sm font-medium rounded-md border transition-colors relative group ${
+                            isSelected
+                              ? 'bg-[#8E1616] text-white border-[#8E1616]'
+                              : isBooked
+                              ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
+                              : 'bg-white text-gray-700 border-gray-300 hover:border-[#8E1616] hover:text-[#8E1616] hover:bg-red-50'
+                          }`}
+                        >
+                          {slot}
+                          {isBooked && (
+                            <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                              Booked
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    <span className="inline-block w-3 h-3 bg-gray-100 border border-gray-300 rounded mr-1"></span>
+                    Booked slots are greyed out
+                  </p>
                 </div>
               )}
 

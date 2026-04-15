@@ -8,6 +8,7 @@ import com.sanaru.backend.model.Break;
 import com.sanaru.backend.model.TimeSlot;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.AppointmentRepository;
+import com.sanaru.backend.repository.ClosedDateRepository;
 import com.sanaru.backend.repository.ServiceRepository;
 import com.sanaru.backend.repository.TimeSlotRepository;
 import com.sanaru.backend.repository.UserRepository;
@@ -28,6 +29,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final UserRepository userRepository;
     private final ServiceRepository serviceRepository;
     private final TimeSlotRepository timeSlotRepository;
+    private final ClosedDateRepository closedDateRepository;
 
     @Override
     public AppointmentResponse createAppointment(AppointmentRequest request, String userEmail) {
@@ -36,6 +38,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         com.sanaru.backend.model.Service service = serviceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new NoSuchElementException("Service not found"));
+
+        // Check if the requested date is marked as closed
+        if (closedDateRepository.findByClosedDate(request.getDate()).isPresent()) {
+            throw new IllegalArgumentException("The selected date is not available. Salon is closed on this date.");
+        }
 
         LocalTime requestedStartTime = request.getTime();
         LocalTime requestedEndTime = requestedStartTime.plusMinutes(service.getDurationMinutes());
