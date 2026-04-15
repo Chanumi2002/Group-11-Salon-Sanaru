@@ -125,7 +125,59 @@ export const adminService = {
     return await api.put(`/appointments/${appointmentId}/reject`);
   },
 
-  // ==================== CATEGORY OPERATIONS ====================
+  // ==================== TIME SLOT OPERATIONS ====================
+
+  // Get all time slots
+  getAllTimeSlots: async () => {
+    return await api.get('/time-slots');
+  },
+
+  // Get available time slots for a specific day
+  getAvailableSlots: async (dayOfWeek) => {
+    return await api.get(`/time-slots/available/${dayOfWeek}`);
+  },
+
+  // Create new time slot
+  createTimeSlot: async (timeSlotData) => {
+    return await api.post('/time-slots', timeSlotData);
+  },
+
+  // Update time slot
+  updateTimeSlot: async (timeSlotId, timeSlotData) => {
+    return await api.put(`/time-slots/${timeSlotId}`, timeSlotData);
+  },
+
+  // Delete time slot
+  deleteTimeSlot: async (timeSlotId) => {
+    return await api.delete(`/time-slots/${timeSlotId}`);
+  },
+
+  // Toggle time slot active/inactive
+  toggleTimeSlot: async (timeSlotId) => {
+    return await api.put(`/time-slots/${timeSlotId}/toggle`);
+  },
+
+  // ==================== BREAK OPERATIONS ====================
+
+  // Add a break to a time slot
+  addBreak: async (timeSlotId, breakData) => {
+    return await api.post(`/time-slots/${timeSlotId}/breaks`, breakData);
+  },
+
+  // Get breaks for a time slot
+  getBreaks: async (timeSlotId) => {
+    return await api.get(`/time-slots/${timeSlotId}/breaks`);
+  },
+
+  // Update a break
+  updateBreak: async (timeSlotId, breakId, breakData) => {
+    return await api.put(`/time-slots/${timeSlotId}/breaks/${breakId}`, breakData);
+  },
+
+  // Delete a break
+  deleteBreak: async (timeSlotId, breakId) => {
+    return await api.delete(`/time-slots/${timeSlotId}/breaks/${breakId}`);
+  },
 
   // Get all categories
   getCategories: async () => {
@@ -263,14 +315,14 @@ export const adminService = {
     return await api.delete(`/admin/feedback/${feedbackId}`);
   },
 
-  // Mark feedback as read
-  markFeedbackAsRead: async (feedbackId) => {
-    return await api.put(`/admin/feedback/${feedbackId}/mark-read`);
+  // Approve feedback (make it visible to customers and guests)
+  approveFeedback: async (feedbackId) => {
+    return await api.put(`/admin/feedback/${feedbackId}/approve`);
   },
 
-  // Get unread feedbacks count
-  getUnreadFeedbackCount: async () => {
-    return await api.get('/admin/feedbacks/unread/count');
+  // Get unapproved feedbacks count
+  getUnapprovedFeedbackCount: async () => {
+    return await api.get('/admin/feedbacks/count');
   },
 };
 
@@ -300,9 +352,47 @@ export const customerService = {
     return await api.get('/appointments');
   },
 
+  // Get all appointments for a specific date (for availability check)
+  getAppointmentsByDate: async (date) => {
+    return await api.get(`/appointments/by-date/${date}`);
+  },
+
+  // Get slot availability info for a specific date
+  getSlotAvailability: async (date) => {
+    return await api.get(`/appointments/availability/${date}`);
+  },
+
   // Cancel an appointment
   cancelAppointment: async (appointmentId) => {
     return await api.put(`/appointments/${appointmentId}/cancel`);
+  },
+};
+
+// ==================== CLOSED DATES OPERATIONS ====================
+export const closedDateService = {
+  // Add closed date
+  addClosedDate: async (closedDateData) => {
+    return await api.post('/closed-dates', closedDateData);
+  },
+
+  // Get all closed dates
+  getAllClosedDates: async () => {
+    return await api.get('/closed-dates');
+  },
+
+  // Get active closed dates only
+  getActiveClosedDates: async () => {
+    return await api.get('/closed-dates/active');
+  },
+
+  // Update closed date
+  updateClosedDate: async (id, closedDateData) => {
+    return await api.put(`/closed-dates/${id}`, closedDateData);
+  },
+
+  // Delete closed date
+  deleteClosedDate: async (id) => {
+    return await api.delete(`/closed-dates/${id}`);
   },
 };
 

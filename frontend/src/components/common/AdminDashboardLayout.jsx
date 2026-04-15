@@ -14,6 +14,7 @@ import {
   User,
   Folder,
   Calendar,
+  Clock,
 } from "lucide-react";
 import logoImage from "@/assets/logo.jpeg";
 import { shopService } from "@/services/shopApi";
@@ -25,6 +26,7 @@ const adminSidebarLinks = [
   { label: "Manage Categories", to: "/admin_dashboard/categories", icon: Folder },
   { label: "Manage Products", to: "/admin_dashboard/products", icon: ShoppingCart },
   { label: "Manage Services", to: "/admin_dashboard/services", icon: Briefcase },
+  { label: "Time Slot Management", to: "/admin_dashboard/time-slots", icon: Clock },
   { label: "Manage Orders", to: "/admin_dashboard/orders", icon: Package },
   { label: "Manage Payments", to: "/admin_dashboard/payments", icon: DollarSign },
   { label: "Booking Management", to: "/admin_dashboard/appointments", icon: Calendar },
@@ -35,7 +37,7 @@ export function AdminDashboardLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { unreadCount } = useFeedback();
+  const { unapprovedCount } = useFeedback();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -56,8 +58,8 @@ export function AdminDashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 h-screen bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:translate-x-0`}
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-6 h-20 border-b border-border">
@@ -81,7 +83,7 @@ export function AdminDashboardLayout({ children }) {
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-hidden">
           {adminSidebarLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to;
@@ -98,9 +100,9 @@ export function AdminDashboardLayout({ children }) {
               >
                 <Icon className="h-5 w-5" />
                 {link.label}
-                {isFeedbackLink && unreadCount > 0 && (
+                {isFeedbackLink && unapprovedCount > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    {unreadCount}
+                    {unapprovedCount}
                   </span>
                 )}
               </Link>
@@ -109,7 +111,7 @@ export function AdminDashboardLayout({ children }) {
         </nav>
 
         {/* Logout Button */}
-        <div className="px-4 py-4 border-t border-border">
+        <div className="mt-auto px-4 py-4 border-t border-border">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
@@ -121,7 +123,7 @@ export function AdminDashboardLayout({ children }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col lg:ml-64">
         {/* Top Bar */}
         <header className="h-20 border-b border-border bg-white flex items-center justify-between px-6 lg:px-12">
           <div className="flex items-center">

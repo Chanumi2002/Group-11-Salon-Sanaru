@@ -31,10 +31,6 @@ public class FeedbackServiceImpl implements FeedbackService {
             throw new IllegalArgumentException("Rating must be between 1 and 5");
         }
 
-        if (request.getComment() == null || request.getComment().trim().isEmpty()) {
-            throw new IllegalArgumentException("Comment cannot be empty");
-        }
-
         if (request.getFeedbackType() == null || request.getFeedbackType().trim().isEmpty()) {
             throw new IllegalArgumentException("Feedback type is required");
         }
@@ -43,7 +39,7 @@ public class FeedbackServiceImpl implements FeedbackService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found with id: " + userId));
 
-        // Create feedback
+        // Create feedback (validation for comment length is handled via @Valid annotation)
         Feedback feedback = new Feedback();
         feedback.setUser(user);
         feedback.setRating(request.getRating());
@@ -184,7 +180,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     }
 
     @Override
-    public FeedbackResponse markFeedbackAsRead(Long feedbackId) {
+    public FeedbackResponse approveFeedback(Long feedbackId) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
                 .orElseThrow(() -> new NoSuchElementException("Feedback not found with id: " + feedbackId));
         
@@ -194,13 +190,27 @@ public class FeedbackServiceImpl implements FeedbackService {
     }
 
     @Override
-    public long getUnreadFeedbackCount() {
+    public long getUnapprovedFeedbackCount() {
         return feedbackRepository.countByIsReadFalse();
     }
 
     @Override
-    public List<FeedbackResponse> getUnreadFeedbacks() {
+    public List<FeedbackResponse> getUnapprovedFeedbacks() {
         return feedbackRepository.findByIsReadFalse().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<FeedbackResponse> getApprovedFeedbacksByType(String feedbackType) {
+        return feedbackRepository.findByFeedbackTypeAndIsReadTrue(feedbackType.toUpperCase()).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<FeedbackResponse> getApprovedFeedbacksForTarget(Long targetId, String feedbackType) {
+        return feedbackRepository.findByTargetIdAndFeedbackTypeAndIsReadTrue(targetId, feedbackType.toUpperCase()).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }

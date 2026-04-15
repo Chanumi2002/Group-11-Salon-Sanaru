@@ -5,39 +5,39 @@ import { getStoredRole, getStoredToken } from '@/utils/authState';
 const FeedbackContext = createContext();
 
 export function FeedbackProvider({ children }) {
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unapprovedCount, setUnapprovedCount] = useState(0);
 
-  // Fetch unread count (only for authenticated admins)
-  const fetchUnreadCount = useCallback(async () => {
+  // Fetch unapproved count (only for authenticated admins)
+  const fetchUnapprovedCount = useCallback(async () => {
     try {
       // Only fetch if user is authenticated and is an admin
       const token = getStoredToken();
       const role = getStoredRole();
       
       if (!token || role !== 'ADMIN') {
-        setUnreadCount(0);
+        setUnapprovedCount(0);
         return;
       }
 
-      const data = await shopService.getUnreadFeedbackCount();
-      setUnreadCount(data.unreadCount || 0);
+      const data = await shopService.getUnapprovedFeedbackCount();
+      setUnapprovedCount(data.unapprovedCount || 0);
     } catch (error) {
       // Only log for non-401 errors
       if (error.response?.status !== 401) {
-        console.error('Error fetching unread count:', error);
+        console.error('Error fetching unapproved count:', error);
       }
-      setUnreadCount(0);
+      setUnapprovedCount(0);
     }
   }, []);
 
   // Decrement count immediately
-  const decrementUnreadCount = useCallback(() => {
-    setUnreadCount((prev) => Math.max(0, prev - 1));
+  const decrementUnapprovedCount = useCallback(() => {
+    setUnapprovedCount((prev) => Math.max(0, prev - 1));
   }, []);
 
   // Increment count
-  const incrementUnreadCount = useCallback(() => {
-    setUnreadCount((prev) => prev + 1);
+  const incrementUnapprovedCount = useCallback(() => {
+    setUnapprovedCount((prev) => prev + 1);
   }, []);
 
   // Fetch count on mount and when auth state changes
@@ -46,19 +46,19 @@ export function FeedbackProvider({ children }) {
     const role = getStoredRole();
     
     if (token && role === 'ADMIN') {
-      fetchUnreadCount();
+      fetchUnapprovedCount();
     } else {
-      setUnreadCount(0);
+      setUnapprovedCount(0);
     }
-  }, [fetchUnreadCount]);
+  }, [fetchUnapprovedCount]);
 
   return (
     <FeedbackContext.Provider
       value={{
-        unreadCount,
-        fetchUnreadCount,
-        decrementUnreadCount,
-        incrementUnreadCount,
+        unapprovedCount,
+        fetchUnapprovedCount,
+        decrementUnapprovedCount,
+        incrementUnapprovedCount,
       }}
     >
       {children}

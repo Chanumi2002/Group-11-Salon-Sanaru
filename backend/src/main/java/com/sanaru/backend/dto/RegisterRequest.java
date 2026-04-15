@@ -4,6 +4,7 @@ import com.sanaru.backend.enums.Role;
 import com.sanaru.backend.enums.Gender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -25,11 +26,14 @@ public class RegisterRequest {
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
     
-    @Pattern(regexp = "^[+]?[0-9]{10,15}$|^$", message = "Phone number must be between 10 and 15 digits")
+    @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be exactly 10 digits")
     private String phone;
     
-    private Role role = Role.CUSTOMER;
+    @NotNull(message = "Gender is required")
     private Gender gender;
+    
+    private Role role = Role.CUSTOMER;
 
     public String getFirstName() {
         return firstName;

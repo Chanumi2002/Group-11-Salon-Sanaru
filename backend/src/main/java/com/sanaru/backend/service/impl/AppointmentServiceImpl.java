@@ -4,16 +4,23 @@ import com.sanaru.backend.dto.AppointmentRequest;
 import com.sanaru.backend.dto.AppointmentResponse;
 import com.sanaru.backend.enums.AppointmentStatus;
 import com.sanaru.backend.model.Appointment;
+import com.sanaru.backend.model.Break;
+import com.sanaru.backend.model.TimeSlot;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.AppointmentRepository;
+import com.sanaru.backend.repository.ClosedDateRepository;
 import com.sanaru.backend.repository.ServiceRepository;
+import com.sanaru.backend.repository.TimeSlotRepository;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -24,6 +31,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
     private final ServiceRepository serviceRepository;
+    private final TimeSlotRepository timeSlotRepository;
+    private final ClosedDateRepository closedDateRepository;
 
     @Override
     public AppointmentResponse createAppointment(AppointmentRequest request, String userEmail) {
@@ -33,22 +42,60 @@ public class AppointmentServiceImpl implements AppointmentService {
         com.sanaru.backend.model.Service service = serviceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new NoSuchElementException("Service not found"));
 
+        // Check if the requested date is marked as closed
+        if (closedDateRepository.findByClosedDate(request.getDate()).isPresent()) {
+            throw new IllegalArgumentException("The selected date is not available. Salon is closed on this date.");
+        }
+
         LocalTime requestedStartTime = request.getTime();
         LocalTime requestedEndTime = requestedStartTime.plusMinutes(service.getDurationMinutes());
 
+        // Validate that the requested time falls within an active time slot for the day
+        List<TimeSlot> activeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(request.getDate().getDayOfWeek());
+        TimeSlot matchingSlot = null;
+        
+        for (TimeSlot slot : activeSlots) {
+            if (!requestedStartTime.isBefore(slot.getStartTime()) && 
+                !requestedEndTime.isAfter(slot.getEndTime())) {
+                matchingSlot = slot;
+                break;
+            }
+        }
+
+        if (matchingSlot == null) {
+            throw new IllegalArgumentException("The selected time is outside operating hours");
+        }
+
+        // Check for breaks: ensure the appointment doesn't conflict with any breaks
+        for (Break breakPeriod : matchingSlot.getBreaks()) {
+            if (breakPeriod.getIsActive()) {
+                LocalTime breakStart = breakPeriod.getStartTime();
+                LocalTime breakEnd = breakPeriod.getEndTime();
+                
+                // Check if appointment overlaps with break
+                if (requestedStartTime.isBefore(breakEnd) && requestedEndTime.isAfter(breakStart)) {
+                    throw new IllegalArgumentException("The selected time conflicts with a break period (" + breakPeriod.getBreakName() + ")");
+                }
+            }
+        }
+
+        // Check capacity: count existing overlapping appointments at the requested time
         List<Appointment> existingAppointments = appointmentRepository.findByAppointmentDateAndStatusIn(
                 request.getDate(),
                 List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
         );
 
-        for (Appointment existing : existingAppointments) {
-            LocalTime existingStartTime = existing.getAppointmentTime();
-            LocalTime existingEndTime = existingStartTime.plusMinutes(existing.getService().getDurationMinutes());
+        long overlappingCount = existingAppointments.stream()
+                .filter(existing -> {
+                    LocalTime existingStartTime = existing.getAppointmentTime();
+                    LocalTime existingEndTime = existingStartTime.plusMinutes(existing.getService().getDurationMinutes());
+                    // Check if the time ranges overlap
+                    return requestedStartTime.isBefore(existingEndTime) && requestedEndTime.isAfter(existingStartTime);
+                })
+                .count();
 
-            // Check if the time ranges overlap
-            if (requestedStartTime.isBefore(existingEndTime) && requestedEndTime.isAfter(existingStartTime)) {
-                throw new IllegalArgumentException("Time slot is unavailable");
-            }
+        if (overlappingCount >= matchingSlot.getCapacity()) {
+            throw new IllegalArgumentException("Time slot is fully booked. No available spots for this time.");
         }
 
         Appointment appointment = new Appointment();
@@ -70,6 +117,15 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         List<Appointment> appointments = appointmentRepository.findByCustomerOrderByAppointmentDateDescAppointmentTimeDesc(customer);
 
+        return appointments.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<AppointmentResponse> getAppointmentsByDate(LocalDate date) {
+        List<Appointment> appointments = appointmentRepository.findByAppointmentDateAndStatusIn(
+                date,
+                List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
+        );
         return appointments.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
@@ -127,6 +183,49 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setStatus(AppointmentStatus.REJECTED);
         Appointment updatedAppointment = appointmentRepository.save(appointment);
         return mapToResponse(updatedAppointment);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getSlotAvailability(LocalDate date) {
+        // Get day of week for the requested date
+        java.time.DayOfWeek dayOfWeek = date.getDayOfWeek();
+        
+        // Get all time slots for this day of week
+        List<TimeSlot> timeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(dayOfWeek);
+        
+        // Get all appointments for this date
+        List<Appointment> appointments = appointmentRepository.findByAppointmentDateAndStatusIn(
+                date,
+                List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
+        );
+        
+        // Build availability info for each time slot
+        List<Map<String, Object>> availabilityList = new java.util.ArrayList<>();
+        
+        for (TimeSlot slot : timeSlots) {
+            // Count appointments that overlap with this time slot
+            long bookedCount = appointments.stream()
+                    .filter(apt -> {
+                        LocalTime aptStart = apt.getAppointmentTime();
+                        LocalTime aptEnd = aptStart.plusMinutes(apt.getService().getDurationMinutes());
+                        return aptStart.isBefore(slot.getEndTime()) && aptEnd.isAfter(slot.getStartTime());
+                    })
+                    .count();
+            
+            int availableSpots = Math.max(0, slot.getCapacity() - (int) bookedCount);
+            
+            Map<String, Object> info = new java.util.HashMap<>();
+            info.put("time", slot.getStartTime().toString().substring(0, 5)); // HH:MM format
+            info.put("booked", bookedCount);
+            info.put("capacity", slot.getCapacity());
+            info.put("available", availableSpots);
+            info.put("isFull", availableSpots == 0);
+            
+            availabilityList.add(info);
+        }
+        
+        return availabilityList;
     }
 
     private AppointmentResponse mapToResponse(Appointment appointment) {

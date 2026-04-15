@@ -13,10 +13,10 @@ export default function AdminFeedback() {
   const [loading, setLoading] = useState(false);
   const [selectedFeedbackId, setSelectedFeedbackId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [markingAsReadId, setMarkingAsReadId] = useState(null);
+  const [approvingFeedbackId, setApprovingFeedbackId] = useState(null);
   const [filterType, setFilterType] = useState('ALL');
   const [stats, setStats] = useState(null);
-  const { decrementUnreadCount, fetchUnreadCount } = useFeedback();
+  const { decrementUnapprovedCount, fetchUnapprovedCount } = useFeedback();
 
   const feedbackTypes = [
     { value: 'ALL', label: 'All Reviews' },
@@ -59,8 +59,8 @@ export default function AdminFeedback() {
 
       if (response.data?.success) {
         setFeedbacks(response.data.data || []);
-        // Refresh the unread count in sidebar
-        await fetchUnreadCount();
+        // Refresh the unapproved count in sidebar
+        await fetchUnapprovedCount();
       } else {
         toast.error(response.data?.message || 'Failed to load feedbacks');
       }
@@ -112,10 +112,10 @@ export default function AdminFeedback() {
     }
   };
 
-  const handleMarkAsRead = async (feedbackId) => {
+  const handleApproveFeedback = async (feedbackId) => {
     try {
-      setMarkingAsReadId(feedbackId);
-      const response = await adminService.markFeedbackAsRead(feedbackId);
+      setApprovingFeedbackId(feedbackId);
+      const response = await adminService.approveFeedback(feedbackId);
       if (response.data?.success) {
         // Update local state
         setFeedbacks(
@@ -123,19 +123,19 @@ export default function AdminFeedback() {
             f.id === feedbackId ? { ...f, isRead: true } : f
           )
         );
-        // Decrement the unread count in sidebar
-        decrementUnreadCount();
+        // Decrement the unapproved count in sidebar
+        decrementUnapprovedCount();
         // Refresh stats
         await fetchStats();
-        toast.success('Marked as read');
+        toast.success('Feedback approved successfully');
       } else {
-        toast.error(response.data?.message || 'Failed to mark as read');
+        toast.error(response.data?.message || 'Failed to approve feedback');
       }
     } catch (error) {
-      console.error('Error marking as read:', error);
-      toast.error('Failed to mark as read');
+      console.error('Error approving feedback:', error);
+      toast.error('Failed to approve feedback');
     } finally {
-      setMarkingAsReadId(null);
+      setApprovingFeedbackId(null);
     }
   };
 
@@ -301,20 +301,20 @@ export default function AdminFeedback() {
                     <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-[#E2D4CD]">
                       {!feedback.isRead && (
                         <Button
-                          onClick={() => handleMarkAsRead(feedback.id)}
-                          disabled={markingAsReadId === feedback.id}
+                          onClick={() => handleApproveFeedback(feedback.id)}
+                          disabled={approvingFeedbackId === feedback.id}
                           size="sm"
                           className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                          {markingAsReadId === feedback.id ? (
+                          {approvingFeedbackId === feedback.id ? (
                             <>
                               <Loader className="h-4 w-4 animate-spin" />
-                              Marking...
+                              Approving...
                             </>
                           ) : (
                             <>
                               <Check size={16} />
-                              Mark as Read
+                              Approve Review
                             </>
                           )}
                         </Button>

@@ -71,10 +71,10 @@ export const shopService = {
     return response.data?.data || response.data || null;
   },
 
-  // Get unread feedback count for admin badge
-  getUnreadFeedbackCount: async () => {
+  // Get unapproved feedback count for admin badge
+  getUnapprovedFeedbackCount: async () => {
     const response = await shopApi.get('/admin/feedbacks/count');
-    return response.data?.data || { unreadCount: 0, hasUnread: false };
+    return response.data?.data || { unapprovedCount: 0, hasUnapproved: false };
   },
 
   // Get all product reviews

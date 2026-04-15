@@ -1,5 +1,6 @@
 package com.sanaru.backend.exception;
 
+import com.sanaru.backend.dto.AuthResponse;
 import io.jsonwebtoken.JwtException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -19,24 +20,19 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationExceptions(
+    public ResponseEntity<AuthResponse> handleValidationExceptions(
             MethodArgumentNotValidException ex,
             WebRequest request) {
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("error", "Validation Failed");
-        
-        // Collect all validation error messages
+        // Get first validation error message for consistency
         String message = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
+                .findFirst()
+                .map(error -> error.getDefaultMessage())
+                .orElse("Validation failed");
         
-        response.put("message", message);
-        response.put("timestamp", System.currentTimeMillis());
-
+        AuthResponse response = new AuthResponse(null, message);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 

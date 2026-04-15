@@ -49,9 +49,9 @@ export function DashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-[282px] bg-[#F8F8F8] border-r border-[#D8D8D8] flex flex-col transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-[282px] h-screen bg-[#F8F8F8] border-r border-[#D8D8D8] flex flex-col transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0`}
       >
         <div className="flex items-center gap-3 px-6 h-20 border-b border-border">
           <img src={logoImage} alt="Salon Sanaru Logo" className="h-11 w-11 object-cover rounded-full" />
@@ -72,7 +72,7 @@ export function DashboardLayout({ children }) {
           </div>
         </div>
 
-        <nav className="flex-1 py-6 px-3 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 py-6 px-3 space-y-1.5 overflow-y-hidden">
           {sidebarLinks.map((link) => {
             const active =
               location.pathname === link.to || location.pathname.startsWith(link.to + "/");
@@ -94,7 +94,7 @@ export function DashboardLayout({ children }) {
           })}
         </nav>
 
-        <div className="px-4 py-4 border-t border-[#D8D8D8]">
+        <div className="mt-auto px-4 py-4 border-t border-[#D8D8D8]">
           <button
             onClick={() => {
               authService.logout();
@@ -110,7 +110,7 @@ export function DashboardLayout({ children }) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-[282px]">
         <header className="h-20 border-b border-border bg-white flex items-center px-4 lg:px-12 gap-6">
           <button
             className="lg:hidden text-foreground"
