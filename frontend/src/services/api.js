@@ -157,6 +157,28 @@ export const adminService = {
     return await api.put(`/time-slots/${timeSlotId}/toggle`);
   },
 
+  // ==================== BREAK OPERATIONS ====================
+
+  // Add a break to a time slot
+  addBreak: async (timeSlotId, breakData) => {
+    return await api.post(`/time-slots/${timeSlotId}/breaks`, breakData);
+  },
+
+  // Get breaks for a time slot
+  getBreaks: async (timeSlotId) => {
+    return await api.get(`/time-slots/${timeSlotId}/breaks`);
+  },
+
+  // Update a break
+  updateBreak: async (timeSlotId, breakId, breakData) => {
+    return await api.put(`/time-slots/${timeSlotId}/breaks/${breakId}`, breakData);
+  },
+
+  // Delete a break
+  deleteBreak: async (timeSlotId, breakId) => {
+    return await api.delete(`/time-slots/${timeSlotId}/breaks/${breakId}`);
+  },
+
   // Get all categories
   getCategories: async () => {
     return await api.get('/categories');
@@ -333,6 +355,34 @@ export const customerService = {
   // Cancel an appointment
   cancelAppointment: async (appointmentId) => {
     return await api.put(`/appointments/${appointmentId}/cancel`);
+  },
+};
+
+// ==================== CLOSED DATES OPERATIONS ====================
+export const closedDateService = {
+  // Add closed date
+  addClosedDate: async (closedDateData) => {
+    return await api.post('/closed-dates', closedDateData);
+  },
+
+  // Get all closed dates
+  getAllClosedDates: async () => {
+    return await api.get('/closed-dates');
+  },
+
+  // Get active closed dates only
+  getActiveClosedDates: async () => {
+    return await api.get('/closed-dates/active');
+  },
+
+  // Update closed date
+  updateClosedDate: async (id, closedDateData) => {
+    return await api.put(`/closed-dates/${id}`, closedDateData);
+  },
+
+  // Delete closed date
+  deleteClosedDate: async (id) => {
+    return await api.delete(`/closed-dates/${id}`);
   },
 };
 

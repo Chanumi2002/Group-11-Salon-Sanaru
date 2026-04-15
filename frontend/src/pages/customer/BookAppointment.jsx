@@ -3,7 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { shopService } from '@/services/shopApi';
-import { customerService } from '@/services/api';
+import { customerService, closedDateService } from '@/services/api';
 
 const TIME_SLOTS = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -18,6 +18,8 @@ export default function BookAppointment() {
   const [isLoading, setIsLoading] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [closedDates, setClosedDates] = useState([]);
+  const [dateMessage, setDateMessage] = useState('');
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -26,6 +28,17 @@ export default function BookAppointment() {
 
   useEffect(() => {
     let isActive = true;
+
+    const loadClosedDates = async () => {
+      try {
+        const response = await closedDateService.getActiveClosedDates();
+        if (isActive) {
+          setClosedDates(response.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to load closed dates:', error);
+      }
+    };
 
     const loadSelectedService = async () => {
       if (!serviceId) {
@@ -59,13 +72,36 @@ export default function BookAppointment() {
       }
     };
 
+    loadClosedDates();
     loadSelectedService();
     return () => { isActive = false; };
   }, [serviceId]);
 
+  const handleDateChange = (e) => {
+    const selectedDate = e.target.value;
+    setDate(selectedDate);
+    setTime(''); // Reset time when date changes
+    
+    // Check if date is marked as closed
+    const isClosed = closedDates.some(cd => cd.closedDate === selectedDate);
+    if (isClosed) {
+      const closedDateInfo = closedDates.find(cd => cd.closedDate === selectedDate);
+      setDateMessage(`⚠️ Salon is closed on this date${closedDateInfo?.reason ? ` (${closedDateInfo.reason})` : ''}`);
+    } else {
+      setDateMessage('');
+    }
+  };
+
   const handleBook = async () => {
     if (!date || !time || !selectedService) {
       toast.error('Please select both a date and a time slot.');
+      return;
+    }
+
+    // Check if selected date is closed
+    const isClosed = closedDates.some(cd => cd.closedDate === date);
+    if (isClosed) {
+      toast.error('The selected date is not available. Please choose another date.');
       return;
     }
 
@@ -139,12 +175,12 @@ export default function BookAppointment() {
                   id="appointment-date"
                   min={todayDateStr}
                   value={date}
-                  onChange={(e) => {
-                    setDate(e.target.value);
-                    setTime(''); // Reset time when date changes
-                  }}
+                  onChange={handleDateChange}
                   className="block w-full md:w-64 rounded-md border-gray-300 shadow-sm focus:border-[#8E1616] focus:ring-[#8E1616] sm:text-sm p-2 border"
                 />
+                {dateMessage && (
+                  <p className="text-sm text-amber-600 font-medium">{dateMessage}</p>
+                )}
               </div>
 
               {/* Time Slots Grid */}

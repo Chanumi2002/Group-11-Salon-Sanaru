@@ -4,6 +4,7 @@ import com.sanaru.backend.dto.AppointmentRequest;
 import com.sanaru.backend.dto.AppointmentResponse;
 import com.sanaru.backend.enums.AppointmentStatus;
 import com.sanaru.backend.model.Appointment;
+import com.sanaru.backend.model.Break;
 import com.sanaru.backend.model.TimeSlot;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.AppointmentRepository;
@@ -53,6 +54,19 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         if (matchingSlot == null) {
             throw new IllegalArgumentException("The selected time is outside operating hours");
+        }
+
+        // Check for breaks: ensure the appointment doesn't conflict with any breaks
+        for (Break breakPeriod : matchingSlot.getBreaks()) {
+            if (breakPeriod.getIsActive()) {
+                LocalTime breakStart = breakPeriod.getStartTime();
+                LocalTime breakEnd = breakPeriod.getEndTime();
+                
+                // Check if appointment overlaps with break
+                if (requestedStartTime.isBefore(breakEnd) && requestedEndTime.isAfter(breakStart)) {
+                    throw new IllegalArgumentException("The selected time conflicts with a break period (" + breakPeriod.getBreakName() + ")");
+                }
+            }
         }
 
         // Check capacity: count existing overlapping appointments at the requested time

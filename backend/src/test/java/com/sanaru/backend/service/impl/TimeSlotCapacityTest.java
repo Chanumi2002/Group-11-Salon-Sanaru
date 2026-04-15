@@ -262,7 +262,7 @@ class TimeSlotCapacityTest {
         AppointmentResponse response = appointmentService.createAppointment(validRequest, "customer2@test.com");
 
         assertNotNull(response);
-        assertEquals(response.getAppointmentTime(), LocalTime.of(10, 0));
+        assertEquals(response.getTime(), LocalTime.of(10, 0));
         verify(appointmentRepository, times(1)).save(any(Appointment.class));
     }
 

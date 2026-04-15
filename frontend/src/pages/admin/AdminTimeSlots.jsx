@@ -35,6 +35,19 @@ export default function AdminTimeSlots() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formMode, setFormMode] = useState("single"); // "single" or "bulk"
+  const [selectedSlotId, setSelectedSlotId] = useState(null);
+  const [showBreakForm, setShowBreakForm] = useState(false);
+  const [showCommonBreakForm, setShowCommonBreakForm] = useState(false);
+  const [breakData, setBreakData] = useState({
+    breakName: "Lunch",
+    startTime: "13:00",
+    endTime: "14:00",
+  });
+  const [commonBreakData, setCommonBreakData] = useState({
+    breakName: "Lunch",
+    startTime: "13:00",
+    endTime: "14:00",
+  });
   const [formData, setFormData] = useState({
     dayOfWeek: "MONDAY",
     startDay: "MONDAY",
@@ -42,6 +55,7 @@ export default function AdminTimeSlots() {
     startTime: "09:00",
     endTime: "17:00",
     capacity: 1,
+    appointmentDuration: 30,
     isActive: true,
   });
 
@@ -103,6 +117,7 @@ export default function AdminTimeSlots() {
           startTime: formData.startTime,
           endTime: formData.endTime,
           capacity: formData.capacity,
+          appointmentDuration: formData.appointmentDuration,
           isActive: formData.isActive,
         });
         toast.success("Time slot updated successfully");
@@ -119,6 +134,7 @@ export default function AdminTimeSlots() {
                 startTime: formData.startTime,
                 endTime: formData.endTime,
                 capacity: formData.capacity,
+                appointmentDuration: formData.appointmentDuration,
                 isActive: formData.isActive,
               });
               successCount++;
@@ -135,6 +151,7 @@ export default function AdminTimeSlots() {
             startTime: formData.startTime,
             endTime: formData.endTime,
             capacity: formData.capacity,
+            appointmentDuration: formData.appointmentDuration,
             isActive: formData.isActive,
           });
           toast.success("Time slot created successfully");
@@ -149,6 +166,7 @@ export default function AdminTimeSlots() {
         startTime: "09:00",
         endTime: "17:00",
         capacity: 1,
+        appointmentDuration: 30,
         isActive: true,
       });
       setEditingId(null);
@@ -202,6 +220,7 @@ export default function AdminTimeSlots() {
             startTime: preset.startTime,
             endTime: preset.endTime,
             capacity: 1,
+            appointmentDuration: 30,
             isActive: true,
           });
           successCount++;
@@ -226,9 +245,11 @@ export default function AdminTimeSlots() {
       startTime: slot.startTime,
       endTime: slot.endTime,
       capacity: slot.capacity || 1,
+      appointmentDuration: slot.appointmentDuration || 30,
       isActive: slot.isActive,
     });
     setEditingId(slot.id);
+    setSelectedSlotId(slot.id);
     setShowForm(true);
   };
 
@@ -275,6 +296,110 @@ export default function AdminTimeSlots() {
       capacity: 1,
       isActive: true,
     });
+  };
+
+  const handleAddBreak = async (e) => {
+    e.preventDefault();
+
+    if (breakData.startTime >= breakData.endTime) {
+      toast.error("Break start time must be before end time");
+      return;
+    }
+
+    try {
+      setActionId("addBreak");
+      await adminService.addBreak(selectedSlotId, {
+        breakName: breakData.breakName,
+        startTime: breakData.startTime,
+        endTime: breakData.endTime,
+        isActive: true,
+      });
+      toast.success("Break added successfully");
+      setBreakData({ breakName: "Lunch", startTime: "13:00", endTime: "14:00" });
+      setShowBreakForm(false);
+      await fetchTimeSlots();
+    } catch (error) {
+      console.error("Error adding break:", error);
+      toast.error(error.response?.data?.message || "Failed to add break");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleDeleteBreak = async (breakId) => {
+    if (!window.confirm("Are you sure you want to delete this break?")) return;
+
+    try {
+      setActionId(`deleteBreak-${breakId}`);
+      await adminService.deleteBreak(selectedSlotId, breakId);
+      toast.success("Break deleted successfully");
+      await fetchTimeSlots();
+    } catch (error) {
+      console.error("Error deleting break:", error);
+      toast.error(error.response?.data?.message || "Failed to delete break");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleBreakFormChange = (e) => {
+    const { name, value } = e.target;
+    setBreakData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleCommonBreakFormChange = (e) => {
+    const { name, value } = e.target;
+    setCommonBreakData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleAddCommonBreak = async (e) => {
+    e.preventDefault();
+
+    if (commonBreakData.startTime >= commonBreakData.endTime) {
+      toast.error("Break start time must be before end time");
+      return;
+    }
+
+    if (timeSlots.length === 0) {
+      toast.error("No time slots available. Create time slots first.");
+      return;
+    }
+
+    try {
+      setActionId("addCommonBreak");
+      let successCount = 0;
+
+      // Add the common break to all time slots
+      for (const slot of timeSlots) {
+        try {
+          await adminService.addBreak(slot.id, {
+            breakName: commonBreakData.breakName,
+            startTime: commonBreakData.startTime,
+            endTime: commonBreakData.endTime,
+            isActive: true,
+          });
+          successCount++;
+        } catch (err) {
+          console.error(`Error adding break to ${slot.dayOfWeek}:`, err);
+        }
+      }
+
+      toast.success(`Common break "${commonBreakData.breakName}" added to ${successCount} time slot(s)`);
+      setCommonBreakData({ breakName: "Lunch", startTime: "13:00", endTime: "14:00" });
+      setShowCommonBreakForm(false);
+      await fetchTimeSlots();
+    } catch (error) {
+      console.error("Error adding common break:", error);
+      toast.error(error.response?.data?.message || "Failed to add common break");
+    } finally {
+      setActionId(null);
+    }
   };
 
   return (
@@ -386,8 +511,9 @@ export default function AdminTimeSlots() {
                 {/* Single Day Mode */}
                 {formMode === "single" && (
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Day</label>
+                    <label htmlFor="dayOfWeek" className="block text-sm font-medium text-foreground mb-2">Day</label>
                     <select
+                      id="dayOfWeek"
                       name="dayOfWeek"
                       value={formData.dayOfWeek}
                       onChange={handleFormChange}
@@ -405,8 +531,9 @@ export default function AdminTimeSlots() {
                 {/* Bulk Mode - Start Day */}
                 {formMode === "bulk" && (
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Start Day</label>
+                    <label htmlFor="startDay" className="block text-sm font-medium text-foreground mb-2">Start Day</label>
                     <select
+                      id="startDay"
                       name="startDay"
                       value={formData.startDay}
                       onChange={handleFormChange}
@@ -424,8 +551,9 @@ export default function AdminTimeSlots() {
                 {/* Bulk Mode - End Day */}
                 {formMode === "bulk" && (
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">End Day</label>
+                    <label htmlFor="endDay" className="block text-sm font-medium text-foreground mb-2">End Day</label>
                     <select
+                      id="endDay"
                       name="endDay"
                       value={formData.endDay}
                       onChange={handleFormChange}
@@ -442,8 +570,9 @@ export default function AdminTimeSlots() {
 
                 {/* Start Time */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Start Time</label>
+                  <label htmlFor="startTime" className="block text-sm font-medium text-foreground mb-2">Start Time</label>
                   <input
+                    id="startTime"
                     type="time"
                     name="startTime"
                     value={formData.startTime}
@@ -454,8 +583,9 @@ export default function AdminTimeSlots() {
 
                 {/* End Time */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">End Time</label>
+                  <label htmlFor="endTime" className="block text-sm font-medium text-foreground mb-2">End Time</label>
                   <input
+                    id="endTime"
                     type="time"
                     name="endTime"
                     value={formData.endTime}
@@ -466,8 +596,9 @@ export default function AdminTimeSlots() {
 
                 {/* Capacity - Number of concurrent appointments */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Capacity</label>
+                  <label htmlFor="capacity" className="block text-sm font-medium text-foreground mb-2">Capacity</label>
                   <input
+                    id="capacity"
                     type="number"
                     name="capacity"
                     value={formData.capacity}
@@ -479,12 +610,33 @@ export default function AdminTimeSlots() {
                   <p className="text-xs text-muted-foreground mt-1">Beauticians/slots</p>
                 </div>
 
+                {/* Appointment Duration - Time period for each booking */}
+                <div>
+                  <label htmlFor="appointmentDuration" className="block text-sm font-medium text-foreground mb-2">Appointment Duration</label>
+                  <select
+                    id="appointmentDuration"
+                    name="appointmentDuration"
+                    value={formData.appointmentDuration}
+                    onChange={handleFormChange}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value={15}>15 minutes</option>
+                    <option value={30}>30 minutes</option>
+                    <option value={45}>45 minutes</option>
+                    <option value={60}>1 hour (60 min)</option>
+                    <option value={90}>1.5 hours (90 min)</option>
+                    <option value={120}>2 hours (120 min)</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">Duration per customer booking</p>
+                </div>
+
                 {/* Active Toggle - only shown when editing */}
                 {editingId && (
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Active</label>
+                    <label htmlFor="isActive" className="block text-sm font-medium text-foreground mb-2">Active</label>
                     <div className="flex items-center h-10">
                       <input
+                        id="isActive"
                         type="checkbox"
                         name="isActive"
                         checked={formData.isActive}
@@ -522,6 +674,203 @@ export default function AdminTimeSlots() {
                 </button>
               </div>
             </form>
+
+            {/* Breaks Management Section - Only shown when editing */}
+            {editingId && (
+              <div className="mt-8 pt-8 border-t border-border">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">Lunch Breaks & Other Breaks ☕</h3>
+                <p className="text-sm text-muted-foreground mb-4">Add breaks like lunch, coffee, or prayer time when no appointments can be booked.</p>
+
+                {/* Add Break Form */}
+                {!showBreakForm ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowBreakForm(true)}
+                    className="flex items-center gap-2 rounded-lg px-4 py-2 bg-amber-600 text-white font-medium hover:bg-amber-700 transition mb-4"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Break
+                  </button>
+                ) : (
+                  <form onSubmit={handleAddBreak} className="bg-amber-50 p-4 rounded-lg border border-amber-200 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                      <div>
+                        <label htmlFor="breakName" className="block text-sm font-medium text-foreground mb-1">Break Name</label>
+                        <input
+                          id="breakName"
+                          type="text"
+                          name="breakName"
+                          value={breakData.breakName}
+                          onChange={handleBreakFormChange}
+                          placeholder="e.g., Lunch, Coffee"
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="breakStartTime" className="block text-sm font-medium text-foreground mb-1">Start Time</label>
+                        <input
+                          id="breakStartTime"
+                          type="time"
+                          name="startTime"
+                          value={breakData.startTime}
+                          onChange={handleBreakFormChange}
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="breakEndTime" className="block text-sm font-medium text-foreground mb-1">End Time</label>
+                        <input
+                          id="breakEndTime"
+                          type="time"
+                          name="endTime"
+                          value={breakData.endTime}
+                          onChange={handleBreakFormChange}
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div className="flex gap-2 items-end">
+                        <button
+                          type="submit"
+                          disabled={!!actionId}
+                          className="flex items-center gap-1 rounded-lg px-4 py-2 bg-amber-600 text-white font-medium hover:bg-amber-700 transition disabled:opacity-50 flex-1"
+                        >
+                          {actionId === "addBreak" ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Plus className="h-4 w-4" />
+                          )}
+                          Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowBreakForm(false)}
+                          className="rounded-lg px-4 py-2 bg-gray-300 text-foreground font-medium hover:bg-gray-400 transition flex-1"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+
+                {/* Breaks List */}
+                {timeSlots.find((s) => s.id === editingId)?.breaks && timeSlots.find((s) => s.id === editingId).breaks.length > 0 ? (
+                  <div className="space-y-2">
+                    {timeSlots.find((s) => s.id === editingId).breaks.map((breakItem) => (
+                      <div key={breakItem.id} className="bg-amber-100 border border-amber-300 rounded-lg p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-foreground">{breakItem.breakName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {formatTime(breakItem.startTime)} - {formatTime(breakItem.endTime)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteBreak(breakItem.id)}
+                          disabled={!!actionId}
+                          className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-red-50 transition disabled:opacity-50"
+                          title="Delete Break"
+                        >
+                          {actionId === `deleteBreak-${breakItem.id}` ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No breaks added yet.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Common Break Management Section */}
+        {!showForm && (
+          <div className="mb-8">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+              <h2 className="text-lg font-semibold text-amber-900 mb-4">☕ Add Common Break to All Days</h2>
+              <p className="text-sm text-amber-700 mb-4">
+                Quickly add a break (lunch, prayer, coffee, etc.) that applies to all time slots at once.
+              </p>
+
+              {!showCommonBreakForm ? (
+                <button
+                  onClick={() => setShowCommonBreakForm(true)}
+                  disabled={timeSlots.length === 0}
+                  className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition disabled:opacity-50 font-medium text-sm"
+                >
+                  + Add Common Break
+                </button>
+              ) : (
+                <form onSubmit={handleAddCommonBreak} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="commonBreakName" className="block text-sm font-medium text-foreground mb-2">Break Name</label>
+                      <input
+                        id="commonBreakName"
+                        type="text"
+                        name="breakName"
+                        value={commonBreakData.breakName}
+                        onChange={handleCommonBreakFormChange}
+                        placeholder="e.g., Lunch, Coffee, Prayer"
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="commonBreakStartTime" className="block text-sm font-medium text-foreground mb-2">Start Time</label>
+                      <input
+                        id="commonBreakStartTime"
+                        type="time"
+                        name="startTime"
+                        value={commonBreakData.startTime}
+                        onChange={handleCommonBreakFormChange}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="commonBreakEndTime" className="block text-sm font-medium text-foreground mb-2">End Time</label>
+                      <input
+                        id="commonBreakEndTime"
+                        type="time"
+                        name="endTime"
+                        value={commonBreakData.endTime}
+                        onChange={handleCommonBreakFormChange}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      disabled={!!actionId}
+                      className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition disabled:opacity-50 font-medium text-sm"
+                    >
+                      {actionId === "addCommonBreak" ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4" />
+                          Add to All Days
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCommonBreakForm(false)}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         )}
 
@@ -560,7 +909,7 @@ export default function AdminTimeSlots() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted">
-                    {["Day", "Start Time", "End Time", "Capacity", "Status", "Actions"].map((h) => (
+                    {["Day", "Start Time", "End Time", "Capacity", "Duration", "Status", "Actions"].map((h) => (
                       <th
                         key={h}
                         className={`px-6 py-4 text-sm font-semibold text-foreground ${h === "Actions" ? "text-right" : "text-left"}`}
@@ -590,6 +939,11 @@ export default function AdminTimeSlots() {
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
                           👥 {slot.capacity || 1}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+                          ⏱️ {slot.appointmentDuration || 60}min
                         </span>
                       </td>
                       <td className="px-6 py-4">

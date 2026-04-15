@@ -27,6 +27,7 @@ const adminSidebarLinks = [
   { label: "Manage Products", to: "/admin_dashboard/products", icon: ShoppingCart },
   { label: "Manage Services", to: "/admin_dashboard/services", icon: Briefcase },
   { label: "Time Slot Management", to: "/admin_dashboard/time-slots", icon: Clock },
+  { label: "Closed Dates", to: "/admin_dashboard/closed-dates", icon: Calendar },
   { label: "Manage Orders", to: "/admin_dashboard/orders", icon: Package },
   { label: "Manage Payments", to: "/admin_dashboard/payments", icon: DollarSign },
   { label: "Booking Management", to: "/admin_dashboard/appointments", icon: Calendar },

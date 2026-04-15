@@ -51,6 +51,7 @@ import AdminInventory from "./pages/admin/AdminInventory";
 import AdminFeedback from "./pages/admin/AdminFeedback";
 import BookingManagement from "./pages/admin/BookingManagement";
 import AdminTimeSlots from "./pages/admin/AdminTimeSlots";
+import AdminClosedDates from "./pages/admin/AdminClosedDates";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -241,6 +242,15 @@ const App = () => (
                 element={
                   <AdminProtectedRoute>
                     <AdminTimeSlots />
+                  </AdminProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin_dashboard/closed-dates"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminClosedDates />
                   </AdminProtectedRoute>
                 }
               />
