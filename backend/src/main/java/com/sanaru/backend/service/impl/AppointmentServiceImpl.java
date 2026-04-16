@@ -199,19 +199,22 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setStatus(AppointmentStatus.CONFIRMED);
         Appointment updatedAppointment = appointmentRepository.save(appointment);
         
-        // Send approval email to customer
-        try {
-            String customerEmail = updatedAppointment.getCustomer().getEmail();
-            String customerName = updatedAppointment.getCustomer().getFirstName() + " " + updatedAppointment.getCustomer().getLastName();
-            String serviceName = updatedAppointment.getService().getName();
-            String appointmentDate = updatedAppointment.getAppointmentDate().toString();
-            String appointmentTime = updatedAppointment.getAppointmentTime().toString();
-            
-            emailService.sendAppointmentApprovedEmail(customerEmail, customerName, serviceName, appointmentDate, appointmentTime);
-        } catch (Exception e) {
-            // Log error but don't fail the appointment approval
-            System.err.println("Failed to send approval email: " + e.getMessage());
-        }
+        // Fetch all required data BEFORE spawning background thread to avoid Hibernate session issues
+        String customerEmail = updatedAppointment.getCustomer().getEmail();
+        String customerName = updatedAppointment.getCustomer().getFirstName() + " " + updatedAppointment.getCustomer().getLastName();
+        String serviceName = updatedAppointment.getService().getName();
+        String appointmentDate = updatedAppointment.getAppointmentDate().toString();
+        String appointmentTime = updatedAppointment.getAppointmentTime().toString();
+        
+        // Send approval email to customer ASYNCHRONOUSLY - don't block the response
+        new Thread(() -> {
+            try {
+                emailService.sendAppointmentApprovedEmail(customerEmail, customerName, serviceName, appointmentDate, appointmentTime);
+            } catch (Exception e) {
+                // Log error but don't fail the appointment approval (since it's already saved)
+                System.err.println("Failed to send approval email (async): " + e.getMessage());
+            }
+        }).start();
         
         return mapToResponse(updatedAppointment);
     }
@@ -228,19 +231,22 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setStatus(AppointmentStatus.REJECTED);
         Appointment updatedAppointment = appointmentRepository.save(appointment);
         
-        // Send rejection email to customer
-        try {
-            String customerEmail = updatedAppointment.getCustomer().getEmail();
-            String customerName = updatedAppointment.getCustomer().getFirstName() + " " + updatedAppointment.getCustomer().getLastName();
-            String serviceName = updatedAppointment.getService().getName();
-            String appointmentDate = updatedAppointment.getAppointmentDate().toString();
-            String appointmentTime = updatedAppointment.getAppointmentTime().toString();
-            
-            emailService.sendAppointmentRejectedEmail(customerEmail, customerName, serviceName, appointmentDate, appointmentTime);
-        } catch (Exception e) {
-            // Log error but don't fail the appointment rejection
-            System.err.println("Failed to send rejection email: " + e.getMessage());
-        }
+        // Fetch all required data BEFORE spawning background thread to avoid Hibernate session issues
+        String customerEmail = updatedAppointment.getCustomer().getEmail();
+        String customerName = updatedAppointment.getCustomer().getFirstName() + " " + updatedAppointment.getCustomer().getLastName();
+        String serviceName = updatedAppointment.getService().getName();
+        String appointmentDate = updatedAppointment.getAppointmentDate().toString();
+        String appointmentTime = updatedAppointment.getAppointmentTime().toString();
+        
+        // Send rejection email to customer ASYNCHRONOUSLY - don't block the response
+        new Thread(() -> {
+            try {
+                emailService.sendAppointmentRejectedEmail(customerEmail, customerName, serviceName, appointmentDate, appointmentTime);
+            } catch (Exception e) {
+                // Log error but don't fail the appointment rejection (since it's already saved)
+                System.err.println("Failed to send rejection email (async): " + e.getMessage());
+            }
+        }).start();
         
         return mapToResponse(updatedAppointment);
     }

@@ -4,6 +4,7 @@ import { Users, UserCheck, UserX } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import UpcomingBookings from "./UpcomingBookings";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -112,7 +113,11 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <div className="border border-border rounded-lg p-6 bg-card">
+        <div className="mt-8">
+          <UpcomingBookings />
+        </div>
+
+        <div className="mt-8 border border-border rounded-lg p-6 bg-card">
           <h2 className="text-lg font-bold text-foreground mb-4">Recent Customers</h2>
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading users...</p>
