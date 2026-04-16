@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { shopService } from '@/services/shopApi';
 import { customerService, closedDateService, adminService } from '@/services/api';
+import axios from 'axios';
 
 export default function BookAppointment() {
   const [searchParams] = useSearchParams();
@@ -20,11 +21,41 @@ export default function BookAppointment() {
   const [timeSlots, setTimeSlots] = useState([]); // Dynamically fetched time slots
   const [showAvailable, setShowAvailable] = useState(true); // Legend filter: show available slots
   const [showBooked, setShowBooked] = useState(true); // Legend filter: show booked slots
+  const [holidays, setHolidays] = useState([]); // List of holidays
+  const [isHolidaysLoading, setIsHolidaysLoading] = useState(false);
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
 
   const serviceId = searchParams.get('serviceId');
+
+  // Load holidays on component mount
+  useEffect(() => {
+    const loadHolidays = async () => {
+      try {
+        setIsHolidaysLoading(true);
+        const response = await axios.get('http://localhost:8080/api/holidays');
+        console.log('Holidays loaded:', response.data);
+        setHolidays(response.data || []);
+      } catch (error) {
+        console.error('Failed to load holidays:', error);
+        setHolidays([]);
+      } finally {
+        setIsHolidaysLoading(false);
+      }
+    };
+    loadHolidays();
+  }, []);
+
+  // Log holidays whenever they update
+  useEffect(() => {
+    if (holidays.length > 0) {
+      console.log(`✅ Holidays loaded: ${holidays.length} total`);
+      console.log('First 3 holidays:', holidays.slice(0, 3));
+    } else {
+      console.log('ℹ️ Waiting for holidays to load...');
+    }
+  }, [holidays]);
 
   useEffect(() => {
     let isActive = true;
@@ -84,6 +115,8 @@ export default function BookAppointment() {
       const response = await customerService.getSlotAvailability(selectedDate);
       const availabilityData = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
       
+      console.log(`Availability data for ${selectedDate}:`, availabilityData); // Debug log
+      
       // Create a map of time -> availability info
       const availabilityMap = {};
       let totalAvailable = 0;
@@ -99,6 +132,8 @@ export default function BookAppointment() {
         totalAvailable += slot.available;
         totalCapacity += slot.capacity;
       });
+      
+      console.log(`Total capacity: ${totalCapacity}, Total available: ${totalAvailable}, Total booked: ${totalCapacity - totalAvailable}`); // Debug log
       
       setSlotAvailability(availabilityMap);
       
@@ -123,15 +158,20 @@ export default function BookAppointment() {
 
   const fetchTimeSlots = async (selectedDate) => {
     try {
-      // Get day of week from date
-      const dateObj = new Date(selectedDate + 'T00:00:00');
-      const jsDay = dateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      // Get day of week from date - use UTC to avoid timezone issues
+      const [year, month, day] = selectedDate.split('-').map(Number);
+      const dateObj = new Date(Date.UTC(year, month - 1, day)); // month is 0-indexed
+      const jsDay = dateObj.getUTCDay(); // 0 = Sunday, 1 = Monday, etc. (in UTC)
       
       const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
       const dayOfWeek = dayNames[jsDay];
+      
+      console.log(`Selected date: ${selectedDate}, Day of week: ${dayOfWeek}`); // Debug log
 
       const response = await adminService.getAvailableSlots(dayOfWeek);
       const slots = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
+      
+      console.log(`Found ${slots.length} slots for ${dayOfWeek}`); // Debug log
       
       // Extract time strings from slot objects
       // TimeSlot has startTime: "HH:MM:SS", extract just "HH:MM"
@@ -158,10 +198,66 @@ export default function BookAppointment() {
     }
   };
 
+  // Check if a date is a holiday
+  const isDateHoliday = (selectedDate) => {
+    console.log(`Checking ${selectedDate} against ${holidays.length} holidays`);
+    if (holidays.length === 0) {
+      console.warn('No holidays loaded yet!');
+      return false;
+    }
+    return holidays.some(holiday => {
+      // Note: The API returns "start" and "end" fields (from @JsonProperty in backend)
+      const startDate = holiday.start || holiday.startDate;
+      const endDate = holiday.end || holiday.endDate;
+      console.log(`Holiday: ${holiday.summary}, start: ${startDate}, end: ${endDate}`);
+      const isMatch = selectedDate >= startDate && selectedDate <= endDate;
+      if (isMatch) {
+        console.log(`MATCH FOUND: ${selectedDate} matches holiday ${holiday.summary} (${startDate} - ${endDate})`);
+      }
+      return isMatch;
+    });
+  };
+
+  // Get holiday info for a date
+  const getHolidayInfo = (selectedDate) => {
+    console.log(`Getting holiday info for ${selectedDate}, available holidays: ${holidays.length}`);
+    if (holidays.length === 0) {
+      console.warn('No holidays loaded yet!');
+      return null;
+    }
+    const found = holidays.find(holiday => {
+      // Note: The API returns "start" and "end" fields (from @JsonProperty in backend)
+      const startDate = holiday.start || holiday.startDate;
+      const endDate = holiday.end || holiday.endDate;
+      console.log(`Comparing ${selectedDate} with ${holiday.summary}: ${startDate} to ${endDate}`);
+      const isMatch = selectedDate >= startDate && selectedDate <= endDate;
+      if (isMatch) {
+        console.log(`FOUND: ${selectedDate} is ${holiday.summary} (${startDate} to ${endDate})`);
+      }
+      return isMatch;
+    });
+    console.log('Holiday info result:', found);
+    return found;
+  };
+
   const handleDateChange = (e) => {
     const selectedDate = e.target.value;
     setDate(selectedDate);
     setTime(''); // Reset time when date changes
+    
+    console.log(`Selected date: ${selectedDate}, Available holidays: ${holidays.length}`);
+    
+    // Check if date is a holiday
+    const holidayInfo = getHolidayInfo(selectedDate);
+    console.log(`Holiday check for ${selectedDate}:`, holidayInfo);
+    
+    if (holidayInfo) {
+      setDateMessage(`🏖️ ${holidayInfo.summary} - Salon is closed on this date`);
+      setSlotAvailability({});
+      setAvailabilityInfo('');
+      setTimeSlots([]);
+      return;
+    }
     
     // Check if date is marked as closed
     const isClosed = closedDates.some(cd => cd.closedDate === selectedDate);
@@ -197,6 +293,13 @@ export default function BookAppointment() {
       return;
     }
 
+    // Check if selected date is a holiday
+    const holidayInfo = getHolidayInfo(date);
+    if (holidayInfo) {
+      toast.error(`Cannot book on ${holidayInfo.summary}. Salon is closed.`);
+      return;
+    }
+
     // Check if selected date is closed
     const isClosed = closedDates.some(cd => cd.closedDate === date);
     if (isClosed) {
@@ -215,8 +318,9 @@ export default function BookAppointment() {
       navigate('/customer_dashboard/bookings');
     } catch (error) {
       console.error('Booking error details:', error);
-      console.error('Response data:', error.response?.data);
+      console.error('Full response data:', JSON.stringify(error.response?.data, null, 2));
       console.error('Response status:', error.response?.status);
+      console.error('Request data sent:', { serviceId: selectedService.id, date, time: time + ":00" });
       
       let msg = 'Unable to book appointment. Please try again.';
       
@@ -358,7 +462,6 @@ export default function BookAppointment() {
                         onChange={(e) => setShowAvailable(e.target.checked)}
                         className="w-4 h-4 border-green-400 rounded cursor-pointer"
                       />
-                      <div className="w-4 h-4 bg-white border-2 border-green-400 rounded"></div>
                       <span>Available</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -368,7 +471,6 @@ export default function BookAppointment() {
                         onChange={(e) => setShowBooked(e.target.checked)}
                         className="w-4 h-4 border-gray-300 rounded cursor-pointer"
                       />
-                      <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded"></div>
                       <span>Booked</span>
                     </label>
                   </div>

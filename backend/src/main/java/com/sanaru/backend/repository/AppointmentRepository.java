@@ -2,6 +2,7 @@ package com.sanaru.backend.repository;
 
 import com.sanaru.backend.enums.AppointmentStatus;
 import com.sanaru.backend.model.Appointment;
+import com.sanaru.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,7 +16,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     List<Appointment> findByAppointmentDateAndStatusIn(LocalDate date, List<AppointmentStatus> statuses);
 
-    List<Appointment> findByCustomerOrderByAppointmentDateDescAppointmentTimeDesc(com.sanaru.backend.model.User customer);
+    List<Appointment> findByCustomerOrderByAppointmentDateDescAppointmentTimeDesc(User customer);
 
     List<Appointment> findAllByOrderByAppointmentDateDescAppointmentTimeDesc();
 }

@@ -13,6 +13,7 @@ import com.sanaru.backend.repository.ServiceRepository;
 import com.sanaru.backend.repository.TimeSlotRepository;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.AppointmentService;
+import com.sanaru.backend.service.HolidayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final ServiceRepository serviceRepository;
     private final TimeSlotRepository timeSlotRepository;
     private final ClosedDateRepository closedDateRepository;
+    private final HolidayService holidayService;
 
     @Override
     public AppointmentResponse createAppointment(AppointmentRequest request, String userEmail) {
@@ -49,6 +51,11 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Check if the requested date is marked as closed
         if (closedDateRepository.findByClosedDate(request.getDate()).isPresent()) {
             throw new IllegalArgumentException("The selected date is not available. Salon is closed on this date.");
+        }
+
+        // Check if the requested date is a holiday
+        if (holidayService.isHoliday(request.getDate())) {
+            throw new IllegalArgumentException("The selected date is a holiday. Salon is closed on this date.");
         }
 
         LocalTime requestedStartTime = request.getTime();
@@ -126,6 +133,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AppointmentResponse> getAppointmentsByDate(LocalDate date) {
         List<Appointment> appointments = appointmentRepository.findByAppointmentDateAndStatusIn(
                 date,
@@ -157,6 +165,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AppointmentResponse> getAllAppointments() {
         List<Appointment> appointments = appointmentRepository.findAllByOrderByAppointmentDateDescAppointmentTimeDesc();
         return appointments.stream().map(this::mapToResponse).collect(Collectors.toList());
@@ -196,8 +205,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Get day of week for the requested date
         java.time.DayOfWeek dayOfWeek = date.getDayOfWeek();
         
-        // Get all time slots for this day of week
-        List<TimeSlot> timeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(dayOfWeek);
+        // Get all base time slots for this day of week
+        List<TimeSlot> baseTimeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(dayOfWeek);
         
         // Get all appointments for this date
         List<Appointment> appointments = appointmentRepository.findByAppointmentDateAndStatusIn(
@@ -205,29 +214,60 @@ public class AppointmentServiceImpl implements AppointmentService {
                 List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
         );
         
-        // Build availability info for each time slot
+        // Build availability info for each individual appointment slot (generated from base slots)
         List<Map<String, Object>> availabilityList = new java.util.ArrayList<>();
         
-        for (TimeSlot slot : timeSlots) {
-            // Count appointments that overlap with this time slot
-            long bookedCount = appointments.stream()
-                    .filter(apt -> {
-                        LocalTime aptStart = apt.getAppointmentTime();
-                        LocalTime aptEnd = aptStart.plusMinutes(apt.getService().getDurationMinutes());
-                        return aptStart.isBefore(slot.getEndTime()) && aptEnd.isAfter(slot.getStartTime());
-                    })
-                    .count();
+        for (TimeSlot baseSlot : baseTimeSlots) {
+            // Generate individual appointment slots from the base time slot
+            LocalTime currentTime = baseSlot.getStartTime();
+            int duration = baseSlot.getAppointmentDuration() != null ? baseSlot.getAppointmentDuration() : 30;
             
-            int availableSpots = Math.max(0, slot.getCapacity() - (int) bookedCount);
-            
-            Map<String, Object> info = new java.util.HashMap<>();
-            info.put("time", slot.getStartTime().toString().substring(0, 5)); // HH:MM format
-            info.put("booked", bookedCount);
-            info.put("capacity", slot.getCapacity());
-            info.put("available", availableSpots);
-            info.put("isFull", availableSpots == 0);
-            
-            availabilityList.add(info);
+            while (currentTime.plusMinutes(duration).isBefore(baseSlot.getEndTime()) || 
+                   currentTime.plusMinutes(duration).equals(baseSlot.getEndTime())) {
+                
+                // Create final variables for use in lambda/conditions
+                final LocalTime slotStartTime = currentTime;
+                final LocalTime slotEndTime = currentTime.plusMinutes(duration);
+                
+                // Check if this slot overlaps with any active break periods
+                boolean isBreakTime = baseSlot.getBreaks().stream()
+                        .filter(Break::getIsActive)
+                        .anyMatch(breakPeriod -> {
+                            LocalTime breakStart = breakPeriod.getStartTime();
+                            LocalTime breakEnd = breakPeriod.getEndTime();
+                            // Check if slot overlaps with break
+                            return slotStartTime.isBefore(breakEnd) && slotEndTime.isAfter(breakStart);
+                        });
+                
+                // Skip this slot if it overlaps with a break
+                if (isBreakTime) {
+                    currentTime = slotEndTime;
+                    continue;
+                }
+                
+                // Count appointments that overlap with this individual appointment slot
+                long bookedCount = appointments.stream()
+                        .filter(apt -> {
+                            LocalTime aptStart = apt.getAppointmentTime();
+                            LocalTime aptEnd = aptStart.plusMinutes(apt.getService().getDurationMinutes());
+                            // Check if appointment overlaps with this appointment slot
+                            return aptStart.isBefore(slotEndTime) && aptEnd.isAfter(slotStartTime);
+                        })
+                        .count();
+                
+                int availableSpots = Math.max(0, baseSlot.getCapacity() - (int) bookedCount);
+                
+                Map<String, Object> info = new java.util.HashMap<>();
+                info.put("time", slotStartTime.toString().substring(0, 5)); // HH:MM format
+                info.put("booked", bookedCount);
+                info.put("capacity", baseSlot.getCapacity());
+                info.put("available", availableSpots);
+                info.put("isFull", availableSpots == 0);
+                
+                availabilityList.add(info);
+                
+                currentTime = slotEndTime;
+            }
         }
         
         return availabilityList;

@@ -85,6 +85,8 @@ public class SecurityConfig {
                     .requestMatchers("/api/products/**", "/api/categories/**", "/api/services/**", "/api/reviews/**", "/uploads/**").permitAll()
                     // Public read-only endpoints for closed dates (write operations secured by @PreAuthorize)
                     .requestMatchers("/api/closed-dates/**").permitAll()
+                    // Public holidays endpoint for appointment booking
+                    .requestMatchers("/api/holidays/**").permitAll()
                     // Public payment provider callback endpoint
                     .requestMatchers("/api/v1/payments/payhere/notify", "/api/v1/payments/payhere/cancel").permitAll()
                         // Authenticated endpoints
