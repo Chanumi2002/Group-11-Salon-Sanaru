@@ -2,7 +2,7 @@ import { AdminDashboardLayout } from "@/components/common/AdminDashboardLayout";
 import { adminService, closedDateService } from "@/services/api";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Edit2, Trash2, Loader2, ToggleLeft, ToggleRight, Calendar } from "lucide-react";
+import { Plus, Edit2, Trash2, Loader2, ToggleLeft, ToggleRight, Calendar, AlertTriangle, Check, X } from "lucide-react";
 
 const DAYS_OF_WEEK = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
@@ -50,13 +50,12 @@ export default function AdminTimeSlots() {
     endTime: "14:00",
   });
   const [breaksToAdd, setBreaksToAdd] = useState([]); // Breaks to add with new time slot
-  const [tempBreakForm, setTempBreakForm] = useState({
-    breakName: "",
-    startTime: "",
-    endTime: "",
-  });
+  const [breakFormRows, setBreakFormRows] = useState([
+    { breakName: "", startTime: "", endTime: "" }
+  ]); // Multiple break input rows
   const [showTempBreakForm, setShowTempBreakForm] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false); // Toggle form visibility
+  const [editingBreakId, setEditingBreakId] = useState(null); // For editing existing breaks
   const [formData, setFormData] = useState({
     dayOfWeek: "MONDAY",
     startDay: "MONDAY",
@@ -219,7 +218,8 @@ export default function AdminTimeSlots() {
         isActive: true,
       });
       setBreaksToAdd([]);
-      setTempBreakForm({ breakName: "", startTime: "", endTime: "" });
+      setBreakFormRows([{ breakName: "", startTime: "", endTime: "" }]);
+      setShowBreakForm(false);
       setEditingId(null);
       setShowEditModal(false);
       setShowCreateForm(false);
@@ -306,20 +306,63 @@ export default function AdminTimeSlots() {
     setShowEditModal(true); // Show modal instead of showing form on page
   };
 
-  const handleDelete = async (slotId) => {
-    if (!window.confirm("Are you sure you want to delete this time slot?")) return;
+  const handleDelete = (slotId) => {
+    const DeleteConfirmation = () => (
+      <div className="flex flex-col gap-3 w-full">
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-gray-900 dark:text-white">Delete Time Slot?</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">This action cannot be undone. You will lose this time slot permanently.</p>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => toast.dismiss()}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+          >
+            <X className="h-4 w-4" />
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss();
+              try {
+                setActionId(`delete-${slotId}`);
+                await adminService.deleteTimeSlot(slotId);
+                toast.success("✓ Time slot deleted successfully", {
+                  description: "The time slot has been removed.",
+                  icon: <Check className="h-5 w-5 text-green-500" />,
+                });
+                await fetchTimeSlots();
+              } catch (error) {
+                console.error("Error deleting time slot:", error);
+                toast.error(error.response?.data?.message || "Failed to delete time slot");
+              } finally {
+                setActionId(null);
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors text-sm font-medium"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </button>
+        </div>
+      </div>
+    );
 
-    try {
-      setActionId(`delete-${slotId}`);
-      await adminService.deleteTimeSlot(slotId);
-      toast.success("Time slot deleted successfully");
-      await fetchTimeSlots();
-    } catch (error) {
-      console.error("Error deleting time slot:", error);
-      toast.error(error.response?.data?.message || "Failed to delete time slot");
-    } finally {
-      setActionId(null);
-    }
+    toast.custom((t) => <DeleteConfirmation />, {
+      duration: 6000,
+      style: {
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        padding: "16px",
+        borderRadius: "12px",
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+      },
+    });
   };
 
   const handleToggle = async (slotId) => {
@@ -352,8 +395,15 @@ export default function AdminTimeSlots() {
       isActive: true,
     });
     setBreaksToAdd([]);
-    setTempBreakForm({ breakName: "", startTime: "", endTime: "" });
+    setBreakFormRows([{ breakName: "", startTime: "", endTime: "" }]);
     setShowTempBreakForm(false);
+    setEditingBreakId(null);
+    setShowBreakForm(false);
+    setBreakData({
+      breakName: "Lunch",
+      startTime: "13:00",
+      endTime: "14:00",
+    });
   };
 
   const handleClosedDateFormChange = (e) => {
@@ -436,6 +486,11 @@ export default function AdminTimeSlots() {
       e.preventDefault();
     }
 
+    // If we're editing a break, call handleUpdateBreak instead
+    if (editingBreakId) {
+      return handleUpdateBreak(e || {preventDefault: () => {}});
+    }
+
     if (breakData.startTime >= breakData.endTime) {
       toast.error("Break start time must be before end time");
       return;
@@ -501,6 +556,60 @@ export default function AdminTimeSlots() {
     }
   };
 
+  const handleEditBreak = (breakItem) => {
+    setEditingBreakId(breakItem.id);
+    setBreakData({
+      breakName: breakItem.breakName,
+      startTime: breakItem.startTime.substring(0, 5),
+      endTime: breakItem.endTime.substring(0, 5),
+    });
+    setShowBreakForm(true);
+  };
+
+  const handleUpdateBreak = async (e) => {
+    e.preventDefault();
+
+    const slotIdToUse = editingId || selectedSlotId;
+    
+    if (!slotIdToUse) {
+      toast.error("No time slot selected");
+      return;
+    }
+
+    if (!breakData.breakName || !breakData.startTime || !breakData.endTime) {
+      toast.error("Please fill in all break fields");
+      return;
+    }
+
+    if (breakData.startTime >= breakData.endTime) {
+      toast.error("Break start time must be before end time");
+      return;
+    }
+
+    try {
+      setActionId("updateBreak");
+      await adminService.updateBreak(slotIdToUse, editingBreakId, {
+        breakName: breakData.breakName,
+        startTime: breakData.startTime,
+        endTime: breakData.endTime,
+      });
+      toast.success("Break updated successfully");
+      setEditingBreakId(null);
+      setBreakData({
+        breakName: "Lunch",
+        startTime: "13:00",
+        endTime: "14:00",
+      });
+      setShowBreakForm(false);
+      await fetchTimeSlots();
+    } catch (error) {
+      console.error("Error updating break:", error);
+      toast.error(error.response?.data?.message || "Failed to update break");
+    } finally {
+      setActionId(null);
+    }
+  };
+
   const handleBreakFormChange = (e) => {
     const { name, value } = e.target;
     setBreakData((prev) => ({
@@ -509,45 +618,59 @@ export default function AdminTimeSlots() {
     }));
   };
 
-  const handleTempBreakFormChange = (e) => {
+  const handleTempBreakFormChange = (index, e) => {
     const { name, value } = e.target;
-    setTempBreakForm((prev) => ({
-      ...prev,
+    const updatedRows = [...breakFormRows];
+    updatedRows[index] = {
+      ...updatedRows[index],
       [name]: value,
-    }));
+    };
+    setBreakFormRows(updatedRows);
   };
 
-  const handleAddTempBreak = (e) => {
-    e.preventDefault();
+  const handleAddBreakRow = (index) => {
+    // Just add a new empty row, don't validate or add to list
+    setBreakFormRows([...breakFormRows, { breakName: "", startTime: "", endTime: "" }]);
+  };
 
-    if (!tempBreakForm.breakName.trim()) {
+  const handleConfirmBreak = (index) => {
+    const currentRow = breakFormRows[index];
+
+    // Validate current row before adding to list
+    if (!currentRow.breakName.trim()) {
       toast.error("Break name is required");
       return;
     }
 
-    if (tempBreakForm.startTime >= tempBreakForm.endTime) {
+    if (currentRow.startTime >= currentRow.endTime) {
       toast.error("Break start time must be before end time");
       return;
     }
 
-    // Check if break overlaps with slot hours
-    if (tempBreakForm.startTime < formData.startTime || tempBreakForm.endTime > formData.endTime) {
+    if (currentRow.startTime < formData.startTime || currentRow.endTime > formData.endTime) {
       toast.error("Break must be within the time slot hours");
       return;
     }
 
-    // Add the break to the list
-    const newBreak = { ...tempBreakForm };
-    setBreaksToAdd([...breaksToAdd, newBreak]);
-    setTempBreakForm({ breakName: "", startTime: "", endTime: "" });
+    // Add to breaks list
+    setBreaksToAdd([...breaksToAdd, currentRow]);
     
-    // Keep the form open so they can add more breaks or see the added break
-    // Don't close immediately - let them decide when to close
-    toast.success(`"${newBreak.breakName}" added to breaks list. Add more or click "Create Slot" when done.`);
+    // Clear this row
+    const updatedRows = breakFormRows.map((row, i) =>
+      i === index ? { breakName: "", startTime: "", endTime: "" } : row
+    );
+    setBreakFormRows(updatedRows);
+    toast.success(`"${currentRow.breakName}" added to breaks list`);
   };
 
-  const handleRemoveTempBreak = (index) => {
-    setBreaksToAdd(breaksToAdd.filter((_, i) => i !== index));
+  const handleAddMoreBreakRows = () => {
+    setBreakFormRows([...breakFormRows, { breakName: "", startTime: "", endTime: "" }]);
+  };
+
+  const handleRemoveBreakRow = (index) => {
+    if (breakFormRows.length > 1) {
+      setBreakFormRows(breakFormRows.filter((_, i) => i !== index));
+    }
   };
 
   return (
@@ -822,104 +945,101 @@ export default function AdminTimeSlots() {
               {/* BREAKS SECTION - When creating new slot (not editing) */}
               {!editingId && (
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-foreground">☕ Add Breaks (Optional)</h3>
-                    {!showTempBreakForm && (
-                      <button
-                        type="button"
-                        onClick={() => setShowTempBreakForm(true)}
-                        className="flex items-center gap-1 rounded-lg px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 transition text-xs font-medium"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Break
-                      </button>
-                    )}
-                  </div>
+                  <h3 className="text-sm font-semibold text-foreground mb-2">☕ Add Breaks (Optional)</h3>
                   <p className="text-xs text-muted-foreground mb-4">Add lunch breaks, prayer time, coffee breaks, or other breaks during this time slot.</p>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Add Break Form - ON THE RIGHT */}
-                    <div className="order-2 lg:order-2">
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                        <form onSubmit={handleAddTempBreak} className="space-y-3">
-                          <div>
-                            <label htmlFor="tempBreakName" className="block text-xs font-medium text-foreground mb-1">Break Name</label>
+                  <div className="space-y-4">
+                    {/* Break Input Rows - One row per break */}
+                    {breakFormRows.map((row, index) => (
+                      <div key={index} className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <div className="grid grid-cols-12 gap-3 items-end">
+                          <div className="col-span-5">
+                            <label className="block text-xs font-medium text-foreground mb-1">Break Name</label>
                             <input
-                              id="tempBreakName"
                               type="text"
                               name="breakName"
-                              value={tempBreakForm.breakName}
-                              onChange={handleTempBreakFormChange}
+                              value={row.breakName}
+                              onChange={(e) => handleTempBreakFormChange(index, e)}
                               placeholder="e.g., Lunch, Prayer, Coffee"
-                              className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                              className="w-full rounded border border-input bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                             />
                           </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label htmlFor="tempBreakStart" className="block text-xs font-medium text-foreground mb-1">Start Time</label>
-                              <input
-                                id="tempBreakStart"
-                                type="time"
-                                name="startTime"
-                                value={tempBreakForm.startTime}
-                                onChange={handleTempBreakFormChange}
-                                className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                              />
-                            </div>
-                            <div>
-                              <label htmlFor="tempBreakEnd" className="block text-xs font-medium text-foreground mb-1">End Time</label>
-                              <input
-                                id="tempBreakEnd"
-                                type="time"
-                                name="endTime"
-                                value={tempBreakForm.endTime}
-                                onChange={handleTempBreakFormChange}
-                                className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                              />
-                            </div>
+                          <div className="col-span-3">
+                            <label className="block text-xs font-medium text-foreground mb-1">Start Time</label>
+                            <input
+                              type="time"
+                              name="startTime"
+                              value={row.startTime}
+                              onChange={(e) => handleTempBreakFormChange(index, e)}
+                              className="w-full rounded border border-input bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
                           </div>
-                          <button
-                            type="submit"
-                            className="w-full flex items-center justify-center gap-1 rounded px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 transition text-xs font-medium"
-                            title="Add this break (or press Enter)"
-                          >
-                            <Plus className="h-4 w-4" />
-                            Add
-                          </button>
-                        </form>
+                          <div className="col-span-3">
+                            <label className="block text-xs font-medium text-foreground mb-1">End Time</label>
+                            <input
+                              type="time"
+                              name="endTime"
+                              value={row.endTime}
+                              onChange={(e) => handleTempBreakFormChange(index, e)}
+                              className="w-full rounded border border-input bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div className="col-span-1 flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmBreak(index)}
+                              className="flex-1 flex items-center justify-center rounded px-2 py-2 bg-green-600 text-white hover:bg-green-700 transition text-xs font-semibold"
+                              title="Add this break to list"
+                            >
+                              Add
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddBreakRow(index)}
+                              className="flex-1 flex items-center justify-center rounded px-2 py-2 bg-amber-600 text-white hover:bg-amber-700 transition"
+                              title="Add another break row"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                            {breakFormRows.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveBreakRow(index)}
+                                className="flex-1 flex items-center justify-center rounded px-2 py-2 bg-red-100 text-red-600 hover:bg-red-200 transition"
+                                title="Remove this row"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
 
-                    {/* Breaks List - ON THE LEFT */}
-                    <div className="order-1 lg:order-1">
-                      {breaksToAdd.length > 0 ? (
+                    {/* Added breaks list preview */}
+                    {breaksToAdd.length > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p className="text-xs font-medium text-green-900 mb-2">✓ Breaks to be added:</p>
                         <div className="space-y-2">
-                          <p className="text-xs font-medium text-foreground mb-3">Breaks to be added:</p>
                           {breaksToAdd.map((brk, index) => (
-                            <div key={index} className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center justify-between">
-                              <div className="min-w-0 flex-1">
-                                <p className="font-medium text-sm text-foreground truncate">{brk.breakName}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {brk.startTime} - {brk.endTime}
-                                </p>
+                            <div key={index} className="flex items-center justify-between bg-white rounded p-2 border border-green-100">
+                              <div className="text-sm text-foreground">
+                                <span className="font-medium">{brk.breakName}</span>
+                                <span className="text-muted-foreground ml-2">({brk.startTime} - {brk.endTime})</span>
                               </div>
                               <button
                                 type="button"
-                                onClick={() => handleRemoveTempBreak(index)}
-                                className="flex items-center justify-center w-6 h-6 rounded hover:bg-red-50 transition flex-shrink-0 ml-2"
-                                title="Remove Break"
+                                onClick={() => setBreaksToAdd(breaksToAdd.filter((_, i) => i !== index))}
+                                className="flex items-center justify-center w-6 h-6 rounded hover:bg-red-50 transition"
+                                title="Remove break"
                               >
                                 <Trash2 className="h-3.5 w-3.5 text-red-600" />
                               </button>
                             </div>
                           ))}
                         </div>
-                      ) : (
-                        <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-4">
-                          <p className="text-xs text-muted-foreground">No breaks added yet. Click "+Add Break" to add one.</p>
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1512,16 +1632,24 @@ export default function AdminTimeSlots() {
                             disabled={!!actionId}
                             className="flex items-center gap-1 rounded-lg px-3 py-1 bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition disabled:opacity-50 flex-1"
                           >
-                            {actionId === "addBreak" ? (
+                            {actionId === "addBreak" || actionId === "updateBreak" ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <Plus className="h-4 w-4" />
                             )}
-                            Add Break
+                            {editingBreakId ? "Update Break" : "Add Break"}
                           </button>
                           <button
                             type="button"
-                            onClick={() => setShowBreakForm(false)}
+                            onClick={() => {
+                              setShowBreakForm(false);
+                              setEditingBreakId(null);
+                              setBreakData({
+                                breakName: "Lunch",
+                                startTime: "13:00",
+                                endTime: "14:00",
+                              });
+                            }}
                             className="rounded-lg px-3 py-1 bg-gray-200 text-foreground text-sm font-medium hover:bg-gray-300 transition flex-1"
                           >
                             Cancel
@@ -1541,19 +1669,34 @@ export default function AdminTimeSlots() {
                                 {formatTime(breakItem.startTime)} - {formatTime(breakItem.endTime)}
                               </p>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteBreak(breakItem.id)}
-                              disabled={!!actionId}
-                              className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-red-50 transition disabled:opacity-50"
-                              title="Delete Break"
-                            >
-                              {actionId === `deleteBreak-${breakItem.id}` ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              )}
-                            </button>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleEditBreak(breakItem)}
+                                disabled={!!actionId}
+                                className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-blue-50 transition disabled:opacity-50"
+                                title="Edit Break"
+                              >
+                                {actionId === `editBreak-${breakItem.id}` ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Edit2 className="h-4 w-4 text-blue-600" />
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteBreak(breakItem.id)}
+                                disabled={!!actionId}
+                                className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-red-50 transition disabled:opacity-50"
+                                title="Delete Break"
+                              >
+                                {actionId === `deleteBreak-${breakItem.id}` ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                )}
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>

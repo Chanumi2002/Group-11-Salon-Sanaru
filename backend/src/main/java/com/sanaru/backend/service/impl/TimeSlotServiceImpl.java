@@ -78,6 +78,8 @@ public class TimeSlotServiceImpl implements TimeSlotService {
                 appointmentSlot.setIsActive(slot.getIsActive());
                 appointmentSlot.setCapacity(slot.getCapacity());
                 appointmentSlot.setAppointmentDuration(duration);
+                // Copy breaks from parent slot
+                appointmentSlot.setBreaks(slot.getBreaks());
                 
                 appointmentSlots.add(mapToResponse(appointmentSlot));
                 

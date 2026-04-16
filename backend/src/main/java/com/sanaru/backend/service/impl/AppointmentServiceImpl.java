@@ -13,6 +13,7 @@ import com.sanaru.backend.repository.ServiceRepository;
 import com.sanaru.backend.repository.TimeSlotRepository;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.service.AppointmentService;
+import com.sanaru.backend.service.EmailService;
 import com.sanaru.backend.service.HolidayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final TimeSlotRepository timeSlotRepository;
     private final ClosedDateRepository closedDateRepository;
     private final HolidayService holidayService;
+    private final EmailService emailService;
 
     @Override
     public AppointmentResponse createAppointment(AppointmentRequest request, String userEmail) {
@@ -118,6 +120,20 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
+        // Send booking confirmation email to customer
+        try {
+            String customerEmail = savedAppointment.getCustomer().getEmail();
+            String customerName = savedAppointment.getCustomer().getFirstName() + " " + savedAppointment.getCustomer().getLastName();
+            String serviceName = savedAppointment.getService().getName();
+            String appointmentDate = savedAppointment.getAppointmentDate().toString();
+            String appointmentTime = savedAppointment.getAppointmentTime().toString();
+            
+            emailService.sendBookingRequestConfirmationEmail(customerEmail, customerName, serviceName, appointmentDate, appointmentTime);
+        } catch (Exception e) {
+            // Log error but don't fail the appointment creation
+            System.err.println("Failed to send booking confirmation email: " + e.getMessage());
+        }
+
         return mapToResponse(savedAppointment);
     }
 
@@ -182,6 +198,21 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         appointment.setStatus(AppointmentStatus.CONFIRMED);
         Appointment updatedAppointment = appointmentRepository.save(appointment);
+        
+        // Send approval email to customer
+        try {
+            String customerEmail = updatedAppointment.getCustomer().getEmail();
+            String customerName = updatedAppointment.getCustomer().getFirstName() + " " + updatedAppointment.getCustomer().getLastName();
+            String serviceName = updatedAppointment.getService().getName();
+            String appointmentDate = updatedAppointment.getAppointmentDate().toString();
+            String appointmentTime = updatedAppointment.getAppointmentTime().toString();
+            
+            emailService.sendAppointmentApprovedEmail(customerEmail, customerName, serviceName, appointmentDate, appointmentTime);
+        } catch (Exception e) {
+            // Log error but don't fail the appointment approval
+            System.err.println("Failed to send approval email: " + e.getMessage());
+        }
+        
         return mapToResponse(updatedAppointment);
     }
 
@@ -196,6 +227,21 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         appointment.setStatus(AppointmentStatus.REJECTED);
         Appointment updatedAppointment = appointmentRepository.save(appointment);
+        
+        // Send rejection email to customer
+        try {
+            String customerEmail = updatedAppointment.getCustomer().getEmail();
+            String customerName = updatedAppointment.getCustomer().getFirstName() + " " + updatedAppointment.getCustomer().getLastName();
+            String serviceName = updatedAppointment.getService().getName();
+            String appointmentDate = updatedAppointment.getAppointmentDate().toString();
+            String appointmentTime = updatedAppointment.getAppointmentTime().toString();
+            
+            emailService.sendAppointmentRejectedEmail(customerEmail, customerName, serviceName, appointmentDate, appointmentTime);
+        } catch (Exception e) {
+            // Log error but don't fail the appointment rejection
+            System.err.println("Failed to send rejection email: " + e.getMessage());
+        }
+        
         return mapToResponse(updatedAppointment);
     }
 

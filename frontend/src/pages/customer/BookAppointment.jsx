@@ -19,6 +19,7 @@ export default function BookAppointment() {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [availabilityInfo, setAvailabilityInfo] = useState('');
   const [timeSlots, setTimeSlots] = useState([]); // Dynamically fetched time slots
+  const [breaks, setBreaks] = useState([]); // Breaks for the selected day
   const [showAvailable, setShowAvailable] = useState(true); // Legend filter: show available slots
   const [showBooked, setShowBooked] = useState(true); // Legend filter: show booked slots
   const [holidays, setHolidays] = useState([]); // List of holidays
@@ -166,35 +167,75 @@ export default function BookAppointment() {
       const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
       const dayOfWeek = dayNames[jsDay];
       
-      console.log(`Selected date: ${selectedDate}, Day of week: ${dayOfWeek}`); // Debug log
+      console.log(`📅 Selected date: ${selectedDate}, Day of week: ${dayOfWeek}`);
 
+      // Fetch available slots - these should include full slot objects with breaks
       const response = await adminService.getAvailableSlots(dayOfWeek);
       const slots = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
       
-      console.log(`Found ${slots.length} slots for ${dayOfWeek}`); // Debug log
+      console.log(`Found ${slots.length} slots for ${dayOfWeek}:`, slots);
       
-      // Extract time strings from slot objects
-      // TimeSlot has startTime: "HH:MM:SS", extract just "HH:MM"
-      const timeStrings = slots
-        .map(slot => {
-          if (typeof slot === 'string') return slot;
-          // Handle both {time: "HH:MM"} and {startTime: "HH:MM:SS"}
+      // Extract breaks and time strings
+      let breaksData = [];
+      let timeStrings = [];
+      
+      slots.forEach(slot => {
+        // Handle string responses (just times)
+        if (typeof slot === 'string') {
+          timeStrings.push(slot);
+          return;
+        }
+        
+        // Handle object responses (full slot objects with breaks)
+        if (typeof slot === 'object') {
+          // Extract time
           const timeStr = slot.time || slot.startTime;
-          if (timeStr && timeStr.length > 5) {
-            // Format is "HH:MM:SS", extract "HH:MM"
-            return timeStr.substring(0, 5);
+          if (timeStr) {
+            // Ensure it's in HH:MM format
+            if (timeStr.length > 5) {
+              timeStrings.push(timeStr.substring(0, 5));
+            } else {
+              timeStrings.push(timeStr);
+            }
           }
-          return timeStr;
-        })
-        .filter(time => time);
+          
+          // Extract breaks if available
+          if (slot.breaks && Array.isArray(slot.breaks)) {
+            console.log(`Slot ${timeStr} has ${slot.breaks.length} breaks:`, slot.breaks);
+            breaksData = breaksData.concat(slot.breaks);
+          }
+        }
+      });
+      
+      // Deduplicate breaks by name
+      const uniqueBreaks = Array.from(
+        new Map(breaksData.map(brk => [brk.breakName, brk])).values()
+      );
+      
+      setBreaks(uniqueBreaks);
+      console.log(`✅ Found ${uniqueBreaks.length} unique breaks for ${dayOfWeek}:`);
+      uniqueBreaks.forEach(brk => {
+        console.log(`  ⏸️ ${brk.breakName}: ${brk.startTime} to ${brk.endTime}`);
+      });
       
       // Deduplicate times using Set and sort
       const uniqueTimeStrings = Array.from(new Set(timeStrings)).sort();
+      console.log(`📊 Total unique times: ${uniqueTimeStrings.length}`);
       
-      setTimeSlots(uniqueTimeStrings);
+      // Filter out times that conflict with breaks
+      const filteredTimes = uniqueTimeStrings.filter(time => !timeConflictsWithBreak(time, uniqueBreaks));
+      const filtered = uniqueTimeStrings.length - filteredTimes.length;
+      console.log(`🚫 Filtered out ${filtered} times due to breaks`);
+      
+      if (filtered > 0) {
+        console.log('Filtered times:', uniqueTimeStrings.filter(time => timeConflictsWithBreak(time, uniqueBreaks)));
+      }
+      
+      setTimeSlots(filteredTimes);
     } catch (error) {
-      console.error('Error fetching time slots:', error);
-      setTimeSlots([]); // Fallback to empty list
+      console.error('❌ Error fetching time slots:', error);
+      setTimeSlots([]);
+      setBreaks([]);
     }
   };
 
@@ -269,10 +310,51 @@ export default function BookAppointment() {
       setTimeSlots([]);
     } else {
       setDateMessage('');
+      setBreaks([]); // Reset breaks
       // First fetch the time slots for this day of week, then fetch availability
       fetchTimeSlots(selectedDate);
       fetchBookedSlots(selectedDate);
     }
+  };
+
+  // Helper function to check if a time conflicts with any break
+  const timeConflictsWithBreak = (timeString, breaksData) => {
+    if (!breaksData || breaksData.length === 0) return false;
+    
+    // Parse the time string "HH:MM"
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const appointmentTime = hours * 60 + minutes; // Convert to minutes since midnight
+    
+    // Check if this time falls within any break period
+    return breaksData.some(brk => {
+      // Parse break times - handle both "HH:MM" and "HH:MM:SS" formats
+      let breakStartStr = brk.startTime || '';
+      let breakEndStr = brk.endTime || '';
+      
+      // Extract HH:MM if format is HH:MM:SS
+      if (breakStartStr.length > 5) breakStartStr = breakStartStr.substring(0, 5);
+      if (breakEndStr.length > 5) breakEndStr = breakEndStr.substring(0, 5);
+      
+      const [breakStartHour, breakStartMin] = breakStartStr.split(':').map(Number);
+      const [breakEndHour, breakEndMin] = breakEndStr.split(':').map(Number);
+      
+      if (isNaN(breakStartHour) || isNaN(breakEndHour)) return false;
+      
+      const breakStart = breakStartHour * 60 + breakStartMin;
+      const breakEnd = breakEndHour * 60 + breakEndMin;
+      
+      // Appointment time conflicts if: appointmentTime >= breakStart AND appointmentTime < breakEnd
+      // * Break 12:20-13:00: Appointment at 13:00 is ALLOWED (appointment at break end time is OK)
+      // * Break 12:30-13:15: Appointment at 13:00 is BLOCKED (still within break period)
+      // * Break 12:30-13:15: Appointment at 13:30 is ALLOWED (after break ends)
+      const conflicts = appointmentTime >= breakStart && appointmentTime < breakEnd;
+      
+      if (conflicts) {
+        console.log(`⚠️ Time ${timeString} conflicts with break "${brk.breakName}" (${brk.startTime}-${brk.endTime})`);
+      }
+      
+      return conflicts;
+    });
   };
 
   // Helper function to filter time slots based on legend toggle selections
@@ -436,6 +518,20 @@ export default function BookAppointment() {
                 />
                 {dateMessage && (
                   <p className="text-sm text-amber-600 font-medium">{dateMessage}</p>
+                )}
+                
+                {/* Display breaks for the selected date */}
+                {date && breaks.length > 0 && (
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-xs font-semibold text-orange-900 mb-2">⏸️ Breaks on this date:</p>
+                    <div className="space-y-1">
+                      {breaks.map((brk, idx) => (
+                        <p key={idx} className="text-xs text-orange-800">
+                          <span className="font-medium">{brk.breakName}</span>: {brk.startTime} - {brk.endTime}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
 

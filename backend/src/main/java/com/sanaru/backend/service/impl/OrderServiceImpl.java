@@ -152,14 +152,19 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.CANCELLATION_REQUESTED);
         Order savedOrder = orderRepository.save(order);
 
-        // Send cancellation request notification to admin
-        logger.info("Sending cancellation request notification for order: {}", orderId);
+        // Send cancellation request email to customer
+        logger.info("Sending cancellation request email to customer for order: {}", orderId);
         try {
-            // Note: You may want to create a separate sendCancellationRequestNotification method
-            // For now, we'll just log it
-            logger.info("Cancellation request notification sent for order: {}", orderId);
+            User customer = order.getUser();
+            emailService.sendOrderCancellationRequestEmail(
+                    customer.getEmail(),
+                    customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : ""),
+                    order.getOrderNumber(),
+                    order.getTotalAmount().doubleValue()
+            );
+            logger.info("Cancellation request email sent to: {}", customer.getEmail());
         } catch (Exception e) {
-            logger.error("Failed to send cancellation request notification for order: {}", orderId, e);
+            logger.error("Failed to send cancellation request email for order: {}", orderId, e);
         }
 
         return mapToOrderResponse(savedOrder);
@@ -177,21 +182,29 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.CANCELLED);
         Order savedOrder = orderRepository.save(order);
 
-        // Send cancellation confirmation email to customer
+        // Send refund and cancellation confirmation emails to customer
         User customer = order.getUser();
         if (customer != null) {
-            logger.info("Sending cancellation confirmation email to customer: {}", customer.getEmail());
+            logger.info("Sending cancellation and refund confirmation emails to customer: {}", customer.getEmail());
             try {
                 double refundAmount = order.getTotalAmount().doubleValue();
+                // Send cancellation confirmation
                 emailService.sendOrderCancellationConfirmationEmail(
                         customer.getEmail(),
                         customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : ""),
                         order.getOrderNumber(),
                         refundAmount
                 );
-                logger.info("Cancellation confirmation email sent to: {}", customer.getEmail());
+                // Also send refund confirmation
+                emailService.sendRefundConfirmationEmail(
+                        customer.getEmail(),
+                        customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : ""),
+                        order.getOrderNumber(),
+                        refundAmount
+                );
+                logger.info("Cancellation and refund emails sent to: {}", customer.getEmail());
             } catch (Exception e) {
-                logger.error("Failed to send cancellation email to {}", customer.getEmail(), e);
+                logger.error("Failed to send cancellation/refund emails to {}", customer.getEmail(), e);
             }
         }
 
@@ -209,7 +222,23 @@ public class OrderServiceImpl implements OrderService {
 
         // Revert to CONFIRMED (the typical status before a customer requests cancellation)
         order.setStatus(OrderStatus.CONFIRMED);
-        return mapToOrderResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+
+        // Send cancellation rejection email to customer
+        logger.info("Sending cancellation rejection email to customer for order: {}", orderId);
+        try {
+            User customer = order.getUser();
+            emailService.sendCancellationRequestRejectedEmail(
+                    customer.getEmail(),
+                    customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : ""),
+                    order.getOrderNumber()
+            );
+            logger.info("Cancellation rejection email sent to: {}", customer.getEmail());
+        } catch (Exception e) {
+            logger.error("Failed to send cancellation rejection email for order: {}", orderId, e);
+        }
+
+        return mapToOrderResponse(savedOrder);
     }
 
     @Override
@@ -235,7 +264,24 @@ public class OrderServiceImpl implements OrderService {
             });
         }
         
-        return mapToOrderResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+
+        // Send order approval email to customer
+        logger.info("Sending order approval email to customer for order: {}", orderId);
+        try {
+            User customer = order.getUser();
+            emailService.sendOrderApprovedEmail(
+                    customer.getEmail(),
+                    customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : ""),
+                    order.getOrderNumber(),
+                    order.getTotalAmount().doubleValue()
+            );
+            logger.info("Order approval email sent to: {}", customer.getEmail());
+        } catch (Exception e) {
+            logger.error("Failed to send order approval email for order: {}", orderId, e);
+        }
+        
+        return mapToOrderResponse(savedOrder);
     }
 
     @Override
