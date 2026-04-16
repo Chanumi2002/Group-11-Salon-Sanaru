@@ -125,6 +125,16 @@ export const adminService = {
     return await api.put(`/appointments/${appointmentId}/reject`);
   },
 
+  // Get pending appointments count (for admin sidebar badge)
+  getPendingAppointmentCount: async () => {
+    return await api.get('/appointments/pending-count');
+  },
+
+  // Get pending orders count (for admin sidebar badge)
+  getPendingOrderCount: async () => {
+    return await api.get('/orders/pending-approval-count');
+  },
+
   // ==================== TIME SLOT OPERATIONS ====================
 
   // Get all time slots

@@ -1,5 +1,6 @@
 package com.sanaru.backend.repository;
 
+import com.sanaru.backend.enums.OrderStatus;
 import com.sanaru.backend.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,4 +14,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByUserIdAndOrderNumber(Long userId, String orderNumber);
 
     Optional<Order> findByOrderNumber(String orderNumber);
+    
+    long countByStatus(OrderStatus status);
+    
+    long countByUserIdAndStatus(Long userId, OrderStatus status);
 }

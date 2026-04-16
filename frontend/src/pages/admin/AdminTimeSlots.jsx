@@ -234,63 +234,6 @@ export default function AdminTimeSlots() {
     }
   };
 
-  const handleQuickPreset = async (presetName) => {
-    const presets = {
-      "weekdays-9-5": {
-        days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"],
-        startTime: "09:00",
-        endTime: "17:00",
-      },
-      "weekdays-9-6": {
-        days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"],
-        startTime: "09:00",
-        endTime: "18:00",
-      },
-      "all-days-10-6": {
-        days: DAYS_OF_WEEK,
-        startTime: "10:00",
-        endTime: "18:00",
-      },
-      "weekdays-10-5-sat-11-4": {
-        days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"],
-        startTime: "10:00",
-        endTime: "17:00",
-      },
-    };
-
-    const preset = presets[presetName];
-    if (!preset) return;
-
-    try {
-      setActionId("preset");
-      let successCount = 0;
-
-      for (const day of preset.days) {
-        try {
-          await adminService.createTimeSlot({
-            dayOfWeek: day,
-            startTime: preset.startTime,
-            endTime: preset.endTime,
-            capacity: 1,
-            appointmentDuration: 30,
-            isActive: true,
-          });
-          successCount++;
-        } catch (err) {
-          console.error(`Error creating slot for ${day}:`, err);
-        }
-      }
-
-      toast.success(`Quick setup complete! Created ${successCount} time slot(s)`);
-      await fetchTimeSlots();
-    } catch (error) {
-      console.error("Error applying preset:", error);
-      toast.error("Failed to apply quick preset");
-    } finally {
-      setActionId(null);
-    }
-  };
-
   const handleEdit = (slot) => {
     setFormData({
       dayOfWeek: slot.dayOfWeek,
@@ -676,87 +619,152 @@ export default function AdminTimeSlots() {
   return (
     <AdminDashboardLayout>
       <div className="max-w-7xl mx-auto p-4 md:p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Time Slot Management</h1>
-          <p className="text-muted-foreground">
-            Define operating hours and manage available booking time slots for your salon.
-          </p>
-        </div>
+        {/* Top Section: Heading and Closed Dates in Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Left Column: Time Slot Management */}
+          <div>
+            <div className="-ml-12 md:-ml-20">
+              <h1 className="text-3xl font-bold text-foreground mb-2">Time Slot Management</h1>
+              <p className="text-muted-foreground">
+                Define operating hours and manage available booking time slots for your salon.
+              </p>
+            </div>
 
-        {/* Quick Preset section */}
-        <div className="mb-8">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-blue-900 mb-4">Quick Setup</h2>
-            <p className="text-sm text-blue-700 mb-4">Instantly create multiple time slots for a typical salon schedule:</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <button
-                onClick={() => handleQuickPreset("weekdays-9-5")}
-                disabled={!!actionId}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm font-medium"
-              >
-                {actionId === "preset" ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Setting up...
+            {/* Create Slot Button */}
+            {!editingId && !showCreateForm && (
+              <div className="mt-6 -ml-12 md:-ml-20">
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="flex items-center gap-2 rounded-lg px-6 py-3 bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition"
+                >
+                  <Plus className="h-5 w-5" />
+                  Create Time Slot
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Closed Dates */}
+          <div>
+            <div className="bg-rose-50 border border-rose-200 rounded-lg p-6 h-full">
+              <h2 className="text-lg font-semibold text-rose-900 mb-4 flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Closed Dates & Holidays
+              </h2>
+              <p className="text-sm text-rose-700 mb-4">
+                Mark specific dates when your salon is closed (holidays, special events, maintenance, etc.).
+              </p>
+
+              {!showClosedDateForm ? (
+                <button
+                  onClick={() => setShowClosedDateForm(true)}
+                  className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition hover:shadow-md hover:scale-105 font-medium text-sm"
+                >
+                  + Add Closed Date
+                </button>
+              ) : (
+                <form onSubmit={handleAddClosedDate} className="space-y-4 bg-white p-4 rounded-lg border border-rose-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="group">
+                      <label htmlFor="closedDate" className="block text-sm font-semibold text-foreground mb-2 group-hover:text-rose-600 transition">
+                        Date <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="closedDate"
+                        type="date"
+                        name="closedDate"
+                        value={closedDateFormData.closedDate}
+                        onChange={handleClosedDateFormChange}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition hover:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-600 focus:border-transparent hover:shadow-sm"
+                      />
+                    </div>
+
+                    <div className="group">
+                      <label htmlFor="closedReason" className="block text-sm font-semibold text-foreground mb-2 group-hover:text-rose-600 transition">
+                        Reason <span className="text-gray-500">(Optional)</span>
+                      </label>
+                      <input
+                        id="closedReason"
+                        type="text"
+                        name="reason"
+                        value={closedDateFormData.reason}
+                        onChange={handleClosedDateFormChange}
+                        placeholder="e.g., Public Holiday, Maintenance"
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition hover:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-600 focus:border-transparent hover:shadow-sm"
+                      />
+                    </div>
                   </div>
-                ) : (
-                  "Mon-Fri 9AM-5PM"
-                )}
-              </button>
-              <button
-                onClick={() => handleQuickPreset("weekdays-9-6")}
-                disabled={!!actionId}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm font-medium"
-              >
-                {actionId === "preset" ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Setting up...
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="submit"
+                      disabled={!!actionId}
+                      className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition hover:shadow-md hover:scale-105 disabled:opacity-50 disabled:scale-100 disabled:hover:shadow-none font-medium text-sm"
+                    >
+                      {actionId === "addClosedDate" ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4" />
+                          Add Closed Date
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowClosedDateForm(false)}
+                      className="px-4 py-2 bg-rose-100 text-rose-700 rounded-lg hover:bg-rose-200 transition hover:shadow-md hover:scale-105 font-medium text-sm"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                ) : (
-                  "Mon-Fri 9AM-6PM"
-                )}
-              </button>
-              <button
-                onClick={() => handleQuickPreset("all-days-10-6")}
-                disabled={!!actionId}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm font-medium"
-              >
-                {actionId === "preset" ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Setting up...
-                  </div>
-                ) : (
-                  "All Days 10AM-6PM"
-                )}
-              </button>
-              <button
-                onClick={() => handleQuickPreset("weekdays-10-5-sat-11-4")}
-                disabled={!!actionId}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm font-medium"
-              >
-                {actionId === "preset" ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Setting up...
-                  </div>
-                ) : (
-                  "Weekdays 10-5, Sat 11-4"
-                )}
-              </button>
+                </form>
+              )}
+
+              {/* Closed Dates List */}
+              {closedDates.length > 0 ? (
+                <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
+                  {closedDates.map((closedDate) => (
+                    <div
+                      key={closedDate.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border text-sm transition hover:shadow-md hover:scale-[1.02] ${
+                        closedDate.isActive
+                          ? "bg-rose-100 border-rose-300 hover:bg-rose-200"
+                          : "bg-gray-50 border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground">
+                          {formatDate(closedDate.closedDate)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {closedDate.reason ? `${closedDate.reason}` : "—"}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteClosedDate(closedDate.id)}
+                        disabled={!!actionId}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-red-100 hover:text-red-700 transition hover:scale-110 disabled:opacity-50 disabled:scale-100 ml-3"
+                        title="Delete"
+                      >
+                        {actionId === `deleteClosedDate-${closedDate.id}` ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 text-red-600 hover:text-red-700" />
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-rose-600 italic mt-3">No closed dates added yet.</p>
+              )}
             </div>
           </div>
         </div>
-
-        {/* Create Slot Button */}
-        {!editingId && !showCreateForm && (
-          <div className="mb-8">
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2 rounded-lg px-6 py-3 bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition"
-            >
-              <Plus className="h-5 w-5" />
-              Create Time Slot
-            </button>
-          </div>
-        )}
 
         {/* Unified Form Section - Only Visible When NOT Editing and Form is Shown */}
         {!editingId && showCreateForm && (
@@ -1180,146 +1188,6 @@ export default function AdminTimeSlots() {
                 )}
               </div>
             )}
-          </div>
-
-        {/* Closed Dates Management Section */}
-        <div className="mb-8">
-          <div className="bg-rose-50 border border-rose-200 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-rose-900 mb-4 flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Closed Dates & Holidays
-              </h2>
-              <p className="text-sm text-rose-700 mb-4">
-                Mark specific dates when your salon is closed (holidays, special events, maintenance, etc.).
-              </p>
-
-              {!showClosedDateForm ? (
-                <button
-                  onClick={() => setShowClosedDateForm(true)}
-                  className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition font-medium text-sm"
-                >
-                  + Add Closed Date
-                </button>
-              ) : (
-                <form onSubmit={handleAddClosedDate} className="space-y-4 bg-white p-4 rounded-lg border border-rose-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="closedDate" className="block text-sm font-medium text-foreground mb-2">
-                        Date <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        id="closedDate"
-                        type="date"
-                        name="closedDate"
-                        value={closedDateFormData.closedDate}
-                        onChange={handleClosedDateFormChange}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-rose-600"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="closedIsActive" className="block text-sm font-medium text-foreground mb-2">
-                        Status
-                      </label>
-                      <div className="flex items-center h-10">
-                        <input
-                          id="closedIsActive"
-                          type="checkbox"
-                          name="isActive"
-                          checked={closedDateFormData.isActive}
-                          onChange={handleClosedDateFormChange}
-                          className="w-4 h-4 rounded border-input accent-rose-600"
-                        />
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          {closedDateFormData.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="closedReason" className="block text-sm font-medium text-foreground mb-2">
-                      Reason <span className="text-gray-500">(Optional)</span>
-                    </label>
-                    <input
-                      id="closedReason"
-                      type="text"
-                      name="reason"
-                      value={closedDateFormData.reason}
-                      onChange={handleClosedDateFormChange}
-                      placeholder="e.g., Public Holiday, Maintenance"
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-rose-600"
-                    />
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      type="submit"
-                      disabled={!!actionId}
-                      className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition disabled:opacity-50 font-medium text-sm"
-                    >
-                      {actionId === "addClosedDate" ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Adding...
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="h-4 w-4" />
-                          Add Closed Date
-                        </>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowClosedDateForm(false)}
-                      className="px-4 py-2 bg-rose-100 text-rose-700 rounded-lg hover:bg-rose-200 transition font-medium text-sm"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Closed Dates List */}
-              {closedDates.length > 0 ? (
-                <div className="mt-4 space-y-2">
-                  {closedDates.map((closedDate) => (
-                    <div
-                      key={closedDate.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        closedDate.isActive
-                          ? "bg-rose-100 border-rose-300"
-                          : "bg-gray-50 border-gray-300"
-                      }`}
-                    >
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {formatDate(closedDate.closedDate)}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {closedDate.reason ? `Reason: ${closedDate.reason}` : "—"}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteClosedDate(closedDate.id)}
-                        disabled={!!actionId}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-red-50 transition disabled:opacity-50"
-                        title="Delete"
-                      >
-                        {actionId === `deleteClosedDate-${closedDate.id}` ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        )}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-rose-600 italic mt-3">No closed dates added yet.</p>
-              )}
-            </div>
           </div>
 
         {/* Time Slots Table */}

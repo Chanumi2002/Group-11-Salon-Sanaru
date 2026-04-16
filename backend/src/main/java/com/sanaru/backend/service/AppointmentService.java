@@ -16,4 +16,6 @@ public interface AppointmentService {
     List<AppointmentResponse> getAllAppointments();
     AppointmentResponse approveAppointment(Long appointmentId);
     AppointmentResponse rejectAppointment(Long appointmentId);
+    long getPendingAppointmentCount();
+    Map<String, Integer> getCustomerAppointmentCounts(String userEmail);
 }

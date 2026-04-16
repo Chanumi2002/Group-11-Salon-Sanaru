@@ -19,12 +19,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Service
 @RequiredArgsConstructor
@@ -336,5 +337,23 @@ public class AppointmentServiceImpl implements AppointmentService {
         response.setTime(appointment.getAppointmentTime());
         response.setStatus(appointment.getStatus());
         return response;
+    }
+
+    @Override
+    public long getPendingAppointmentCount() {
+        return appointmentRepository.countByStatus(AppointmentStatus.PENDING);
+    }
+
+    @Override
+    public Map<String, Integer> getCustomerAppointmentCounts(String userEmail) {
+        User customer = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userEmail));
+        
+        Map<String, Integer> counts = new HashMap<>();
+        counts.put("pending", (int) appointmentRepository.countByCustomerIdAndStatus(customer.getId(), AppointmentStatus.PENDING));
+        counts.put("confirmed", (int) appointmentRepository.countByCustomerIdAndStatus(customer.getId(), AppointmentStatus.CONFIRMED));
+        counts.put("cancelled", (int) appointmentRepository.countByCustomerIdAndStatus(customer.getId(), AppointmentStatus.CANCELLED));
+        counts.put("rejected", (int) appointmentRepository.countByCustomerIdAndStatus(customer.getId(), AppointmentStatus.REJECTED));
+        return counts;
     }
 }

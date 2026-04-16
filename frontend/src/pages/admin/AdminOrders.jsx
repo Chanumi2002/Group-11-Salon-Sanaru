@@ -1,8 +1,10 @@
 import { AdminDashboardLayout } from "@/components/common/AdminDashboardLayout";
 import { adminService } from "@/services/api";
+import { useNotificationRefresh } from "@/context/NotificationContext";
+import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, Package } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, Package, CheckCircle2, Trash2 } from "lucide-react";
 
 // ── Status helpers ──────────────────────────────────────────────────────────
 
@@ -24,11 +26,17 @@ const toMoney = (v) => (v != null ? `Rs. ${Number(v).toFixed(2)}` : "—");
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function AdminOrders() {
+function AdminOrdersContent() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null); // orderId currently being acted on
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const { refetch } = useNotificationRefresh();
+
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [dialogConfig, setDialogConfig] = useState({});
 
   const toggleExpand = (orderId) => {
     setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
@@ -51,20 +59,59 @@ export default function AdminOrders() {
 
   const handleAction = async (orderId, action) => {
     const messages = {
-      cancel: { confirm: "Approve this cancellation request? The order will be cancelled.", success: "Order cancelled successfully." },
-      reject: { confirm: "Reject this cancellation request? The order will revert to Confirmed.", success: "Cancellation request rejected." },
-      approve: { confirm: "Manually approve this order? It will be marked as Confirmed.", success: "Order approved successfully." },
+      cancel: {
+        title: "Approve Cancellation",
+        message: "Are you sure? This order will be marked as Cancelled.",
+        success: "Order cancelled successfully.",
+        type: "danger",
+      },
+      reject: {
+        title: "Reject Cancellation",
+        message: "The order will revert to Confirmed status.",
+        success: "Cancellation request rejected.",
+        type: "warning",
+      },
+      approve: {
+        title: "Approve Order",
+        message: "This order will be marked as Confirmed.",
+        success: "Order approved successfully.",
+        type: "success",
+      },
     };
-    if (!window.confirm(messages[action].confirm)) return;
+
+    const config = messages[action];
+    setPendingAction({ orderId, action });
+    setDialogConfig({
+      title: config.title,
+      message: config.message,
+      type: config.type,
+      confirmText: action === "cancel" ? "Cancel Order" : action === "reject" ? "Reject" : "Approve Order",
+    });
+    setDialogOpen(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!pendingAction) return;
+
+    const { orderId, action } = pendingAction;
+    const messages = {
+      cancel: { success: "Order cancelled successfully." },
+      reject: { success: "Cancellation request rejected." },
+      approve: { success: "Order approved successfully." },
+    };
 
     try {
       setActionId(`${orderId}-${action}`);
+      setDialogOpen(false);
+      setPendingAction(null);
+
       if (action === "cancel") await adminService.cancelOrder(orderId);
       else if (action === "reject") await adminService.rejectCancelOrder(orderId);
       else await adminService.approveOrder(orderId);
 
       toast.success(messages[action].success);
       await fetchOrders();
+      refetch(); // Update sidebar badges
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
       toast.error(error.response?.data?.message || "Action failed");
@@ -73,9 +120,13 @@ export default function AdminOrders() {
     }
   };
 
+  const handleCancelDialog = () => {
+    setDialogOpen(false);
+    setPendingAction(null);
+  };
+
   return (
-    <AdminDashboardLayout>
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
+    <div className="max-w-7xl mx-auto p-4 md:p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Order Management</h1>
           <p className="text-muted-foreground">
@@ -240,7 +291,25 @@ export default function AdminOrders() {
             </div>
           )}
         </div>
+
+        <ConfirmationDialog
+          isOpen={dialogOpen}
+          title={dialogConfig.title}
+          message={dialogConfig.message}
+          type={dialogConfig.type}
+          confirmText={dialogConfig.confirmText}
+          cancelText="Cancel"
+          onConfirm={handleConfirmAction}
+          onCancel={handleCancelDialog}
+        />
       </div>
+    );
+}
+
+export default function AdminOrders() {
+  return (
+    <AdminDashboardLayout>
+      <AdminOrdersContent />
     </AdminDashboardLayout>
   );
 }

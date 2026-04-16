@@ -3,6 +3,7 @@ package com.sanaru.backend.service;
 import com.sanaru.backend.dto.OrderResponse;
 
 import java.util.List;
+import java.util.Map;
 
 public interface OrderService {
 
@@ -25,4 +26,8 @@ public interface OrderService {
 
     /** Admin: manually approve an order regardless of payment state → sets order to CONFIRMED */
     OrderResponse adminApproveOrder(Long orderId);
-}
+    
+    long getPendingApprovalOrderCount();
+    
+    Map<String, Integer> getCustomerOrderStatusCounts(String userEmail);
+}

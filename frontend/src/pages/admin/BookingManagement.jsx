@@ -1,5 +1,6 @@
 import { AdminDashboardLayout } from "@/components/common/AdminDashboardLayout";
 import { adminService } from "@/services/api";
+import { useNotificationRefresh } from "@/context/NotificationContext";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle, XCircle, Loader2, Filter, AlertTriangle, X } from "lucide-react";
@@ -23,13 +24,14 @@ const formatTime = (timeString) => {
   return `${formattedHour}:${minute} ${ampm}`;
 };
 
-export default function BookingManagement() {
+function BookingManagementContent() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [dateFilter, setDateFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const { refetch } = useNotificationRefresh();
 
   useEffect(() => { fetchAppointments(); }, []);
 
@@ -100,6 +102,7 @@ export default function BookingManagement() {
                   description: action === 'approve' ? 'Customer notification sent.' : 'Customer has been notified.',
                 });
                 await fetchAppointments();
+                refetch(); // Update sidebar badges
               } catch (error) {
                 console.error(`Error performing ${action}:`, error);
                 toast.error(error.response?.data?.message || `Failed to ${action} appointment`);
@@ -358,6 +361,14 @@ export default function BookingManagement() {
           )}
         </div>
       </div>
+    </AdminDashboardLayout>
+  );
+}
+
+export default function BookingManagement() {
+  return (
+    <AdminDashboardLayout>
+      <BookingManagementContent />
     </AdminDashboardLayout>
   );
 }

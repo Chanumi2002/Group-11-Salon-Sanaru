@@ -369,4 +369,22 @@ public class OrderServiceImpl implements OrderService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
+
+    @Override
+    public long getPendingApprovalOrderCount() {
+        return orderRepository.countByStatus(OrderStatus.PENDING);
+    }
+
+    @Override
+    public java.util.Map<String, Integer> getCustomerOrderStatusCounts(String userEmail) {
+        User customer = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userEmail));
+        
+        java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+        counts.put("pending", (int) orderRepository.countByUserIdAndStatus(customer.getId(), OrderStatus.PENDING));
+        counts.put("confirmed", (int) orderRepository.countByUserIdAndStatus(customer.getId(), OrderStatus.CONFIRMED));
+        counts.put("paid", (int) orderRepository.countByUserIdAndStatus(customer.getId(), OrderStatus.PAID));
+        counts.put("cancelled", (int) orderRepository.countByUserIdAndStatus(customer.getId(), OrderStatus.CANCELLED));
+        return counts;
+    }
 }
