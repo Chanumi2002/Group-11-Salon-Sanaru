@@ -2,7 +2,7 @@ import { AdminDashboardLayout } from "@/components/common/AdminDashboardLayout";
 import { adminService } from "@/services/api";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Loader2, Filter, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Filter, AlertTriangle, X } from "lucide-react";
 
 const STATUS_CONFIG = {
   PENDING: { label: "Pending", cls: "bg-orange-100 text-orange-700 font-semibold ring-1 ring-orange-300" },
@@ -136,9 +136,16 @@ export default function BookingManagement() {
         return false;
       }
       
-      // Filter by date
-      if (dateFilter && appt.date !== dateFilter) {
-        return false;
+      // Filter by date - convert both to YYYY-MM-DD format for comparison
+      if (dateFilter) {
+        // dateFilter from input is already in YYYY-MM-DD format
+        // appt.date should also be in YYYY-MM-DD format
+        const appointmentDate = appt.date ? appt.date.toString().trim() : "";
+        const filterDate = dateFilter.toString().trim();
+        
+        if (appointmentDate !== filterDate) {
+          return false;
+        }
       }
       
       return true;
@@ -177,8 +184,10 @@ export default function BookingManagement() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
               {/* Status Filter */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Filter by Status</label>
+                <label htmlFor="status-filter" className="block text-sm font-medium text-foreground mb-2">Filter by Status</label>
                 <select
+                  id="status-filter"
+                  name="status-filter"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -193,9 +202,11 @@ export default function BookingManagement() {
 
               {/* Date Filter */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Filter by Date</label>
+                <label htmlFor="date-filter" className="block text-sm font-medium text-foreground mb-2">Filter by Date</label>
                 <div className="flex gap-2">
                   <input
+                    id="date-filter"
+                    name="date-filter"
                     type="date"
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
