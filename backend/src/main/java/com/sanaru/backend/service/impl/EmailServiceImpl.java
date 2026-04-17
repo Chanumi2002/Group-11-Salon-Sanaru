@@ -138,6 +138,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void sendBookingRequestConfirmationEmail(String toEmail, String customerName, String serviceName,
             String appointmentDate, String appointmentTime) {
         try {
@@ -148,7 +149,6 @@ public class EmailServiceImpl implements EmailService {
             logger.info("Booking request confirmation email sent successfully to: " + toEmail);
         } catch (Exception e) {
             logger.error("Failed to send booking request confirmation email to " + toEmail, e);
-            throw new RuntimeException("Failed to send booking request confirmation email", e);
         }
     }
 

@@ -16,6 +16,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle 404 responses for holiday overrides gracefully (they're expected)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Silently resolve 404s for holiday-overrides (no override found is normal)
+    if (
+      error.response?.status === 404 &&
+      error.config?.url?.includes('/holiday-overrides/by-date')
+    ) {
+      return Promise.resolve({ status: 404, data: null });
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const authService = {
   // Register a new user
   register: async (userData) => {

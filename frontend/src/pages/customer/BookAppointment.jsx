@@ -148,7 +148,7 @@ export default function BookAppointment() {
     }
   };
 
-  const fetchTimeSlots = async (selectedDate) => {
+      const fetchTimeSlots = async (selectedDate) => {
     try {
       // Get day of week from date - use UTC to avoid timezone issues
       const [year, month, day] = selectedDate.split('-').map(Number);
@@ -201,10 +201,16 @@ export default function BookAppointment() {
       const filteredTimes = uniqueTimeStrings.filter(time => !timeConflictsWithBreak(time, uniqueBreaks));
       
       setTimeSlots(filteredTimes);
+      
+      // If no time slots available, show message
+      if (filteredTimes.length === 0) {
+        setAvailabilityInfo('No time slots available for this day');
+      }
     } catch (error) {
       console.error('Error fetching time slots:', error);
       setTimeSlots([]);
       setBreaks([]);
+      setAvailabilityInfo('Unable to load time slots');
     }
   };
 
@@ -237,8 +243,20 @@ export default function BookAppointment() {
     const fetchOverrideForDate = async () => {
       try {
         const overrideRes = await axios.get('http://localhost:8080/api/holiday-overrides/by-date', {
-          params: { date: selectedDate }
+          params: { date: selectedDate },
+          // Suppress default error logging for this request
+          validateStatus: (status) => {
+            // Accept all status codes (200, 404, etc.) without throwing
+            return true;
+          }
         });
+        
+        // Check if we got a 404 response (expected when no override exists)
+        if (overrideRes.status === 404 || !overrideRes.data) {
+          setCurrentOverride(null);
+          return null;
+        }
+        
         const override = overrideRes.data;
         setCurrentOverride(override);
         
@@ -264,7 +282,7 @@ export default function BookAppointment() {
             fetchBookedSlots(selectedDate)
           ])
             .catch(error => {
-              console.error('Error fetching time slots or availability:', error);
+              // Silently ignore - fetch errors are non-critical
             })
             .finally(() => setSlotsLoading(false));
           return override; // Return the override data
@@ -279,14 +297,10 @@ export default function BookAppointment() {
         }
         return override; // Return override even if no specific conditions match
       } catch (error) {
-        if (error.response && error.response.status === 404) {
-          setCurrentOverride(null);
-          return null; // Return null to indicate no override
-        } else {
-          console.error('Error fetching override:', error);
-          setCurrentOverride(null);
-          return null;
-        }
+        // Silently ignore all errors from holiday override fetch
+        // 404 is expected and handled above by validateStatus
+        setCurrentOverride(null);
+        return null;
       }
     };
     
@@ -334,10 +348,13 @@ export default function BookAppointment() {
           fetchBookedSlots(selectedDate)
         ])
           .catch(error => {
-            console.error('Error fetching time slots or availability:', error);
+            // Silently ignore errors
           })
           .finally(() => setSlotsLoading(false));
       }
+    })
+    .catch(() => {
+      // Silently suppress any errors from the override fetch promise chain
     });
   };
 
