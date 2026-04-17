@@ -9,6 +9,7 @@ import com.sanaru.backend.model.TimeSlot;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.AppointmentRepository;
 import com.sanaru.backend.repository.ClosedDateRepository;
+import com.sanaru.backend.repository.HolidayOverrideRepository;
 import com.sanaru.backend.repository.ServiceRepository;
 import com.sanaru.backend.repository.TimeSlotRepository;
 import com.sanaru.backend.repository.UserRepository;
@@ -36,6 +37,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final ServiceRepository serviceRepository;
     private final TimeSlotRepository timeSlotRepository;
     private final ClosedDateRepository closedDateRepository;
+    private final HolidayOverrideRepository holidayOverrideRepository;
     private final HolidayService holidayService;
     private final EmailService emailService;
 
@@ -51,14 +53,35 @@ public class AppointmentServiceImpl implements AppointmentService {
         com.sanaru.backend.model.Service service = serviceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new NoSuchElementException("Service not found"));
 
+        // Validate timeSlotId if provided
+        if (request.getTimeSlotId() != null && request.getTimeSlotId() > 0) {
+            timeSlotRepository.findById(request.getTimeSlotId())
+                    .orElseThrow(() -> new NoSuchElementException("Time slot with ID " + request.getTimeSlotId() + " not found"));
+        }
+
         // Check if the requested date is marked as closed
         if (closedDateRepository.findByClosedDate(request.getDate()).isPresent()) {
             throw new IllegalArgumentException("The selected date is not available. Salon is closed on this date.");
         }
 
-        // Check if the requested date is a holiday
-        if (holidayService.isHoliday(request.getDate())) {
+        // Check for holiday override first (takes precedence over system holidays)
+        var holidayOverride = holidayOverrideRepository.findByHolidayDate(request.getDate());
+        
+        if (holidayOverride.isPresent()) {
+            // If override exists and marks it as working date, allow booking
+            if (holidayOverride.get().getIsWorkingDate()) {
+                // Holiday override says it's a working date, so proceed with booking
+            } else {
+                // Holiday override marks it as closed
+                throw new IllegalArgumentException("The selected date is not available. Salon is closed on this date.");
+            }
+        } else if (holidayService.isHoliday(request.getDate())) {
+            // No override, and it's a system holiday, so it's closed
             throw new IllegalArgumentException("The selected date is a holiday. Salon is closed on this date.");
+        }
+
+        if (request.getTime() == null) {
+            throw new IllegalArgumentException("Time slot is required. Please select a valid time");
         }
 
         LocalTime requestedStartTime = request.getTime();
@@ -66,6 +89,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Validate that the requested time falls within an active time slot for the day
         List<TimeSlot> activeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(request.getDate().getDayOfWeek());
+        
+        if (activeSlots == null || activeSlots.isEmpty()) {
+            throw new IllegalArgumentException("No time slots available for the selected date");
+        }
+
         TimeSlot matchingSlot = null;
         
         for (TimeSlot slot : activeSlots) {
@@ -77,18 +105,20 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         if (matchingSlot == null) {
-            throw new IllegalArgumentException("The selected time is outside operating hours");
+            throw new IllegalArgumentException("The selected time is outside operating hours for the selected date");
         }
 
         // Check for breaks: ensure the appointment doesn't conflict with any breaks
-        for (Break breakPeriod : matchingSlot.getBreaks()) {
-            if (breakPeriod.getIsActive()) {
-                LocalTime breakStart = breakPeriod.getStartTime();
-                LocalTime breakEnd = breakPeriod.getEndTime();
-                
-                // Check if appointment overlaps with break
-                if (requestedStartTime.isBefore(breakEnd) && requestedEndTime.isAfter(breakStart)) {
-                    throw new IllegalArgumentException("The selected time conflicts with a break period (" + breakPeriod.getBreakName() + ")");
+        if (matchingSlot.getBreaks() != null) {
+            for (Break breakPeriod : matchingSlot.getBreaks()) {
+                if (breakPeriod.getIsActive()) {
+                    LocalTime breakStart = breakPeriod.getStartTime();
+                    LocalTime breakEnd = breakPeriod.getEndTime();
+                    
+                    // Check if appointment overlaps with break
+                    if (requestedStartTime.isBefore(breakEnd) && requestedEndTime.isAfter(breakStart)) {
+                        throw new IllegalArgumentException("The selected time conflicts with a break period (" + breakPeriod.getBreakName() + ")");
+                    }
                 }
             }
         }
@@ -99,14 +129,17 @@ public class AppointmentServiceImpl implements AppointmentService {
                 List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
         );
 
-        long overlappingCount = existingAppointments.stream()
-                .filter(existing -> {
-                    LocalTime existingStartTime = existing.getAppointmentTime();
-                    LocalTime existingEndTime = existingStartTime.plusMinutes(existing.getService().getDurationMinutes());
-                    // Check if the time ranges overlap
-                    return requestedStartTime.isBefore(existingEndTime) && requestedEndTime.isAfter(existingStartTime);
-                })
-                .count();
+        long overlappingCount = 0;
+        if (existingAppointments != null && !existingAppointments.isEmpty()) {
+            overlappingCount = existingAppointments.stream()
+                    .filter(existing -> {
+                        LocalTime existingStartTime = existing.getAppointmentTime();
+                        LocalTime existingEndTime = existingStartTime.plusMinutes(existing.getService().getDurationMinutes());
+                        // Check if the time ranges overlap
+                        return requestedStartTime.isBefore(existingEndTime) && requestedEndTime.isAfter(existingStartTime);
+                    })
+                    .count();
+        }
 
         if (overlappingCount >= matchingSlot.getCapacity()) {
             throw new IllegalArgumentException("Time slot is fully booked. No available spots for this time.");

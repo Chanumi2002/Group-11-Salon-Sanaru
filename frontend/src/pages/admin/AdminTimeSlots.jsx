@@ -1,5 +1,6 @@
 import { AdminDashboardLayout } from "@/components/common/AdminDashboardLayout";
 import { adminService, closedDateService } from "@/services/api";
+import HolidayManagement from "@/components/HolidayManagement";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Edit2, Trash2, Loader2, ToggleLeft, ToggleRight, Calendar, AlertTriangle, Check, X } from "lucide-react";
@@ -1319,6 +1320,11 @@ export default function AdminTimeSlots() {
               </table>
             </div>
           )}
+        </div>
+
+        {/* HOLIDAY MANAGEMENT SECTION */}
+        <div className="mt-12">
+          <HolidayManagement />
         </div>
 
         {/* EDIT MODAL - Appears When Editing */}
