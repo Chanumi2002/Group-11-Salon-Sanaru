@@ -52,6 +52,15 @@ public interface EmailService {
 
     // Feedback/Review Emails
     void sendReviewNotificationToAdmin(com.sanaru.backend.dto.FeedbackResponse feedback);
+    
+    // Admin Notification Emails
+    void sendNewUserRegistrationNotificationToAdmin(String userEmail, String userFirstName, String userLastName);
+    void sendNewOrderNotificationToAdmin(String orderNumber, String customerName, double totalAmount, int itemCount);
+    void sendPaymentSuccessNotificationToAdmin(String customerEmail, String customerName, String orderId, double amount, String paymentMethod);
+    void sendAppointmentCancellationNotificationToAdmin(String customerName, String serviceName, String appointmentDate, String cancellationReason);
+    void sendRefundRequestNotificationToAdmin(String customerName, String orderId, double amount, String reason);
+    void sendBulkAppointmentCancellationNotificationToAdmin(int appointmentCount, String closedDateReason);
+    void sendOrderCancellationRequestNotificationToAdmin(String orderNumber, String customerName, double totalAmount, String reason);
 
     // Async methods for notifications (non-blocking)
     CompletableFuture<Void> sendPasswordChangedEmailAsync(String email, String name);

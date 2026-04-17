@@ -108,6 +108,19 @@ public class OrderServiceImpl implements OrderService {
             logger.error("Failed to send order confirmation email to {}", user.getEmail(), e);
         }
 
+        // Send admin notification about new order
+        try {
+            emailService.sendNewOrderNotificationToAdmin(
+                    savedOrder.getOrderNumber(),
+                    user.getFirstName() + " " + user.getLastName(),
+                    savedOrder.getTotalAmount().doubleValue(),
+                    savedOrder.getItems().size()
+            );
+            logger.info("New order notification sent to admin for order: {}", savedOrder.getOrderNumber());
+        } catch (Exception e) {
+            logger.error("Failed to send new order notification to admin", e);
+        }
+
         return mapToOrderResponse(savedOrder);
     }
 
@@ -174,6 +187,18 @@ public class OrderServiceImpl implements OrderService {
                 logger.error("Failed to send cancellation request email for order: {}", orderId, e);
             }
         }).start();
+        
+        // Send cancellation request notification to admin ASYNCHRONOUSLY
+        try {
+            emailService.sendOrderCancellationRequestNotificationToAdmin(
+                    orderNumber,
+                    customerName,
+                    totalAmount,
+                    "Customer has requested cancellation and refund"
+            );
+        } catch (Exception e) {
+            logger.error("Failed to send order cancellation notification to admin for order: {}", orderId, e);
+        }
 
         return mapToOrderResponse(savedOrder);
     }
@@ -221,6 +246,18 @@ public class OrderServiceImpl implements OrderService {
                     logger.error("Failed to send cancellation/refund emails to {}", customerEmail, e);
                 }
             }).start();
+            
+            // Send refund request notification to admin ASYNCHRONOUSLY
+            try {
+                emailService.sendRefundRequestNotificationToAdmin(
+                        customerName,
+                        orderNumber,
+                        refundAmount,
+                        "Admin approved refund request and processed cancellation"
+                );
+            } catch (Exception e) {
+                logger.error("Failed to send refund request notification to admin for order: {}", orderId, e);
+            }
         }
 
         return mapToOrderResponse(savedOrder);

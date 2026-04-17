@@ -403,9 +403,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<li>Track your bookings and appointments</li>"
                 + "<li>Receive personalized beauty recommendations</li>"
                 + "</ul>"
-                + "<div style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Start Booking Now</a>"
-                + "</div>"
                 + "<p style=\"font-size: 14px; color: #666; line-height: 1.6;\">If you have any questions, feel free to reach out to us at <a href=\"mailto:" + supportEmail + "\">" + supportEmail + "</a></p>"
                 + "<hr style=\"border: none; border-top: 1px solid #ddd; margin: 20px 0;\">"
                 + "<p style=\"font-size: 12px; color: #999; text-align: center;\">Salon Sanaru | Beauty & Wellness</p>"
@@ -418,9 +415,7 @@ public class EmailServiceImpl implements EmailService {
                 + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
                 + "<h2 style=\"color: #d946a6;\">Password Reset Request</h2>"
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">We received a request to reset your password. Click the link below to proceed:</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/reset-password?token=" + resetToken + "\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Reset Password</a>"
-                + "</p>"
+                + "<p style=\"font-size: 14px; color: #d946a6; font-weight: bold;\">http://localhost:3000/reset-password?token=" + resetToken + "</p>"
                 + "<p style=\"font-size: 14px; color: #666;\">This link will expire in 24 hours for security purposes.</p>"
                 + "<p style=\"font-size: 14px; color: #666;\">If you didn't request this, please ignore this email.</p>"
                 + "</div>"
@@ -446,9 +441,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">Hi " + name + ",</p>"
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">Your Salon Sanaru account has been successfully deleted.</p>"
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">We'll miss you! If you change your mind, you can always create a new account.</p>"
-                + "<p style=\"font-size: 16px; line-height: 1.6; text-align: center;\">"
-                + "<a href=\"http://localhost:3000/register\" style=\"color: #d946a6; text-decoration: none; font-weight: bold;\">Create New Account</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -472,9 +464,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">Hi " + name + ",</p>"
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">Good news! Your Salon Sanaru account has been unblocked and is now active again.</p>"
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">You can now log in and continue booking your favorite services.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/login\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Log In Now</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -510,9 +499,6 @@ public class EmailServiceImpl implements EmailService {
                 + "</div>"
                 + "<p style=\"font-size: 16px; line-height: 1.6;\"><strong>Please arrive 10 minutes early!</strong></p>"
                 + "<p style=\"font-size: 14px; color: #666;\">If you need to reschedule or cancel, please contact us as soon as possible.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/dashboard\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View My Bookings</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -534,9 +520,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p style=\"margin: 5px 0; color: #92400e; font-size: 14px;\">Our salon team will review your request and confirm availability. You will receive an email once your appointment is <strong style=\"color: #10b981;\">approved</strong> or we may contact you with alternative times.</p>"
                 + "</div>"
                 + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">📧 <strong>Keep an eye on your inbox</strong> for confirmation. Check your spam folder if you don't see our email.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/dashboard\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Track My Booking</a>"
-                + "</p>"
                 + "<hr style=\"border: none; border-top: 2px solid #f9f0f6; margin: 30px 0;\">"
                 + "<p style=\"font-size: 12px; color: #999; text-align: center;\">Salon Sanaru<br/>Contact: (+94) 123-4567<br/>Email: support@sanaru.com</p>"
                 + "</div>"
@@ -573,9 +556,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p><strong>Reason:</strong> " + cancellationReason + "</p>"
                 + "</div>"
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">We're sorry to hear that! Feel free to book another appointment anytime.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/dashboard\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Book Another Appointment</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -594,9 +574,6 @@ public class EmailServiceImpl implements EmailService {
                 + "</div>"
                 + "<p style=\"font-size: 16px; line-height: 1.6;\"><strong>Important:</strong> Please arrive 10-15 minutes early to complete any check-in procedures.</p>"
                 + "<p style=\"font-size: 14px; line-height: 1.6; color: #666;\">If you need to reschedule or cancel, please let us know as soon as possible.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/dashboard\" style=\"background-color: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View My Appointments</a>"
-                + "</p>"
                 + "<hr style=\"border: none; border-top: 2px solid #f0fdf4; margin: 30px 0;\">"
                 + "<p style=\"font-size: 12px; color: #999; text-align: center;\">Salon Sanaru<br/>Contact: (+94) 123-4567<br/>Email: support@sanaru.com</p>"
                 + "</div>"
@@ -622,9 +599,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<li>Service availability</li>"
                 + "</ul>"
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">Please feel free to book another appointment at a different date or time.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/book\" style=\"background-color: #ef4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Book Another Appointment</a>"
-                + "</p>"
                 + "<hr style=\"border: none; border-top: 2px solid #fef2f2; margin: 30px 0;\">"
                 + "<p style=\"font-size: 12px; color: #999; text-align: center;\">Salon Sanaru<br/>Contact: (+94) 123-4567<br/>Email: support@sanaru.com</p>"
                 + "</div>"
@@ -645,9 +619,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p style=\"font-size: 18px; color: #d946a6;\"><strong>Total Price: $" + String.format("%.2f", totalPrice) + "</strong></p>"
                 + "</div>"
                 + "<p style=\"font-size: 16px; line-height: 1.6;\">Your order is being prepared and will be shipped soon. You'll receive a tracking number via email.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/orders\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Track My Order</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -666,9 +637,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p style=\"font-style: italic; background-color: white; padding: 15px; border-left: 4px solid #d946a6;\">" + feedback.getComment() + "</p>"
                 + "</div>"
                 + "<p style=\"font-size: 14px; color: #666;\"><strong>Feedback ID:</strong> " + feedback.getId() + "</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:5174/admin_dashboard/feedback?id=" + feedback.getId() + "\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View in Dashboard</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -685,9 +653,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p><strong>Payment Method:</strong> " + paymentMethod + "</p>"
                 + "</div>"
                 + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">You can track your order status in your Salon Sanaru dashboard.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View Your Orders</a>"
-                + "</p>"
                 + "<p style=\"font-size: 12px; color: #999; text-align: center; margin-top: 30px;\">Thank you for shopping at Salon Sanaru!</p>"
                 + "</div>"
                 + "</body></html>";
@@ -704,9 +669,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p><strong>Reason:</strong> " + reason + "</p>"
                 + "</div>"
                 + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">Your order is still saved. You can retry the payment whenever you're ready.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #ef4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Retry Payment</a>"
-                + "</p>"
                 + "<p style=\"font-size: 12px; color: #999; text-align: center; margin-top: 30px;\">Need help? Contact " + supportEmail + "</p>"
                 + "</div>"
                 + "</body></html>";
@@ -723,9 +685,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p><strong>Refund Amount:</strong> Rs. " + String.format("%.2f", refundAmount) + "</p>"
                 + "</div>"
                 + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">The refund may take 3-5 business days to appear in your account depending on your bank.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View Orders</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -741,9 +700,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p><strong>Status:</strong> <span style=\"background-color: " + (status.equals("COMPLETED") ? "#22c55e" : status.equals("FAILED") ? "#ef4444" : "#f59e0b") + "; color: white; padding: 5px 10px; border-radius: 3px;\">" + status + "</span></p>"
                 + "<p><strong>Payment Method:</strong> " + paymentMethod + "</p>"
                 + "</div>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/admin_dashboard/transactions\" style=\"background-color: #8b5cf6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View in Dashboard</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -759,9 +715,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p><strong>New Status:</strong> <strong>" + newStatus + "</strong></p>"
                 + "</div>"
                 + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">We're working hard to prepare your order. You'll receive further updates soon.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #06b6d4; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Track Order</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -777,9 +730,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p><strong>Refund Amount:</strong> Rs. " + String.format("%.2f", refundAmount) + "</p>"
                 + "</div>"
                 + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">The refund will be processed within 3-5 business days.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #f97316; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View Orders</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -796,9 +746,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p><strong>Price:</strong> Rs. " + String.format("%.2f", price) + "</p>"
                 + "</div>"
                 + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">You will receive a confirmation email with appointment details shortly. If you have any questions, please contact us.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/customer_dashboard/bookings\" style=\"background-color: #d946a6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View My Bookings</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -815,9 +762,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p><strong>Reason:</strong> " + reason + "</p>"
                 + "</div>"
                 + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">Our team will review your request and process the refund within 3-5 business days. You'll receive an email once the refund is processed.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Track Refund Status</a>"
-                + "</p>"
                 + "</div>"
                 + "</body></html>";
     }
@@ -834,9 +778,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p style=\"color: #10b981; font-weight: bold;\">✓ Status: CONFIRMED</p>"
                 + "</div>"
                 + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">Our team is now preparing your order for shipping. You will receive tracking information soon via email.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">Track Your Order</a>"
-                + "</p>"
                 + "<p style=\"font-size: 12px; color: #999; text-align: center; margin-top: 30px;\">Thank you for shopping with Salon Sanaru!</p>"
                 + "</div>"
                 + "</body></html>";
@@ -857,9 +798,6 @@ public class EmailServiceImpl implements EmailService {
                 + "<p style=\"margin: 0; color: #92400e;\"><strong>⏳ What happens next?</strong></p>"
                 + "<p style=\"margin: 5px 0; color: #92400e; font-size: 14px;\">Our admin team will review your cancellation request within 24 hours. You will receive a confirmation email once your request is approved or if we need more information from you.</p>"
                 + "</div>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #f59e0b; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View Orders</a>"
-                + "</p>"
                 + "<p style=\"font-size: 12px; color: #999; text-align: center; margin-top: 30px;\">If you have any questions, please contact us at " + supportEmail + "</p>"
                 + "</div>"
                 + "</body></html>";
@@ -882,12 +820,216 @@ public class EmailServiceImpl implements EmailService {
                 + "<li>Order is currently being prepared</li>"
                 + "</ul>"
                 + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">Your order will proceed as originally planned. If you have any concerns, please contact our support team.</p>"
-                + "<p style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:3000/customer_dashboard/orders\" style=\"background-color: #ef4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">View Orders</a>"
-                + "</p>"
                 + "<p style=\"font-size: 12px; color: #999; text-align: center; margin-top: 30px;\">Contact: " + supportEmail + "</p>"
                 + "</div>"
                 + "</body></html>";
+    }
+
+    private String buildNewUserRegistrationNotificationHtml(String userEmail, String userFirstName, String userLastName) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #d946a6;\">New User Registration 👤</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">A new user has registered on your Salon Sanaru platform.</p>"
+                + "<div style=\"background-color: #f9f0f6; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #d946a6;\">"
+                + "<p><strong>User Name:</strong> " + userFirstName + " " + userLastName + "</p>"
+                + "<p><strong>Email:</strong> " + userEmail + "</p>"
+                + "<p><strong>Registration Time:</strong> " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")) + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">The user can now book services and place orders on your platform.</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildNewOrderNotificationHtml(String orderNumber, String customerName, double totalAmount, int itemCount) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #d946a6;\">New Order Received 📦</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">A new order has been placed on your Salon Sanaru platform.</p>"
+                + "<div style=\"background-color: #f9f0f6; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #d946a6;\">"
+                + "<p><strong>Order Number:</strong> #" + orderNumber + "</p>"
+                + "<p><strong>Customer:</strong> " + customerName + "</p>"
+                + "<p><strong>Total Items:</strong> " + itemCount + "</p>"
+                + "<p><strong>Total Amount:</strong> Rs. " + String.format("%.2f", totalAmount) + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">Please review and process this order as soon as possible.</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildPaymentSuccessNotificationHtml(String customerEmail, String customerName, String orderId, double amount, String paymentMethod) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #22c55e;\">Payment Received Successfully 💳✓</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">A customer has completed a successful payment for their order.</p>"
+                + "<div style=\"background-color: #f0fdf4; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #22c55e;\">"
+                + "<p><strong>Customer Email:</strong> " + customerEmail + "</p>"
+                + "<p><strong>Customer Name:</strong> " + customerName + "</p>"
+                + "<p><strong>Order ID:</strong> #" + orderId + "</p>"
+                + "<p><strong>Amount Received:</strong> Rs. " + String.format("%.2f", amount) + "</p>"
+                + "<p><strong>Payment Method:</strong> " + paymentMethod + "</p>"
+                + "<p><strong>Status:</strong> <span style=\"background-color: #22c55e; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;\">✓ CONFIRMED</span></p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">The order is ready to be prepared and shipped. Please update the order status accordingly.</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildAppointmentCancellationNotificationHtml(String customerName, String serviceName, String appointmentDate, String cancellationReason) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #ef4444;\">Appointment Cancelled ❌</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">An appointment has been cancelled. Please note the details below.</p>"
+                + "<div style=\"background-color: #fef2f2; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ef4444;\">"
+                + "<p><strong>Customer Name:</strong> " + customerName + "</p>"
+                + "<p><strong>Service:</strong> " + serviceName + "</p>"
+                + "<p><strong>Appointment Date:</strong> " + appointmentDate + "</p>"
+                + "<p><strong>Cancellation Reason:</strong> " + cancellationReason + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">Please update your schedule accordingly and consider reaching out to the customer if needed.</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildRefundRequestAdminNotificationHtml(String customerName, String orderId, double amount, String reason) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #f59e0b;\">Refund Request Received 💰</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">A customer has submitted a refund request that requires your attention.</p>"
+                + "<div style=\"background-color: #fffbeb; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #f59e0b;\">"
+                + "<p><strong>Customer Name:</strong> " + customerName + "</p>"
+                + "<p><strong>Order ID:</strong> #" + orderId + "</p>"
+                + "<p><strong>Refund Amount:</strong> Rs. " + String.format("%.2f", amount) + "</p>"
+                + "<p><strong>Reason:</strong> " + reason + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">Please review the request and approve or reject it in the admin dashboard. Contact the customer if clarification is needed.</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildBulkAppointmentCancellationNotificationHtml(int appointmentCount, String closedDateReason) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #ef4444;\">Bulk Appointment Cancellations ⚠️</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">Multiple appointments have been automatically cancelled due to a closed date.</p>"
+                + "<div style=\"background-color: #fef2f2; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ef4444;\">"
+                + "<p><strong>Number of Appointments Cancelled:</strong> " + appointmentCount + "</p>"
+                + "<p><strong>Reason:</strong> " + closedDateReason + "</p>"
+                + "<p><strong>Status:</strong> <span style=\"background-color: #ef4444; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;\">⚠️ AUTO-CANCELLED</span></p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">All affected customers have been notified about their cancellations. Please verify all details in the system.</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    private String buildOrderCancellationRequestNotificationHtml(String orderNumber, String customerName, double totalAmount, String reason) {
+        return "<html><body style=\"font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5;\">"
+                + "<div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);\">"
+                + "<h2 style=\"color: #f59e0b;\">Order Cancellation Request ⚠️</h2>"
+                + "<p style=\"font-size: 16px; line-height: 1.6;\">A customer has requested to cancel their order. Please review and take appropriate action.</p>"
+                + "<div style=\"background-color: #fffbeb; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #f59e0b;\">"
+                + "<p><strong>Order Number:</strong> #" + orderNumber + "</p>"
+                + "<p><strong>Customer Name:</strong> " + customerName + "</p>"
+                + "<p><strong>Order Total:</strong> Rs. " + String.format("%.2f", totalAmount) + "</p>"
+                + "<p><strong>Cancellation Reason:</strong> " + reason + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; color: #666; margin: 20px 0;\">Review the order status and approve or reject the cancellation request in the admin dashboard.</p>"
+                + "</div>"
+                + "</body></html>";
+    }
+
+    /**
+     * Async method to send password changed email without blocking the main thread
+     * Failures are logged but do not affect the main operation
+     */
+    @Override
+    @Async
+    public void sendNewUserRegistrationNotificationToAdmin(String userEmail, String userFirstName, String userLastName) {
+        try {
+            String subject = "New User Registration - Salon Sanaru 👤";
+            String htmlContent = buildNewUserRegistrationNotificationHtml(userEmail, userFirstName, userLastName);
+            sendHtmlEmail(supportEmail, subject, htmlContent);
+            logger.info("New user registration notification sent to admin for user: " + userEmail);
+        } catch (Exception e) {
+            logger.error("Failed to send new user registration notification to admin", e);
+        }
+    }
+
+    @Override
+    @Async
+    public void sendNewOrderNotificationToAdmin(String orderNumber, String customerName, double totalAmount, int itemCount) {
+        try {
+            String subject = "New Order Received - Order #" + orderNumber + " 📦";
+            String htmlContent = buildNewOrderNotificationHtml(orderNumber, customerName, totalAmount, itemCount);
+            sendHtmlEmail(supportEmail, subject, htmlContent);
+            logger.info("New order notification sent to admin for order: " + orderNumber);
+        } catch (Exception e) {
+            logger.error("Failed to send new order notification to admin", e);
+        }
+    }
+
+    @Override
+    @Async
+    public void sendPaymentSuccessNotificationToAdmin(String customerEmail, String customerName, String orderId, double amount, String paymentMethod) {
+        try {
+            String subject = "Payment Received Successfully - Order #" + orderId + " 💳✓";
+            String htmlContent = buildPaymentSuccessNotificationHtml(customerEmail, customerName, orderId, amount, paymentMethod);
+            sendHtmlEmail(supportEmail, subject, htmlContent);
+            logger.info("Payment success notification sent to admin for order: " + orderId);
+        } catch (Exception e) {
+            logger.error("Failed to send payment success notification to admin", e);
+        }
+    }
+
+    @Override
+    @Async
+    public void sendAppointmentCancellationNotificationToAdmin(String customerName, String serviceName, String appointmentDate, String cancellationReason) {
+        try {
+            String subject = "Appointment Cancelled - Notification ❌";
+            String htmlContent = buildAppointmentCancellationNotificationHtml(customerName, serviceName, appointmentDate, cancellationReason);
+            sendHtmlEmail(supportEmail, subject, htmlContent);
+            logger.info("Appointment cancellation notification sent to admin for customer: " + customerName);
+        } catch (Exception e) {
+            logger.error("Failed to send appointment cancellation notification to admin", e);
+        }
+    }
+
+    @Override
+    @Async
+    public void sendRefundRequestNotificationToAdmin(String customerName, String orderId, double amount, String reason) {
+        try {
+            String subject = "Refund Request Received - Order #" + orderId + " 💰";
+            String htmlContent = buildRefundRequestAdminNotificationHtml(customerName, orderId, amount, reason);
+            sendHtmlEmail(supportEmail, subject, htmlContent);
+            logger.info("Refund request notification sent to admin for order: " + orderId);
+        } catch (Exception e) {
+            logger.error("Failed to send refund request notification to admin", e);
+        }
+    }
+
+    @Override
+    @Async
+    public void sendBulkAppointmentCancellationNotificationToAdmin(int appointmentCount, String closedDateReason) {
+        try {
+            String subject = "Bulk Appointment Cancellations - " + appointmentCount + " Cancelled ⚠️";
+            String htmlContent = buildBulkAppointmentCancellationNotificationHtml(appointmentCount, closedDateReason);
+            sendHtmlEmail(supportEmail, subject, htmlContent);
+            logger.info("Bulk appointment cancellation notification sent to admin for " + appointmentCount + " appointments");
+        } catch (Exception e) {
+            logger.error("Failed to send bulk appointment cancellation notification to admin", e);
+        }
+    }
+
+    @Override
+    @Async
+    public void sendOrderCancellationRequestNotificationToAdmin(String orderNumber, String customerName, double totalAmount, String reason) {
+        try {
+            String subject = "Order Cancellation Request - Order #" + orderNumber + " ⚠️";
+            String htmlContent = buildOrderCancellationRequestNotificationHtml(orderNumber, customerName, totalAmount, reason);
+            sendHtmlEmail(supportEmail, subject, htmlContent);
+            logger.info("Order cancellation request notification sent to admin for order: " + orderNumber);
+        } catch (Exception e) {
+            logger.error("Failed to send order cancellation request notification to admin", e);
+        }
     }
 
     /**

@@ -86,6 +86,14 @@ public class ClosedDateServiceImpl implements ClosedDateService {
             }
         }
         
+        // Send bulk cancellation notification to admin
+        if (cancelledCount > 0) {
+            emailService.sendBulkAppointmentCancellationNotificationToAdmin(
+                    cancelledCount,
+                    "Salon closed on " + formattedDate + (request.getReason() != null ? ": " + request.getReason() : "")
+            );
+        }
+        
         // Create and save the closed date
         ClosedDate closedDate = new ClosedDate();
         closedDate.setClosedDate(request.getClosedDate());

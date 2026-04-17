@@ -249,6 +249,19 @@ public class AppointmentServiceImpl implements AppointmentService {
             }
         }).start();
         
+        // Send appointment cancellation notification to admin
+        try {
+            emailService.sendAppointmentCancellationNotificationToAdmin(
+                    customerName,
+                    serviceName,
+                    appointmentDate,
+                    "Admin rejected/cancelled this appointment"
+            );
+        } catch (Exception e) {
+            // Log error but don't fail the appointment rejection (since it's already saved)
+            System.err.println("Failed to send appointment cancellation notification to admin: " + e.getMessage());
+        }
+        
         return mapToResponse(updatedAppointment);
     }
 

@@ -310,6 +310,14 @@ public class PaymentServiceImpl implements PaymentService {
                         "SUCCESS",
                         transaction.getPaymentProvider()
                     );
+                    // Send detailed payment success notification to admin
+                    emailService.sendPaymentSuccessNotificationToAdmin(
+                        customerEmail,
+                        customerName,
+                        order.getOrderNumber(),
+                        transaction.getAmount().doubleValue(),
+                        transaction.getPaymentProvider()
+                    );
                 } catch (Exception e) {
                     log.error("Failed to send payment success emails for order: {}", order.getId(), e);
                 }
