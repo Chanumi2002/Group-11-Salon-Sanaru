@@ -2,6 +2,7 @@ package com.sanaru.backend.service.impl;
 
 import com.sanaru.backend.dto.TimeSlotRequest;
 import com.sanaru.backend.dto.TimeSlotResponse;
+import com.sanaru.backend.model.Break;
 import com.sanaru.backend.model.TimeSlot;
 import com.sanaru.backend.repository.TimeSlotRepository;
 import com.sanaru.backend.service.TimeSlotService;
@@ -59,7 +60,34 @@ public class TimeSlotServiceImpl implements TimeSlotService {
     @Override
     public List<TimeSlotResponse> getActiveTimeSlotsForDay(DayOfWeek dayOfWeek) {
         List<TimeSlot> timeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(dayOfWeek);
-        return timeSlots.stream().map(this::mapToResponse).collect(Collectors.toList());
+        
+        // Generate individual appointment slots based on appointmentDuration
+        List<TimeSlotResponse> appointmentSlots = new java.util.ArrayList<>();
+        
+        for (TimeSlot slot : timeSlots) {
+            java.time.LocalTime currentTime = slot.getStartTime();
+            int duration = slot.getAppointmentDuration() != null ? slot.getAppointmentDuration() : 30;
+            
+            while (currentTime.plusMinutes(duration).isBefore(slot.getEndTime()) || 
+                   currentTime.plusMinutes(duration).equals(slot.getEndTime())) {
+                TimeSlot appointmentSlot = new TimeSlot();
+                appointmentSlot.setId(slot.getId());
+                appointmentSlot.setDayOfWeek(slot.getDayOfWeek());
+                appointmentSlot.setStartTime(currentTime);
+                appointmentSlot.setEndTime(currentTime.plusMinutes(duration));
+                appointmentSlot.setIsActive(slot.getIsActive());
+                appointmentSlot.setCapacity(slot.getCapacity());
+                appointmentSlot.setAppointmentDuration(duration);
+                // Copy breaks from parent slot
+                appointmentSlot.setBreaks(slot.getBreaks());
+                
+                appointmentSlots.add(mapToResponse(appointmentSlot));
+                
+                currentTime = currentTime.plusMinutes(duration);
+            }
+        }
+        
+        return appointmentSlots;
     }
 
     @Override
@@ -79,6 +107,9 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         }
         if (request.getCapacity() != null && request.getCapacity() > 0) {
             timeSlot.setCapacity(request.getCapacity());
+        }
+        if (request.getAppointmentDuration() != null && request.getAppointmentDuration() > 0) {
+            timeSlot.setAppointmentDuration(request.getAppointmentDuration());
         }
 
         TimeSlot updatedTimeSlot = timeSlotRepository.save(timeSlot);
@@ -112,6 +143,27 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         response.setCapacity(timeSlot.getCapacity());
         response.setCreatedAt(timeSlot.getCreatedAt());
         response.setUpdatedAt(timeSlot.getUpdatedAt());
+        response.setAppointmentDuration(timeSlot.getAppointmentDuration());
+        
+        // Map breaks if they exist
+        if (timeSlot.getBreaks() != null && !timeSlot.getBreaks().isEmpty()) {
+            response.setBreaks(timeSlot.getBreaks().stream()
+                    .map(this::mapBreakToResponse)
+                    .collect(Collectors.toList()));
+        }
+        
+        return response;
+    }
+    
+    private com.sanaru.backend.dto.BreakResponse mapBreakToResponse(Break breakPeriod) {
+        com.sanaru.backend.dto.BreakResponse response = new com.sanaru.backend.dto.BreakResponse();
+        response.setId(breakPeriod.getId());
+        response.setBreakName(breakPeriod.getBreakName());
+        response.setStartTime(breakPeriod.getStartTime());
+        response.setEndTime(breakPeriod.getEndTime());
+        response.setIsActive(breakPeriod.getIsActive());
+        response.setCreatedAt(breakPeriod.getCreatedAt());
+        response.setUpdatedAt(breakPeriod.getUpdatedAt());
         return response;
     }
 }

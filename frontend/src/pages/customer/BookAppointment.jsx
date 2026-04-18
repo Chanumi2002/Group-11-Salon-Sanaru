@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { shopService } from '@/services/shopApi';
 import { customerService, closedDateService, adminService } from '@/services/api';
+import axios from 'axios';
 
 export default function BookAppointment() {
   const [searchParams] = useSearchParams();
@@ -18,13 +19,46 @@ export default function BookAppointment() {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [availabilityInfo, setAvailabilityInfo] = useState('');
   const [timeSlots, setTimeSlots] = useState([]); // Dynamically fetched time slots
+  const [breaks, setBreaks] = useState([]); // Breaks for the selected day
   const [showAvailable, setShowAvailable] = useState(true); // Legend filter: show available slots
   const [showBooked, setShowBooked] = useState(true); // Legend filter: show booked slots
+  const [holidays, setHolidays] = useState([]); // List of holidays
+  const [isHolidaysLoading, setIsHolidaysLoading] = useState(false);
+  const [currentOverride, setCurrentOverride] = useState(null); // Current date's holiday override
+  const [customHours, setCustomHours] = useState(null); // Custom hours for overridden holiday
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
 
   const serviceId = searchParams.get('serviceId');
+
+  // Load holidays on component mount
+  useEffect(() => {
+    const loadHolidays = async () => {
+      try {
+        setIsHolidaysLoading(true);
+        const holidaysRes = await axios.get('http://localhost:8080/api/holidays');
+        console.log('Holidays loaded:', holidaysRes.data);
+        setHolidays(holidaysRes.data || []);
+      } catch (error) {
+        console.error('Failed to load holidays:', error);
+        setHolidays([]);
+      } finally {
+        setIsHolidaysLoading(false);
+      }
+    };
+    loadHolidays();
+  }, []);
+
+  // Log holidays whenever they update
+  useEffect(() => {
+    if (holidays.length > 0) {
+      console.log(`✅ Holidays loaded: ${holidays.length} total`);
+      console.log('First 3 holidays:', holidays.slice(0, 3));
+    } else {
+      console.log('ℹ️ Waiting for holidays to load...');
+    }
+  }, [holidays]);
 
   useEffect(() => {
     let isActive = true;
@@ -79,12 +113,9 @@ export default function BookAppointment() {
 
   const fetchBookedSlots = async (selectedDate) => {
     try {
-      setSlotsLoading(true);
-      // Fetch slot availability info (booked count, capacity, available spots)
       const response = await customerService.getSlotAvailability(selectedDate);
       const availabilityData = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
       
-      // Create a map of time -> availability info
       const availabilityMap = {};
       let totalAvailable = 0;
       let totalCapacity = 0;
@@ -102,7 +133,6 @@ export default function BookAppointment() {
       
       setSlotAvailability(availabilityMap);
       
-      // Calculate availability summary
       const totalBooked = totalCapacity - totalAvailable;
       if (totalBooked === 0) {
         setAvailabilityInfo(`All ${totalCapacity} spots available`);
@@ -113,49 +143,95 @@ export default function BookAppointment() {
       }
     } catch (error) {
       console.error('Error fetching slot availability:', error);
-      console.error('Response:', error?.response?.data);
       setSlotAvailability({});
       setAvailabilityInfo('');
-    } finally {
-      setSlotsLoading(false);
     }
   };
 
-  const fetchTimeSlots = async (selectedDate) => {
+      const fetchTimeSlots = async (selectedDate) => {
     try {
-      // Get day of week from date
-      const dateObj = new Date(selectedDate + 'T00:00:00');
-      const jsDay = dateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      // Get day of week from date - use UTC to avoid timezone issues
+      const [year, month, day] = selectedDate.split('-').map(Number);
+      const dateObj = new Date(Date.UTC(year, month - 1, day));
+      const jsDay = dateObj.getUTCDay();
       
       const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
       const dayOfWeek = dayNames[jsDay];
 
+      // Fetch available slots
       const response = await adminService.getAvailableSlots(dayOfWeek);
       const slots = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
       
-      // Extract time strings from slot objects
-      // TimeSlot has startTime: "HH:MM:SS", extract just "HH:MM"
-      const timeStrings = slots
-        .map(slot => {
-          if (typeof slot === 'string') return slot;
-          // Handle both {time: "HH:MM"} and {startTime: "HH:MM:SS"}
+      let breaksData = [];
+      let timeStrings = [];
+      
+      slots.forEach(slot => {
+        if (typeof slot === 'string') {
+          timeStrings.push(slot);
+          return;
+        }
+        
+        if (typeof slot === 'object') {
           const timeStr = slot.time || slot.startTime;
-          if (timeStr && timeStr.length > 5) {
-            // Format is "HH:MM:SS", extract "HH:MM"
-            return timeStr.substring(0, 5);
+          if (timeStr) {
+            if (timeStr.length > 5) {
+              timeStrings.push(timeStr.substring(0, 5));
+            } else {
+              timeStrings.push(timeStr);
+            }
           }
-          return timeStr;
-        })
-        .filter(time => time);
+          
+          if (slot.breaks && Array.isArray(slot.breaks)) {
+            breaksData = breaksData.concat(slot.breaks);
+          }
+        }
+      });
+      
+      // Deduplicate breaks by name
+      const uniqueBreaks = Array.from(
+        new Map(breaksData.map(brk => [brk.breakName, brk])).values()
+      );
+      
+      setBreaks(uniqueBreaks);
       
       // Deduplicate times using Set and sort
       const uniqueTimeStrings = Array.from(new Set(timeStrings)).sort();
       
-      setTimeSlots(uniqueTimeStrings);
+      // Filter out times that conflict with breaks
+      const filteredTimes = uniqueTimeStrings.filter(time => !timeConflictsWithBreak(time, uniqueBreaks));
+      
+      setTimeSlots(filteredTimes);
+      
+      // If no time slots available, show message
+      if (filteredTimes.length === 0) {
+        setAvailabilityInfo('No time slots available for this day');
+      }
     } catch (error) {
       console.error('Error fetching time slots:', error);
-      setTimeSlots([]); // Fallback to empty list
+      setTimeSlots([]);
+      setBreaks([]);
+      setAvailabilityInfo('Unable to load time slots');
     }
+  };
+
+  // Check if a date is a holiday
+  const isDateHoliday = (selectedDate) => {
+    if (holidays.length === 0) return false;
+    return holidays.some(holiday => {
+      const startDate = holiday.start || holiday.startDate;
+      const endDate = holiday.end || holiday.endDate;
+      return selectedDate >= startDate && selectedDate <= endDate;
+    });
+  };
+
+  // Get holiday info for a date
+  const getHolidayInfo = (selectedDate) => {
+    if (holidays.length === 0) return null;
+    return holidays.find(holiday => {
+      const startDate = holiday.start || holiday.startDate;
+      const endDate = holiday.end || holiday.endDate;
+      return selectedDate >= startDate && selectedDate <= endDate;
+    });
   };
 
   const handleDateChange = (e) => {
@@ -163,20 +239,183 @@ export default function BookAppointment() {
     setDate(selectedDate);
     setTime(''); // Reset time when date changes
     
-    // Check if date is marked as closed
-    const isClosed = closedDates.some(cd => cd.closedDate === selectedDate);
-    if (isClosed) {
-      const closedDateInfo = closedDates.find(cd => cd.closedDate === selectedDate);
-      setDateMessage(`⚠️ Salon is closed on this date${closedDateInfo?.reason ? ` (${closedDateInfo.reason})` : ''}`);
-      setSlotAvailability({});
-      setAvailabilityInfo('');
-      setTimeSlots([]);
-    } else {
-      setDateMessage('');
-      // First fetch the time slots for this day of week, then fetch availability
-      fetchTimeSlots(selectedDate);
-      fetchBookedSlots(selectedDate);
-    }
+    // Fetch holiday override for this specific date (using public endpoint)
+    const fetchOverrideForDate = async () => {
+      try {
+        const overrideRes = await axios.get('http://localhost:8080/api/holiday-overrides/by-date', {
+          params: { date: selectedDate },
+          // Suppress default error logging for this request
+          validateStatus: (status) => {
+            // Accept all status codes (200, 404, etc.) without throwing
+            return true;
+          }
+        });
+        
+        // Check if we got a 404 response (expected when no override exists)
+        if (overrideRes.status === 404 || !overrideRes.data) {
+          setCurrentOverride(null);
+          return null;
+        }
+        
+        const override = overrideRes.data;
+        setCurrentOverride(override);
+        
+        if (override && override.isWorkingDate) {
+          setDateMessage(`📌 ${override.holidaySummary} - Marked as WORKING DATE`);
+          
+          // Check if custom hours are set
+          if (override.useCustomHours) {
+            const customHoursData = {
+              startTime: override.customStartTime,
+              endTime: override.customEndTime
+            };
+            setCustomHours(customHoursData);
+          } else {
+            setCustomHours(null);
+          }
+          
+          setBreaks([]); // Reset breaks
+          // Fetch time slots and booked slots in parallel for faster loading
+          setSlotsLoading(true);
+          Promise.all([
+            fetchTimeSlots(selectedDate),
+            fetchBookedSlots(selectedDate)
+          ])
+            .catch(error => {
+              // Silently ignore - fetch errors are non-critical
+            })
+            .finally(() => setSlotsLoading(false));
+          return override; // Return the override data
+        } else if (override && !override.isWorkingDate) {
+          // Override marks it as closed
+          setDateMessage(`⚠️ ${override.holidaySummary} - Salon is closed on this date`);
+          setSlotAvailability({});
+          setAvailabilityInfo('');
+          setTimeSlots([]);
+          setCustomHours(null);
+          return override; // Return the override data
+        }
+        return override; // Return override even if no specific conditions match
+      } catch (error) {
+        // Silently ignore all errors from holiday override fetch
+        // 404 is expected and handled above by validateStatus
+        setCurrentOverride(null);
+        return null;
+      }
+    };
+    
+    fetchOverrideForDate().then((override) => {
+      // Skip ALL holiday/closed date checks if override marked this as a working date
+      if (override && override.isWorkingDate === true) {
+        return;
+      }
+      
+      // If override marked as closed, also skip
+      if (override && override.isWorkingDate === false) {
+        return;
+      }
+      
+      // ONLY proceed with holiday/closed date checks if NO override exists
+      // Check if date is a holiday
+      const holidayInfo = getHolidayInfo(selectedDate);
+      
+      if (holidayInfo) {
+        setDateMessage(`🏖️ ${holidayInfo.summary} - Salon is closed on this date`);
+        setSlotAvailability({});
+        setAvailabilityInfo('');
+        setTimeSlots([]);
+        setCustomHours(null);
+        return;
+      }
+      
+      // Check if date is marked as closed
+      const isClosed = closedDates.some(cd => cd.closedDate === selectedDate);
+      if (isClosed) {
+        const closedDateInfo = closedDates.find(cd => cd.closedDate === selectedDate);
+        setDateMessage(`⚠️ Salon is closed on this date${closedDateInfo?.reason ? ` (${closedDateInfo.reason})` : ''}`);
+        setSlotAvailability({});
+        setAvailabilityInfo('');
+        setTimeSlots([]);
+        setCustomHours(null);
+      } else {
+        setDateMessage('');
+        setCustomHours(null); // Reset custom hours for regular dates
+        setBreaks([]); // Reset breaks
+        // Fetch time slots and booked slots in parallel for faster loading
+        setSlotsLoading(true);
+        Promise.all([
+          fetchTimeSlots(selectedDate),
+          fetchBookedSlots(selectedDate)
+        ])
+          .catch(error => {
+            // Silently ignore errors
+          })
+          .finally(() => setSlotsLoading(false));
+      }
+    })
+    .catch(() => {
+      // Silently suppress any errors from the override fetch promise chain
+    });
+  };
+
+  // Helper function to check if a time conflicts with any break
+  const timeConflictsWithBreak = (timeString, breaksData) => {
+    if (!breaksData || breaksData.length === 0) return false;
+    
+    // Parse the time string "HH:MM"
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const appointmentTime = hours * 60 + minutes; // Convert to minutes since midnight
+    
+    // Check if this time falls within any break period
+    return breaksData.some(brk => {
+      // Parse break times - handle both "HH:MM" and "HH:MM:SS" formats
+      let breakStartStr = brk.startTime || '';
+      let breakEndStr = brk.endTime || '';
+      
+      // Extract HH:MM if format is HH:MM:SS
+      if (breakStartStr.length > 5) breakStartStr = breakStartStr.substring(0, 5);
+      if (breakEndStr.length > 5) breakEndStr = breakEndStr.substring(0, 5);
+      
+      const [breakStartHour, breakStartMin] = breakStartStr.split(':').map(Number);
+      const [breakEndHour, breakEndMin] = breakEndStr.split(':').map(Number);
+      
+      if (isNaN(breakStartHour) || isNaN(breakEndHour)) return false;
+      
+      const breakStart = breakStartHour * 60 + breakStartMin;
+      const breakEnd = breakEndHour * 60 + breakEndMin;
+      
+      // Appointment time conflicts if: appointmentTime >= breakStart AND appointmentTime < breakEnd
+      // * Break 12:20-13:00: Appointment at 13:00 is ALLOWED (appointment at break end time is OK)
+      // * Break 12:30-13:15: Appointment at 13:00 is BLOCKED (still within break period)
+      // * Break 12:30-13:15: Appointment at 13:30 is ALLOWED (after break ends)
+      return appointmentTime >= breakStart && appointmentTime < breakEnd;
+    });
+  };
+
+  // Helper function to check if a time is within custom hours
+  const isTimeWithinCustomHours = (timeString, customHoursData) => {
+    if (!customHoursData || !customHoursData.startTime || !customHoursData.endTime) return true;
+    
+    // Parse time string "HH:MM"
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const appointmentTime = hours * 60 + minutes;
+    
+    // Parse custom hours
+    let customStartStr = customHoursData.startTime || '';
+    let customEndStr = customHoursData.endTime || '';
+    
+    if (customStartStr.length > 5) customStartStr = customStartStr.substring(0, 5);
+    if (customEndStr.length > 5) customEndStr = customEndStr.substring(0, 5);
+    
+    const [startHour, startMin] = customStartStr.split(':').map(Number);
+    const [endHour, endMin] = customEndStr.split(':').map(Number);
+    
+    if (isNaN(startHour) || isNaN(endHour)) return true;
+    
+    const customStart = startHour * 60 + startMin;
+    const customEnd = endHour * 60 + endMin;
+    
+    return appointmentTime >= customStart && appointmentTime < customEnd;
   };
 
   // Helper function to filter time slots based on legend toggle selections
@@ -191,17 +430,53 @@ export default function BookAppointment() {
     });
   };
 
+  // Pre-compute filtered slots for each period to avoid triple filtering
+  const morningSlots = getFilteredSlots(timeSlots.filter(t => {
+    const hour = parseInt(t.split(':')[0]);
+    return hour >= 9 && hour < 12 && isTimeWithinCustomHours(t, customHours);
+  }));
+
+  const afternoonSlots = getFilteredSlots(timeSlots.filter(t => {
+    const hour = parseInt(t.split(':')[0]);
+    return hour >= 12 && hour < 15 && isTimeWithinCustomHours(t, customHours);
+  }));
+
+  const eveningSlots = getFilteredSlots(timeSlots.filter(t => {
+    const hour = parseInt(t.split(':')[0]);
+    return hour >= 15 && isTimeWithinCustomHours(t, customHours);
+  }));
+
   const handleBook = async () => {
     if (!date || !time || !selectedService) {
       toast.error('Please select both a date and a time slot.');
       return;
     }
 
-    // Check if selected date is closed
-    const isClosed = closedDates.some(cd => cd.closedDate === date);
-    if (isClosed) {
-      toast.error('The selected date is not available. Please choose another date.');
+    // Check for holiday override first (takes precedence)
+    if (currentOverride && !currentOverride.isWorkingDate) {
+      toast.error(`Cannot book on ${currentOverride.holidaySummary}. Salon is closed.`);
       return;
+    }
+
+    // If we have a working date override, skip all other checks and book directly
+    if (currentOverride && currentOverride.isWorkingDate) {
+      // Override allows booking - proceed directly to API call
+    } else {
+      // No override - check holidays and closed dates
+      
+      // Check if selected date is a holiday
+      const holidayInfo = getHolidayInfo(date);
+      if (holidayInfo) {
+        toast.error(`Cannot book on ${holidayInfo.summary}. Salon is closed.`);
+        return;
+      }
+
+      // Check if selected date is closed
+      const isClosed = closedDates.some(cd => cd.closedDate === date);
+      if (isClosed) {
+        toast.error('The selected date is not available. Please choose another date.');
+        return;
+      }
     }
 
     try {
@@ -215,8 +490,9 @@ export default function BookAppointment() {
       navigate('/customer_dashboard/bookings');
     } catch (error) {
       console.error('Booking error details:', error);
-      console.error('Response data:', error.response?.data);
+      console.error('Full response data:', JSON.stringify(error.response?.data, null, 2));
       console.error('Response status:', error.response?.status);
+      console.error('Request data sent:', { serviceId: selectedService.id, date, time: time + ":00" });
       
       let msg = 'Unable to book appointment. Please try again.';
       
@@ -333,6 +609,30 @@ export default function BookAppointment() {
                 {dateMessage && (
                   <p className="text-sm text-amber-600 font-medium">{dateMessage}</p>
                 )}
+                
+                {/* Display custom hours for overridden holiday */}
+                {customHours && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs font-semibold text-blue-900 mb-1">⏰ Custom Operating Hours:</p>
+                    <p className="text-xs text-blue-800 font-medium">
+                      {customHours.startTime} - {customHours.endTime}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Display breaks for the selected date */}
+                {date && breaks.length > 0 && (
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-xs font-semibold text-orange-900 mb-2">⏸️ Breaks on this date:</p>
+                    <div className="space-y-1">
+                      {breaks.map((brk, idx) => (
+                        <p key={idx} className="text-xs text-orange-800">
+                          <span className="font-medium">{brk.breakName}</span>: {brk.startTime} - {brk.endTime}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Time Slots Grid */}
@@ -358,7 +658,6 @@ export default function BookAppointment() {
                         onChange={(e) => setShowAvailable(e.target.checked)}
                         className="w-4 h-4 border-green-400 rounded cursor-pointer"
                       />
-                      <div className="w-4 h-4 bg-white border-2 border-green-400 rounded"></div>
                       <span>Available</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -368,7 +667,6 @@ export default function BookAppointment() {
                         onChange={(e) => setShowBooked(e.target.checked)}
                         className="w-4 h-4 border-gray-300 rounded cursor-pointer"
                       />
-                      <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded"></div>
                       <span>Booked</span>
                     </label>
                   </div>
@@ -380,17 +678,11 @@ export default function BookAppointment() {
                     ) : (
                       <>
                         {/* Morning slots (9:00 - 11:59) */}
-                        {getFilteredSlots(timeSlots.filter(t => {
-                          const hour = parseInt(t.split(':')[0]);
-                          return hour >= 9 && hour < 12;
-                        })).length > 0 && (
+                        {morningSlots.length > 0 && (
                           <div>
                             <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Morning</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                              {getFilteredSlots(timeSlots.filter(t => {
-                                const hour = parseInt(t.split(':')[0]);
-                                return hour >= 9 && hour < 12;
-                              })).map((slot) => (
+                              {morningSlots.map((slot) => (
                                 <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
                               ))}
                             </div>
@@ -398,17 +690,11 @@ export default function BookAppointment() {
                         )}
 
                         {/* Afternoon slots (12:00 - 14:59) */}
-                        {getFilteredSlots(timeSlots.filter(t => {
-                          const hour = parseInt(t.split(':')[0]);
-                          return hour >= 12 && hour < 15;
-                        })).length > 0 && (
+                        {afternoonSlots.length > 0 && (
                           <div>
                             <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Afternoon</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                              {getFilteredSlots(timeSlots.filter(t => {
-                                const hour = parseInt(t.split(':')[0]);
-                                return hour >= 12 && hour < 15;
-                              })).map((slot) => (
+                              {afternoonSlots.map((slot) => (
                                 <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
                               ))}
                             </div>
@@ -416,17 +702,11 @@ export default function BookAppointment() {
                         )}
 
                         {/* Evening slots (15:00 onwards) */}
-                        {getFilteredSlots(timeSlots.filter(t => {
-                          const hour = parseInt(t.split(':')[0]);
-                          return hour >= 15;
-                        })).length > 0 && (
+                        {eveningSlots.length > 0 && (
                           <div>
                             <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Evening</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                              {getFilteredSlots(timeSlots.filter(t => {
-                                const hour = parseInt(t.split(':')[0]);
-                                return hour >= 15;
-                              })).map((slot) => (
+                              {eveningSlots.map((slot) => (
                                 <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
                               ))}
                             </div>
@@ -441,8 +721,8 @@ export default function BookAppointment() {
                     <p className="text-xs text-blue-900">
                       {Object.values(slotAvailability).length > 0 ? (
                         <>
-                          <span className="font-semibold">Total Capacity:</span> {Object.values(slotAvailability).reduce((sum, s) => sum + (s?.capacity || 0), 0)} | 
-                          <span className="font-semibold ml-2">Available Spots:</span> {Object.values(slotAvailability).reduce((sum, s) => sum + (s?.available || 0), 0)} | 
+                          <span className="font-semibold">Total Capacity:</span> {Object.values(slotAvailability).reduce((sum, s) => sum + (s?.capacity || 0), 0)}{' | '}
+                          <span className="font-semibold ml-2">Available Spots:</span> {Object.values(slotAvailability).reduce((sum, s) => sum + (s?.available || 0), 0)}{' | '}
                           <span className="font-semibold ml-2">Booked:</span> {Object.values(slotAvailability).reduce((sum, s) => sum + (s?.booked || 0), 0)}
                         </>
                       ) : (
@@ -487,3 +767,4 @@ export default function BookAppointment() {
     </DashboardLayout>
   );
 }
+

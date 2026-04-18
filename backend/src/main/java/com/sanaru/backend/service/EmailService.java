@@ -15,10 +15,16 @@ public interface EmailService {
     // Appointment Emails
     void sendAppointmentConfirmationEmail(String toEmail, String customerName, String serviceName,
             String appointmentDate, String appointmentTime, String staffName);
+    void sendBookingRequestConfirmationEmail(String toEmail, String customerName, String serviceName,
+            String appointmentDate, String appointmentTime);
     void sendAppointmentReminderEmail(String toEmail, String customerName, String serviceName,
             String appointmentDate, String appointmentTime);
     void sendAppointmentCancellationEmail(String toEmail, String customerName, String serviceName,
             String appointmentDate, String cancellationReason);
+    void sendAppointmentApprovedEmail(String toEmail, String customerName, String serviceName,
+            String appointmentDate, String appointmentTime);
+    void sendAppointmentRejectedEmail(String toEmail, String customerName, String serviceName,
+            String appointmentDate, String appointmentTime);
 
     // Product/Booking Emails
     void sendBookingConfirmationEmail(String toEmail, String customerName, String productName,
@@ -33,6 +39,9 @@ public interface EmailService {
     // Order Status Update Emails
     void sendOrderStatusUpdateEmail(String toEmail, String customerName, String orderId, String newStatus);
     void sendOrderCancellationConfirmationEmail(String toEmail, String customerName, String orderId, double refundAmount);
+    void sendOrderApprovedEmail(String toEmail, String customerName, String orderId, double totalAmount);
+    void sendOrderCancellationRequestEmail(String toEmail, String customerName, String orderId, double amount);
+    void sendCancellationRequestRejectedEmail(String toEmail, String customerName, String orderId);
 
     // Service Booking Emails
     void sendServiceBookingConfirmationEmail(String toEmail, String customerName, String serviceName, double price, String bookingReference);
@@ -43,6 +52,15 @@ public interface EmailService {
 
     // Feedback/Review Emails
     void sendReviewNotificationToAdmin(com.sanaru.backend.dto.FeedbackResponse feedback);
+    
+    // Admin Notification Emails
+    void sendNewUserRegistrationNotificationToAdmin(String userEmail, String userFirstName, String userLastName);
+    void sendNewOrderNotificationToAdmin(String orderNumber, String customerName, double totalAmount, int itemCount);
+    void sendPaymentSuccessNotificationToAdmin(String customerEmail, String customerName, String orderId, double amount, String paymentMethod);
+    void sendAppointmentCancellationNotificationToAdmin(String customerName, String serviceName, String appointmentDate, String cancellationReason);
+    void sendRefundRequestNotificationToAdmin(String customerName, String orderId, double amount, String reason);
+    void sendBulkAppointmentCancellationNotificationToAdmin(int appointmentCount, String closedDateReason);
+    void sendOrderCancellationRequestNotificationToAdmin(String orderNumber, String customerName, double totalAmount, String reason);
 
     // Async methods for notifications (non-blocking)
     CompletableFuture<Void> sendPasswordChangedEmailAsync(String email, String name);

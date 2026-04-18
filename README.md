@@ -4,16 +4,16 @@
 -----
 
 
-----
-# 📅 Sprint 4 - Appointment Booking & Review System
+
+## 📅 Sprint 4 - Appointment Booking & Review System
 
 A comprehensive appointment management and review system enabling customers to book salon services with time slot selection, cancel appointments, view booking history, and submit detailed reviews with star ratings while providing administrators with booking approval and review moderation capabilities.
 
-**Group:** Group 11 | **Status:** Sprint 4 In Progress 🔄 | **Version:** 2.5.0
+**Group:** Group 11 | **Status:** Sprint 4 In Progress 🔄 (Apr 17/23) | **Version:** 2.5.0
 
 ---
 
-## 🤝 Team (Sprint 4)
+### 🤝 Team (Sprint 4)
 
 **Project:** Group 11 - Salon Sanaru
 
@@ -26,7 +26,7 @@ A comprehensive appointment management and review system enabling customers to b
 
 ---
 
-## 📋 Sprint Status
+### 📋 Sprint Status
 
 | Sprint | Goal | Status | Duration | Story Points |
 |--------|------|--------|----------|--------------|
@@ -37,38 +37,38 @@ A comprehensive appointment management and review system enabling customers to b
 
 ---
 
-## 🔧 Tech Stack
+### 📋 Sprint 4 User Stories (8 Work Items - 32 Points)
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18, Vite 5.x, Tailwind CSS, React Calendar |
-| **Backend** | Spring Boot 4.0.3, Spring Data JPA, Hibernate |
-| **Database** | MySQL 8.0 |
-| **Authentication** | JWT + BCrypt |
-| **Email** | Spring Mail + SMTP |
-| **File Upload** | Multipart/Form-Data for review photos |
-
----
-
-## 📋 Sprint 4 User Stories (8 Work Items - 32 Points)
+**Sprint:** 8 Apr - 23 Apr | **Status:** 0 Complete | 19 In Review | 13 Done
 
 ### Epic 2: Appointment Management (5 Stories - 19 Points)
 
-| Story ID | Title | Status | Points |
-|----------|-------|--------|--------|
-| SS-37 | STORY 1 - Book Appointment | 🔄 IN PROGRESS | 5 |
-| SS-38 | STORY 2 - Cancel Appointment | 🔄 IN PROGRESS | 3 |
-| SS-39 | STORY 3 - View Booking History | ⏳ TO DO | 3 |
-| SS-41 | STORY 4 - Admin Appointment Approval | ⏳ TO DO | 3 |
-| SS-42 | STORY 5 - Time Slot Management | ⏳ TO DO | 5 |
+| Story ID | Title | Status | Points | Assignee |
+|----------|-------|--------|--------|----------|
+| SS-37 | STORY 1 - Book Appointment | 🔄 IN REVIEW | 5 | DK |
+| SS-38 | STORY 2 - Cancel Appointment | 🔄 IN REVIEW | 3 | DK |
+| SS-39 | STORY 3 - View Booking History | 🔄 IN REVIEW | 3 | DK |
+| SS-41 | STORY 4 - Admin Appointment Approval | 🔄 IN REVIEW | 3 | DK |
+| SS-42 | STORY 5 - Time Slot Management | 🔄 IN REVIEW | 5 | K |
 
 ### Epic 8: Review & Rating System (3 Stories - 13 Points)
 
-| Story ID | Title | Status | Points |
-|----------|-------|--------|--------|
-| SS-60 | Story 1 - Submit Review & Rating | 🔄 IN REVIEW | 5 |
-| SS-61 | Story 2 - View Reviews | 🔄 IN REVIEW | 3 |
-| SS-62 | Story 3 - Admin Moderate Reviews | 🔄 IN PROGRESS | 5 |
+| Story ID | Title | Status | Points | Assignee |
+|----------|-------|--------|--------|----------|
+| SS-60 | Story 1 - Submit Review & Rating | ✅ DONE | 5 | K |
+| SS-61 | Story 2 - View Reviews | ✅ DONE | 3 | K |
+| SS-62 | Story 3 - Admin Moderate Reviews | ✅ DONE | 5 | K |
+
+---
+
+## 🎯 Sprint 4 Objectives
+
+- ✅ **Review & Rating System** - Complete submission, viewing, and admin moderation workflow
+- 📋 **Appointment Booking System** - Implement booking, cancellation, history, and admin approval
+- 🎯 **Time Slot Management** - Enable dynamic slot management with staff availability
+- 🔄 **Email Notifications** - Appointment confirmations, reminders, and cancellation alerts
+- 🧪 **System Testing** - Integration testing and refinement of appointment & review flows
+- 🤖 **AI Integration** - AI-powered beauty recommendations and service suggestions (Upcoming)
 
 ---
 
@@ -114,9 +114,9 @@ GET    /api/reviews/stats             - Review statistics
 
 ---
 
-## 📊 Database Schema (Sprint 4)
+### 📊 Database Schema (Sprint 4)
 
-### Appointments Table
+#### Appointments Table
 ```
 id (PK), user_id (FK), service_id (FK), staff_id (FK),
 appointment_date, appointment_time, 
@@ -124,14 +124,14 @@ status (PENDING/APPROVED/REJECTED/CANCELLED/COMPLETED),
 notes, created_at, updated_at
 ```
 
-### TimeSlots Table
+#### TimeSlots Table
 ```
 id (PK), staff_id (FK), date, start_time, end_time,
 is_available, appointment_id (FK),
 created_at, updated_at
 ```
 
-### Reviews Table
+#### Reviews Table
 ```
 id (PK), user_id (FK), service_id (FK), appointment_id (FK),
 service_quality_rating (1-5), staff_rating (1-5),
@@ -141,7 +141,7 @@ helpful_count, unhelpful_count,
 admin_response, created_at, updated_at
 ```
 
-### AppointmentNotifications Table
+#### AppointmentNotifications Table
 ```
 id (PK), appointment_id (FK), user_id (FK),
 notification_type (CONFIRMATION/REMINDER/CANCELLATION),
@@ -150,108 +150,28 @@ sent_at, created_at
 
 ---
 
-## 🔐 Security Features
+### 🏗️ Tech Stack
 
-✅ **Authentication Required** - All appointment/review endpoints require login  
-✅ **Customer Isolation** - Can only view/modify own appointments & reviews  
-✅ **Admin Authorization** - CRUD operations require admin role  
-✅ **Data Validation** - Service duration, staff availability validation  
-✅ **Conflict Prevention** - Database constraints prevent double-booking  
-✅ **Review Moderation** - Admin approval before public visibility  
-✅ **Email Notifications** - Confirmation, reminder, and cancellation emails  
-✅ **Input Sanitization** - XSS protection on review text  
-✅ **Rate Limiting** - Prevent spam review submissions  
-
----
-
-## 🎯 Sprint 4 Metrics
-
-| Metric | Value | Status |
-|--------|-------|--------|
-| Sprint Duration | 8 Apr - 23 Apr (16 days) | 🔄 Active |
-| Story Points Committed | 32 | ✅ Confirmed |
-| Total Work Items | 8 Stories | ✅ Confirmed |
-| API Endpoints | 21 | 🔄 Development |
-| Database Tables | 4 New | 🔄 Development |
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18, Vite 5.x, Tailwind CSS, React Calendar |
+| **Backend** | Spring Boot 4.0.3, Spring Data JPA, Hibernate |
+| **Database** | MySQL 8.0 |
+| **Authentication** | JWT + BCrypt |
+| **Email** | Spring Mail + SMTP |
+| **File Upload** | Multipart/Form-Data for review photos |
 
 ---
 
-## 🚀 Quick Start
+### 🚀 Quick Start
 
-**Backend:**
-```bash
-cd backend
-mvn clean install -DskipTests
-mvn spring-boot:run
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
----
-
-## 📞 Contact & Support
-
-**Project Manager:** Perera K T L (IT24610793)  
-**Development Team:** Group 11  
-**QA Lead:** Yavindi M D C (IT24101636)  
-
----
-
-**Status: 🔄 SPRINT 4 IN PROGRESS - APPOINTMENTS & REVIEWS MODULE**
-
-*Building the complete booking and feedback system for Salon Sanaru.*
-
-----
-**.**
-----
-----
-
-# 💳 Sprint 3 - E-Commerce & Payment Integration
-
-A comprehensive payment processing and inventory management system enabling customers to purchase products, complete secure transactions, and receive AI-powered beauty recommendations.
-
-**Group:** Group 11 | **Status:** Sprint 3 Complete ✅ | **Version:** 2.0.0
-
----
-
-## 🤝 Team (Sprint 3)
-
-**Project:** Group 11 - Salon Sanaru
-
-| Role | Member | ID |
-|------|--------|-----|
-| PM | Wijesinghe K | IT24102587 |
-| Dev 1 | Yavindi M D C | IT24101636 |
-| Dev 2 | Wickramasinghe G K D K | IT24101516 |
-| QA | Perera K T L | IT24610793 |
-
----
-
-## 📋 Sprint Status
-
-| Sprint | Goal | Status | Duration | Story Points |
-|--------|------|--------|----------|--------------|
-| 1 | User Management & Auth | ✅ COMPLETE | Week 1-2 | - |
-| 2 | Services & Appointments | ✅ COMPLETE | Week 3-4 | - |
-| 3 | E-Commerce & Payments | ✅ COMPLETE | 24 Mar - 8 Apr | 27 |
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
+#### Prerequisites
 - Node.js 16+ & npm
 - Java 17+
 - MySQL 8.0+
 - Maven 3.8+
-- PayHere/Payment Gateway Account
 
-### Setup & Run
+#### Setup & Run
 
 **Backend:**
 ```bash
@@ -271,9 +191,245 @@ npm run dev
 
 ---
 
-## 📊 Features Overview (Sprint 3 - Complete ✅)
+### 📋 Features Overview (Sprint 4 - In Progress 🔄)
 
-### ✅ Shopping Cart System
+#### ✅ Review & Rating System (Complete)
+- Customer review submission with title and content
+- Star rating system (1-5 stars)
+  - Service quality rating
+  - Staff rating
+  - Overall rating (calculated average)
+- Review moderation by admin
+- Approve/Reject reviews before public display
+- Admin response to reviews
+- Helpful/Unhelpful marking
+- Anonymous review option
+- Review photo upload capability
+- Review history tracking
+
+#### 📋 Appointment Booking System (In Review)
+- Customer appointment booking with service selection
+- Staff member assignment to appointments
+- Appointment date and time selection
+- Appointment status tracking (PENDING/APPROVED/REJECTED/CANCELLED/COMPLETED)
+- Appointment cancellation by customer
+- Appointment rescheduling capability
+- Booking history view for customers
+- Personal appointment statistics
+
+#### 📋 Admin Appointment Management (In Review)
+- View all pending appointment requests
+- Approve or reject appointment bookings
+- Appointment detail inspection
+- Appointment status management
+- Email notifications on approval/rejection
+
+#### 📋 Time Slot Management (In Review)
+- Dynamic availability calendar for staff
+- Time slot creation and configuration
+- Availability status tracking
+- Staff schedule management
+- Booking conflict prevention
+- Customizable slot duration
+
+---
+
+### 👥 User Roles
+
+#### Admin Access
+- ✅ Dashboard with appointment statistics
+- ✅ Appointment approval/rejection
+- ✅ Time slot management
+- ✅ Review moderation and response
+- ✅ Block/Unblock customers
+- ✅ Profile management
+
+#### Customer Access
+- ✅ Browse available services
+- ✅ View available time slots
+- ✅ Book appointments
+- ✅ Cancel appointments
+- ✅ Reschedule appointments
+- ✅ View booking history
+- ✅ Submit reviews and ratings
+- ✅ View appointment statistics
+
+#### Guest Access
+- ✅ View services
+- ✅ View reviews and ratings
+- ❌ Cannot book appointments (redirected to login)
+- ❌ Cannot submit reviews (redirected to login)
+
+---
+
+### 📁 Project Structure (Sprint 4 Updates)
+
+```
+Group-11-Salon-Sanaru/
+├── backend/
+│   ├── src/main/java/com/sanaru/backend/
+│   │   ├── controller/
+│   │   │   ├── AppointmentController.java      # NEW
+│   │   │   ├── TimeSlotController.java         # NEW
+│   │   │   ├── ReviewController.java           # NEW
+│   │   │   └── [Previous controllers...]
+│   │   ├── service/
+│   │   │   ├── AppointmentService.java         # NEW
+│   │   │   ├── TimeSlotService.java            # NEW
+│   │   │   ├── ReviewService.java              # NEW
+│   │   │   ├── AppointmentNotificationService.java # NEW
+│   │   │   └── [Previous services...]
+│   │   ├── model/
+│   │   │   ├── Appointment.java                # NEW
+│   │   │   ├── TimeSlot.java                   # NEW
+│   │   │   ├── Review.java                     # NEW
+│   │   │   ├── AppointmentNotification.java    # NEW
+│   │   │   └── [Previous models...]
+│   │   ├── dto/
+│   │   │   ├── AppointmentDTO.java             # NEW
+│   │   │   ├── TimeSlotDTO.java                # NEW
+│   │   │   ├── ReviewDTO.java                  # NEW
+│   │   │   └── [Previous DTOs...]
+│   │   ├── repository/
+│   │   │   ├── AppointmentRepository.java      # NEW
+│   │   │   ├── TimeSlotRepository.java         # NEW
+│   │   │   ├── ReviewRepository.java           # NEW
+│   │   │   └── [Previous repositories...]
+│   │   └── util/
+│   │       └── [Previous utilities...]
+│   └── pom.xml
+├── frontend/
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── AppointmentBookingPage.jsx      # NEW
+│   │   │   ├── BookingHistoryPage.jsx          # NEW
+│   │   │   ├── ReviewPage.jsx                  # NEW
+│   │   │   ├── AdminApprovalsPage.jsx          # NEW
+│   │   │   └── [Previous pages...]
+│   │   ├── components/
+│   │   │   ├── AppointmentCalendar.jsx         # NEW
+│   │   │   ├── TimeSlotSelector.jsx            # NEW
+│   │   │   ├── ReviewForm.jsx                  # NEW
+│   │   │   ├── ReviewsDisplay.jsx              # NEW
+│   │   │   └── [Previous components...]
+│   │   ├── hooks/
+│   │   │   ├── useCustomerAppointments.jsx     # NEW
+│   │   │   └── useAdminNotifications.jsx       # NEW
+│   │   └── [Previous directories...]
+│   └── vite.config.js
+└── README_SPRINT4.md
+```
+
+---
+
+### 📱 Key Pages
+
+#### Customer Pages
+- `/customer_dashboard/appointments` - View bookings
+- `/book-appointment` - New appointment booking
+- `/customer_dashboard/booking-history` - Booking history
+- `/reviews/service/:id` - Submit service review
+- `/customer_dashboard/my-reviews` - View own reviews
+
+#### Admin Pages
+- `/admin_dashboard/appointments` - All appointments
+- `/admin_dashboard/appointments/pending` - Pending approvals
+- `/admin_dashboard/timeslots` - Time slot management
+- `/admin_dashboard/reviews` - Review moderation
+- `/admin_dashboard/staff-availability` - Staff schedule
+
+#### Public Pages
+- `/services/:id/reviews` - View service reviews
+- `/reviews` - All approved reviews
+
+---
+
+### 🔐 Security Features
+
+✅ **Authentication Required** - All appointment/review endpoints require login  
+✅ **Customer Isolation** - Can only view/modify own appointments & reviews  
+✅ **Admin Authorization** - CRUD operations require admin role  
+✅ **Data Validation** - Service duration, staff availability validation  
+✅ **Conflict Prevention** - Database constraints prevent double-booking  
+✅ **Review Moderation** - Admin approval before public visibility  
+✅ **Email Notifications** - Confirmation, reminder, and cancellation emails  
+✅ **Input Sanitization** - XSS protection on review text  
+✅ **Rate Limiting** - Prevent spam review submissions  
+
+---
+
+### 📊 Current Progress (As of Apr 17, 2026)
+
+#### Completed ✅
+- **Review & Rating System** (3 Stories - 13 Points) - EPIC 8
+  - ✅ SS-60: Submit reviews with star ratings
+  - ✅ SS-61: View service reviews and ratings
+  - ✅ SS-62: Admin review moderation and response
+
+#### In Review 🔄
+- **Appointment Management** (5 Stories - 19 Points) - EPIC 2
+  - 🔄 SS-37: Book appointment (5 pts)
+  - 🔄 SS-38: Cancel appointment (3 pts)
+  - 🔄 SS-39: View booking history (3 pts)
+  - 🔄 SS-41: Admin appointment approval (3 pts)
+  - 🔄 SS-42: Time slot management (5 pts)
+
+#### Sprint Metrics
+- **Sprint Duration:** 8 Apr - 23 Apr (16 days)
+- **Current Day:** Day 10 (Progress: 62.5%)
+- **Stories Completed:** 3/8 (37.5%)
+- **Points Completed:** 13/32 (40.6%)
+- **Stories In Review:** 5/8 (62.5%)
+- **Points In Review:** 19/32 (59.4%)
+- **Stories To Do:** 0/8 (0%)
+- **Points To Do:** 0/32 (0%)
+
+---
+
+### 🔮 Next Steps
+
+- [ ] Review and merge Appointment Booking (SS-37) implementation
+- [ ] Review and merge Cancel Appointment (SS-38) implementation
+- [ ] Review and merge View Booking History (SS-39) implementation
+- [ ] Review and merge Admin Appointment Approval (SS-41) implementation
+- [ ] Review and merge Time Slot Management (SS-42) implementation
+- [ ] Integration testing for complete appointment workflow
+- [ ] End-to-end email notification verification
+- [ ] Performance testing and optimization
+- [ ] User acceptance testing (UAT)
+- [ ] Sprint 4 demo and release preparation
+
+---
+
+### 📞 Contact & Support
+
+**Project Manager:** Perera K T L (IT24610793)  
+**Development Team:** Group 11  
+**QA Lead:** Yavindi M D C (IT24101636)  
+
+---
+
+### 🆘 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Appointment not showing | Verify appointment status in database |
+| Email not sending | Check Gmail app password and SMTP settings |
+| Time slot conflicts | Verify database constraints and validations |
+| Review moderation stuck | Check admin permissions and approval workflow |
+| Calendar not displaying | Clear cache and verify React Calendar integration |
+
+---
+
+**Status: 🔄 SPRINT 4 IN PROGRESS - APPOINTMENTS & REVIEWS MODULE**
+
+
+---
+---
+
+### 📊 Features Overview (Sprint 3 - Complete ✅)
+
+#### ✅ Shopping Cart System
 - Add products to cart
 - Update item quantities
 - Remove items from cart
@@ -282,7 +438,7 @@ npm run dev
 - Cart persistence across sessions
 - Cart badge with item count
 
-### ✅ Checkout & Order Management
+#### ✅ Checkout & Order Management
 - Checkout page with order summary
 - Shipping address management
 - Order confirmation
@@ -291,7 +447,7 @@ npm run dev
 - Order cancellation (if applicable)
 - Invoice generation
 
-### ✅ Payment Processing
+#### ✅ Payment Processing
 - **Sandbox Payment Integration** - PayHere/similar gateway
 - Multiple payment method support (Visa, Mastercard, etc.)
 - Payment success response handling
@@ -300,7 +456,7 @@ npm run dev
 - Secure payment data handling
 - Transaction ID generation and tracking
 
-### ✅ Inventory Management
+#### ✅ Inventory Management
 - Stock quantity tracking per product
 - Low stock threshold configuration
 - Automatic stock updates on purchase
@@ -308,7 +464,7 @@ npm run dev
 - Stock synchronization across orders
 - Inventory alerts for admin
 
-### ✅ Transaction & Order History
+#### ✅ Transaction & Order History
 - Transaction detail storage
 - Order confirmation only after successful payment
 - Complete transaction history for customers
@@ -316,7 +472,7 @@ npm run dev
 - Transaction status tracking
 - Payment receipt generation
 
-### ✅ AI Beauty Recommendation System
+#### ✅ AI Beauty Recommendation System
 - Beauty prescription based on user preferences
 - Recommended services suggestions
 - Curated product recommendations
@@ -324,7 +480,7 @@ npm run dev
 - Personalized beauty advice
 - Recommendation caching for performance
 
-### ✅ Notification System
+#### ✅ Notification System
 - Order confirmation emails
 - Payment receipt emails
 - Shipment tracking updates
@@ -333,9 +489,9 @@ npm run dev
 
 ---
 
-## 👥 User Roles
+### 👥 User Roles
 
-### Customer Access
+#### Customer Access
 - ✅ Browse and purchase products
 - ✅ Manage shopping cart
 - ✅ Complete checkout process
@@ -345,7 +501,7 @@ npm run dev
 - ✅ Receive AI recommendations
 - ✅ Download invoices
 
-### Admin Access
+#### Admin Access
 - ✅ Inventory management
 - ✅ Transaction reporting
 - ✅ Order management
@@ -356,7 +512,7 @@ npm run dev
 
 ---
 
-## 🏗️ Tech Stack
+### 🏗️ Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -371,7 +527,7 @@ npm run dev
 
 ---
 
-## 📁 Project Structure (Sprint 3 Updates)
+### 📁 Project Structure (Sprint 3 Updates)
 
 ```
 Group-11-Salon-Sanaru/
@@ -437,9 +593,9 @@ Group-11-Salon-Sanaru/
 
 ---
 
-## 🛒 Key Pages (Sprint 3)
+### 🛒 Key Pages (Sprint 3)
 
-### Customer Shopping
+#### Customer Shopping
 - `/products` - Product listing
 - `/products/:id` - Product details
 - `/customer_dashboard/cart` - Shopping cart
@@ -448,19 +604,19 @@ Group-11-Salon-Sanaru/
 - `/order-confirmation` - Order confirmation
 - `/my-orders` - Order history
 
-### Admin
+#### Admin
 - `/admin_dashboard/inventory` - Inventory management
 - `/admin_dashboard/orders` - Order management
 - `/admin_dashboard/transactions` - Transaction reports
 - `/admin_dashboard/low-stock` - Low stock alerts
 
-### AI Features
+#### AI Features
 - `/customer_dashboard/ai-recommendation` - Beauty advisor
 - `/customer_dashboard/ai-recommendation/prescriptions` - Beauty prescriptions
 
 ---
 
-## 💳 Payment Gateway Integration
+### 💳 Payment Gateway Integration
 
 ### PayHere Sandbox Setup
 ```
@@ -470,7 +626,7 @@ Return URL: http://localhost:5173/payment-confirmation
 Notify URL: http://localhost:8080/api/payment/notify
 ```
 
-### Payment Flow
+#### Payment Flow
 1. Customer adds items to cart
 2. Checkout page shows order summary
 3. Customer initiates payment
@@ -481,7 +637,7 @@ Notify URL: http://localhost:8080/api/payment/notify
 8. Stock updated automatically
 9. Confirmation email sent
 
-### Payment Status Management
+#### Payment Status Management
 - ✅ **SUCCESS** - Order confirmed, stock updated
 - ❌ **FAILED** - Cart retained, retry option shown
 - 🔄 **PENDING** - Awaiting payment confirmation
@@ -489,9 +645,9 @@ Notify URL: http://localhost:8080/api/payment/notify
 
 ---
 
-## 📦 API Endpoints (Sprint 3)
+### 📦 API Endpoints (Sprint 3)
 
-### Cart Endpoints
+#### Cart Endpoints
 ```
 POST   /api/cart/add          - Add item to cart
 DELETE /api/cart/remove/:id   - Remove item
@@ -500,7 +656,7 @@ GET    /api/cart              - Get cart items
 POST   /api/cart/clear        - Clear cart
 ```
 
-### Order Endpoints
+#### Order Endpoints
 ```
 POST   /api/orders            - Create order
 GET    /api/orders            - Get user orders
@@ -509,7 +665,7 @@ PUT    /api/orders/:id        - Update order status
 DELETE /api/orders/:id        - Cancel order
 ```
 
-### Payment Endpoints
+#### Payment Endpoints
 ```
 POST   /api/payment/initiate  - Start payment
 POST   /api/payment/confirm   - Confirm payment
@@ -517,14 +673,14 @@ POST   /api/payment/notify    - Payment callback
 GET    /api/transactions      - Transaction history
 ```
 
-### Inventory Endpoints
+#### Inventory Endpoints
 ```
 GET    /api/inventory/stock   - Check stock
 GET    /api/inventory/low-stock - Low stock alerts
 PUT    /api/inventory/update  - Update stock
 ```
 
-### Recommendation Endpoints
+#### Recommendation Endpoints
 ```
 GET    /api/recommendations/beauty-prescription - Get recommendations
 GET    /api/recommendations/products             - Recommended products
@@ -533,7 +689,7 @@ GET    /api/recommendations/services             - Recommended services
 
 ---
 
-## 🔐 Security Features (Sprint 3 Additions)
+### 🔐 Security Features (Sprint 3 Additions)
 
 ✅ **Payment Data Protection** - Secure transmission to gateway
 ✅ **Order Validation** - Verify order before confirmation
@@ -544,16 +700,16 @@ GET    /api/recommendations/services             - Recommended services
 
 ---
 
-## 📊 Database Schema Updates (Sprint 3)
+### 📊 Database Schema Updates (Sprint 3)
 
-### New Tables
+#### New Tables
 - `orders` - Order details and status
 - `order_items` - Items in each order
 - `transactions` - Payment transaction records
 - `carts` - Shopping cart data
 - `inventory` - Stock and threshold levels
 
-### Key Fields
+#### Key Fields
 - Order: `id, user_id, total_amount, status, created_at`
 - Transaction: `id, order_id, payment_id, status, amount, timestamp`
 - Cart: `id, user_id, total_items, total_price`
@@ -561,9 +717,9 @@ GET    /api/recommendations/services             - Recommended services
 
 ---
 
-## ✅ Quality Assurance (Sprint 3)
+### ✅ Quality Assurance (Sprint 3)
 
-### Test Coverage
+#### Test Coverage
 - ✅ Cart operations (add, remove, update)
 - ✅ Checkout workflow
 - ✅ Payment gateway integration
@@ -572,12 +728,12 @@ GET    /api/recommendations/services             - Recommended services
 - ✅ AI recommendation accuracy
 - ✅ Error handling and edge cases
 
-### Known Issues
+#### Known Issues
 - None (All critical issues resolved)
 
 ---
 
-## 🎯 Sprint 3 Metrics
+### 🎯 Sprint 3 Metrics
 
 | Metric | Value |
 |--------|-------|
@@ -591,7 +747,7 @@ GET    /api/recommendations/services             - Recommended services
 
 ---
 
-## 🔮 Next Steps (Sprint 4+)
+### 🔮 Next Steps (Sprint 4+)
 
 - [ ] Advanced analytics dashboard
 - [ ] Subscription services
@@ -603,7 +759,7 @@ GET    /api/recommendations/services             - Recommended services
 
 ---
 
-## 📝 Deployment
+### 📝 Deployment
 
 ### Build & Deploy
 ```bash
@@ -620,28 +776,28 @@ npm run preview
 
 ---
 
-## 🆘 Troubleshooting
+### 🆘 Troubleshooting
 
-### Payment Not Processing
+#### Payment Not Processing
 - Verify PayHere credentials in `application.properties`
 - Check internet connectivity
 - Review payment gateway logs
 - Ensure order amount is valid
 
-### Cart Not Synchronizing
+#### Cart Not Synchronizing
 - Clear browser cache
 - Check CartContext state
 - Verify API endpoint connectivity
 - Review browser console for errors
 
-### Low Stock Alerts Not Showing
+#### Low Stock Alerts Not Showing
 - Verify low_stock_threshold is set
 - Check inventory repository query
 - Confirm admin user permissions
 
 ---
 
-## 📞 Contact & Support
+### 📞 Contact & Support
 
 **Project Manager:** Wijesinghe K (IT24102587)  
 **Development Team:** Group 11  
@@ -654,11 +810,10 @@ npm run preview
 
 -----
 
-**.** 
 
 #
 
- # 🏪 Sprint 2 - Service & Product Management
+ ## 🏪 Sprint 2 - Service & Product Management
 
 A comprehensive service and product management system enabling administrators to manage salon services and beauty products while allowing customers and guests to browse available offerings with secure role-based access control.
 
@@ -666,7 +821,7 @@ A comprehensive service and product management system enabling administrators to
 
 ---
 
-## 🤝 Team (Sprint 2)
+### 🤝 Team (Sprint 2)
 
 **Project:** Group 11 - Salon Sanaru
 
@@ -679,7 +834,7 @@ A comprehensive service and product management system enabling administrators to
 
 ---
 
-## 📋 Sprint Status
+### 📋 Sprint Status
 
 | Sprint | Goal | Status | Duration | Story Points |
 |--------|------|--------|----------|--------------|
@@ -689,15 +844,15 @@ A comprehensive service and product management system enabling administrators to
 
 ---
 
-## 🚀 Quick Start
+### 🚀 Quick Start
 
-### Prerequisites
+#### Prerequisites
 - Node.js 16+ & npm
 - Java 17+
 - MySQL 8.0+
 - Maven 3.8+
 
-### Setup & Run
+#### Setup & Run
 
 **Backend:**
 ```bash
@@ -717,9 +872,9 @@ npm run dev
 
 ---
 
-## 📊 Features Overview (Sprint 2 - Complete ✅)
+### 📊 Features Overview (Sprint 2 - Complete ✅)
 
-### ✅ Service Management (Admin)
+#### ✅ Service Management (Admin)
 - Complete Service CRUD operations (Create, Read, Update, Delete)
 - Service details: name, description, price, duration
 - Service image management
@@ -728,7 +883,7 @@ npm run dev
 - Admin service management dashboard
 - Input validation and error handling
 
-### ✅ Product Management (Admin)
+#### ✅ Product Management (Admin)
 - Complete Product CRUD operations (Create, Read, Update, Delete)
 - Product image upload and storage
 - Product details: name, description, price, category
@@ -738,14 +893,14 @@ npm run dev
 - Image validation and size limits
 - Input validation and error handling
 
-### ✅ Public Service Browsing (Customer & Guest)
+#### ✅ Public Service Browsing (Customer & Guest)
 - View all available services
 - Service detail pages with description, price, duration
 - Service filtering and search
 - Browse public service information
 - "Book Now" buttons (redirects to login if guest)
 
-### ✅ Public Product Browsing (Customer & Guest)
+#### ✅ Public Product Browsing (Customer & Guest)
 - View all available products
 - Product detail pages with pricing and descriptions
 - Product categorization and filtering
@@ -753,7 +908,7 @@ npm run dev
 - Browse public product information
 - "Add to Cart" buttons (redirects to login if guest)
 
-### ✅ Guest Access Control
+#### ✅ Guest Access Control
 - Public access to services and products
 - Guests can view but cannot:
   - Book appointments (redirected to login)
@@ -764,7 +919,7 @@ npm run dev
 - Login redirection for restricted actions
 - Secure role-based access validation
 
-### ✅ Role-Based Access Control
+#### ✅ Role-Based Access Control
 - Admin-only operations (CRUD for services/products)
 - Customer features (booking, cart, reviews)
 - Guest read-only access
@@ -774,9 +929,9 @@ npm run dev
 
 ---
 
-## 👥 User Roles
+### 👥 User Roles
 
-### Admin Access
+#### Admin Access
 - ✅ Manage services (CRUD operations)
 - ✅ Manage products (CRUD operations)
 - ✅ View all services and products
@@ -785,7 +940,7 @@ npm run dev
 - ✅ Access admin dashboard
 - ✅ View all customer activity
 
-### Customer Access
+#### Customer Access
 - ✅ Browse services and products
 - ✅ View service and product details
 - ✅ Search and filter offerings
@@ -794,7 +949,7 @@ npm run dev
 - ✅ Leave reviews (Sprint 3+)
 - ✅ Access customer dashboard
 
-### Guest Access
+#### Guest Access
 - ✅ Browse public services
 - ✅ Browse public products
 - ✅ View service details
@@ -806,7 +961,7 @@ npm run dev
 
 ---
 
-## 🏗️ Tech Stack
+### 🏗️ Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -821,7 +976,7 @@ npm run dev
 
 ---
 
-## 📁 Project Structure (Sprint 2 Updates)
+### 📁 Project Structure (Sprint 2 Updates)
 
 ```
 Group-11-Salon-Sanaru/
@@ -884,21 +1039,21 @@ Group-11-Salon-Sanaru/
 
 ---
 
-## �️ Key Pages (Sprint 2)
+### �️ Key Pages (Sprint 2)
 
-### Public Pages (Guest Access)
+#### Public Pages (Guest Access)
 - `/services` - Browse all salon services
 - `/products` - Browse all beauty products
 - `/services/:id` - Service details page
 - `/products/:id` - Product details page
 - `/` - Homepage
 
-### Customer Pages
+#### Customer Pages
 - `/customer_dashboard` - Customer dashboard
 - `/services` - View all services
 - `/products` - View all products
 
-### Admin Pages
+#### Admin Pages
 - `/admin_dashboard` - Admin dashboard
 - `/admin_dashboard/services` - Service management (CRUD)
 - `/admin_dashboard/products` - Product management (CRUD)
@@ -906,9 +1061,9 @@ Group-11-Salon-Sanaru/
 
 ---
 
-## � Management Workflows
+### � Management Workflows
 
-### Admin Service Management
+#### Admin Service Management
 1. Access `/admin_dashboard/services`
 2. Click "Add Service" to create new service
 3. Fill in service details (name, description, price, duration)
@@ -917,7 +1072,7 @@ Group-11-Salon-Sanaru/
 6. Edit or Delete existing services
 7. View all services in list format
 
-### Admin Product Management
+#### Admin Product Management
 1. Access `/admin_dashboard/products`
 2. Click "Add Product" to create new product
 3. Fill in product details (name, description, price, category)
@@ -927,14 +1082,14 @@ Group-11-Salon-Sanaru/
 7. Edit or Delete existing products
 8. View all products in list format
 
-### Customer/Guest Service Browsing
+#### Customer/Guest Service Browsing
 1. Navigate to `/services` page
 2. View all available services with images
 3. Click on service card for details
 4. See price, duration, description
 5. Click "Book Now" (redirects to login if guest)
 
-### Customer/Guest Product Browsing
+#### Customer/Guest Product Browsing
 1. Navigate to `/products` page
 2. View all available products with images
 3. Filter by category if needed
@@ -944,16 +1099,16 @@ Group-11-Salon-Sanaru/
 
 ---
 
-## 🖼️ Image Upload System
+### 🖼️ Image Upload System
 
-### Product/Service Images
+#### Product/Service Images
 - **Supported Formats:** JPG, JPEG, PNG, WEBP
 - **Max Size:** 5MB per image
 - **Storage:** Backend `/uploads` directory
 - **Validation:** Size and format checked before upload
 - **Error Handling:** Clear messages for invalid uploads
 
-### Upload Process
+#### Upload Process
 1. Select image file from computer
 2. Click upload button in form
 3. Validation checks file format and size
@@ -961,7 +1116,7 @@ Group-11-Salon-Sanaru/
 5. Image path saved to database
 6. Display preview in UI
 
-### Access Control
+#### Access Control
 - Guests can view images (public)
 - Admin can upload new images
 - Admin can update/replace images
@@ -969,9 +1124,9 @@ Group-11-Salon-Sanaru/
 
 ---
 
-## 📊 API Endpoints (Sprint 2)
+### 📊 API Endpoints (Sprint 2)
 
-### Service Endpoints
+#### Service Endpoints
 ```
 GET    /api/services               - Get all services (public)
 GET    /api/services/:id           - Get service details (public)
@@ -980,7 +1135,7 @@ PUT    /api/services/:id           - Update service (admin only)
 DELETE /api/services/:id           - Delete service (admin only)
 ```
 
-### Product Endpoints
+#### Product Endpoints
 ```
 GET    /api/products               - Get all products (public)
 GET    /api/products/:id           - Get product details (public)
@@ -990,7 +1145,7 @@ PUT    /api/products/:id           - Update product (admin only)
 DELETE /api/products/:id           - Delete product (admin only)
 ```
 
-### Category Endpoints
+#### Category Endpoints
 ```
 GET    /api/categories             - Get all categories (public)
 POST   /api/categories             - Create category (admin only)
@@ -998,7 +1153,7 @@ PUT    /api/categories/:id         - Update category (admin only)
 DELETE /api/categories/:id         - Delete category (admin only)
 ```
 
-### File Upload Endpoints
+#### File Upload Endpoints
 ```
 POST   /api/upload/image           - Upload image (multipart/form-data)
 GET    /uploads/:filename          - Download image
@@ -1006,7 +1161,7 @@ GET    /uploads/:filename          - Download image
 
 ---
 
-## 🔐 Security Features (Sprint 2)
+### 🔐 Security Features (Sprint 2)
 
 ✅ **Role-Based Access Control** - Admin/Customer/Guest separation
 ✅ **Protected Endpoints** - CRUD operations require authentication
@@ -1021,31 +1176,31 @@ GET    /uploads/:filename          - Download image
 
 ---
 
-## 📊 Database Schema (Sprint 2)
+### 📊 Database Schema (Sprint 2)
 
-### Services Table
+#### Services Table
 ```
 id (PK), name, description, price, duration (minutes), 
 image_path, is_active, created_at, updated_at
 ```
 
-### Products Table
+#### Products Table
 ```
 id (PK), name, description, price, category_id (FK), 
 image_path, stock_quantity, created_at, updated_at
 ```
 
-### Categories Table
+#### Categories Table
 ```
 id (PK), name, description, created_at, updated_at
 ```
 
-### Product_Categories Junction Table
+#### Product_Categories Junction Table
 ```
 product_id (FK), category_id (FK) - for many-to-many relationship
 ```
 
-### Key Constraints
+#### Key Constraints
 - Service/Product names are not unique (duplicates allowed)
 - Image path is required and not null
 - Price must be greater than 0
@@ -1053,9 +1208,9 @@ product_id (FK), category_id (FK) - for many-to-many relationship
 
 ---
 
-## ✅ Quality Assurance (Sprint 2)
+### ✅ Quality Assurance (Sprint 2)
 
-### Test Coverage
+#### Test Coverage
 - ✅ Service CRUD operations (admin)
 - ✅ Product CRUD operations (admin)
 - ✅ Service browsing (customer & guest)
@@ -1066,19 +1221,19 @@ product_id (FK), category_id (FK) - for many-to-many relationship
 - ✅ Protected endpoint authorization
 - ✅ Error handling and messages
 
-### Issues Found & Resolved
+#### Issues Found & Resolved
 - ✅ **Image Upload**: Boundary conditions tested, size limits enforced
 - ✅ **Admin Product Creation**: Form validation and backend constraints verified
 - ✅ **Role-Based Access**: Authorization checks implemented and tested
 - ✅ **Frontend-Backend Sync**: Data consistency validated across operations
 - ✅ **Multi-Role Testing**: All user types tested (Admin, Customer, Guest)
 
-### Known Issues
+#### Known Issues
 - None (All issues resolved before sprint completion)
 
 ---
 
-## 🎯 Sprint 2 Metrics
+### 🎯 Sprint 2 Metrics
 
 | Metric | Value |
 |--------|-------|
@@ -1095,33 +1250,33 @@ product_id (FK), category_id (FK) - for many-to-many relationship
 
 ---
 
-## ⚠️ Challenges Faced During Sprint 2
+### ⚠️ Challenges Faced During Sprint 2
 
-### 1. Image Upload Handling
+#### 1. Image Upload Handling
 - **Challenge:** Managing multipart form data for image uploads
 - **Issue:** Validation of file types and sizes
 - **Solution:** Implemented comprehensive validation (JPG/PNG/WEBP, 5MB max)
 - **Outcome:** ✅ Resolved - Images upload and store correctly
 
-### 2. Admin Product Creation Validation
+#### 2. Admin Product Creation Validation
 - **Challenge:** Form validation and data type constraints
 - **Issue:** Price precision, required field handling
 - **Solution:** Server-side validation with proper error messages
 - **Outcome:** ✅ Resolved - Admin can create products without errors
 
-### 3. Role-Based Access Control
+#### 3. Role-Based Access Control
 - **Challenge:** Protecting admin endpoints from unauthorized access
 - **Issue:** Guest users accessing restricted features
 - **Solution:** JWT token validation, role checking on backend
 - **Outcome:** ✅ Resolved - Proper 401 responses for unauthorized access
 
-### 4. Frontend-Backend Synchronization
+#### 4. Frontend-Backend Synchronization
 - **Challenge:** Data consistency across create/update/delete operations
 - **Issue:** Caching and real-time updates
 - **Solution:** API cache invalidation, state management updates
 - **Outcome:** ✅ Resolved - Data remains consistent
 
-### 5. Mid-Semester Exams Impact
+#### 5. Mid-Semester Exams Impact
 - **Challenge:** First week of sprint overlapped with exams
 - **Issue:** Reduced initial development velocity
 - **Solution:** Team coordinated efforts, made up progress by sprint end
@@ -1129,7 +1284,7 @@ product_id (FK), category_id (FK) - for many-to-many relationship
 
 ---
 
-## 📝 Notifications (Sprint 2)
+### 📝 Notifications (Sprint 2)
 
 - Service created/updated/deleted (admin logging)
 - Product created/updated/deleted (admin logging)
@@ -1137,7 +1292,7 @@ product_id (FK), category_id (FK) - for many-to-many relationship
 
 ---
 
-## � Next Steps (Sprint 3)
+### � Next Steps (Sprint 3)
 
 - Implement appointment booking system
 - Add staff management features
@@ -1148,7 +1303,7 @@ product_id (FK), category_id (FK) - for many-to-many relationship
 
 ---
 
-## 📞 Contact & Support
+### 📞 Contact & Support
 
 **Project Manager:** Wickramasinghe G K D K (IT24101516)  
 **Development Team:** Group 11  
@@ -1160,7 +1315,7 @@ For technical issues:
 
 ---
 
-## ✅ Committed Work Completed
+### ✅ Committed Work Completed
 
 | Story | Title | Points | Status |
 |-------|-------|--------|--------|
@@ -1180,7 +1335,7 @@ For technical issues:
 
 
 
- # 🏪 Sprint 1  - User Management, Authentication & Email Notification System
+ ## 🏪 Sprint 1  - User Management, Authentication & Email Notification System
 
 A comprehensive web-based beauty salon management system enabling customers to book appointments, purchase products, and receive personalized beauty recommendations while providing administrators with complete business control.
 
@@ -1188,7 +1343,7 @@ A comprehensive web-based beauty salon management system enabling customers to b
 
 ---
 
-## 🤝 Team (Sprint 1)
+### 🤝 Team (Sprint 1)
 
 **Project:** Group 11 - Salon Sanaru
 
@@ -1201,7 +1356,7 @@ A comprehensive web-based beauty salon management system enabling customers to b
 
 ---
 
-## 📋 Sprint Status
+### 📋 Sprint Status
 
 | Sprint | Goal | Status | Duration |
 |--------|------|--------|----------|
@@ -1209,15 +1364,15 @@ A comprehensive web-based beauty salon management system enabling customers to b
 
 ---
 
-## 🚀 Quick Start
+### 🚀 Quick Start
 
-### Prerequisites
+#### Prerequisites
 - Node.js 16+ & npm
 - Java 17+
 - MySQL 8.0+
 - Maven 3.8+
 
-### Setup & Run
+#### Setup & Run
 
 **Backend:**
 ```bash
@@ -1237,9 +1392,9 @@ npm run dev
 
 ---
 
-## 📊 Features Overview (Sprint 1 - Complete ✅)
+### 📊 Features Overview (Sprint 1 - Complete ✅)
 
-### ✅ User Management & Authentication
+#### ✅ User Management & Authentication
 - User Registration & Login with JWT token
 - **Email Format Validation** - Regex pattern validation
 - **Domain MX Records Validation** - Ensures email domain can receive emails
@@ -1249,21 +1404,21 @@ npm run dev
 - Role-based access control (ADMIN/CUSTOMER)
 - JWT token blacklist on logout
 
-### ✅ Admin Features
+#### ✅ Admin Features
 - Dashboard with customer statistics
 - Customer Management (view, block, delete)
 - Admin profile management with password change
 - Account blocking enforcement
 - Role-based access control
 
-### ✅ Customer Features
+#### ✅ Customer Features
 - User registration with email validation
 - Login and profile management
 - Password change functionality
 - Dashboard with personal information
 - Profile update capability
 
-### ✅ Email Notification System
+#### ✅ Email Notification System
 - Welcome email on registration
 - Account blocked notification with support contact
 - Account unblocked notification
@@ -1273,7 +1428,7 @@ npm run dev
 - Appointment confirmation and reminders
 - Booking confirmation emails
 
-### ✅ Homepage Features
+#### ✅ Homepage Features
 - **Full-Screen Hero Section** with salon interior image (`salon-hero.jpg`)
 - Responsive design on all devices
 - Smooth animations with Framer Motion
@@ -1281,7 +1436,7 @@ npm run dev
 - About section
 - Call-to-action buttons
 
-### ✅ UI/UX Enhancements
+#### ✅ UI/UX Enhancements
 - Dark/Light theme toggle
 - Tailwind CSS styling
 - Form validation (client + server)
@@ -1292,29 +1447,29 @@ npm run dev
 
 ---
 
-## 👥 User Roles
+### 👥 User Roles
 
-### Admin Access
+#### Admin Access
 - Dashboard with customer statistics
 - Customer management (view, block, delete)
 - Block/Unblock customers with notifications
 - Profile and password management
 - Admin dashboard access
 
-### Customer Access
+#### Customer Access
 - Register with email validation
 - Login and profile management
 - View customer dashboard
 - Browse homepage
 - Secure password change
 
-### Guest Access
+#### Guest Access
 - View public homepage
 - Access registration/login pages
 
 ---
 
-## 🏗️ Tech Stack
+### 🏗️ Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -1328,7 +1483,7 @@ npm run dev
 
 ---
 
-## 📁 Project Structure
+### 📁 Project Structure
 
 ```
 Group-11-Salon-Sanaru/
@@ -1360,7 +1515,7 @@ Group-11-Salon-Sanaru/
 
 ---
 
-## 🔑 Seed Admin Credentials
+### 🔑 Seed Admin Credentials
 
 ```
 Email: admin@salonsanaru.com
@@ -1369,28 +1524,28 @@ Password: qazxsw
 
 ---
 
-## 📱 Key Pages
+### 📱 Key Pages
 
-### Admin
+#### Admin
 - `/admin_dashboard` - Dashboard with stats
 - `/admin_dashboard/users` - Customer management
 - `/admin_dashboard/profile` - Admin profile
 
-### Customer
+#### Customer
 - `/customer_dashboard` - Dashboard
 - `/homepage` - Homepage
 - `/customer_profile` - Profile
 
-### Public
+#### Public
 - `/` - Homepage with hero image
 - `/login` - Login
 - `/register` - Registration
 
 ---
 
-## ✉️ Email Validation System (NEW)
+### ✉️ Email Validation System (NEW)
 
-### 3-Layer Validation
+#### 3-Layer Validation
 
 **1. Format Check**
 - Pattern: `^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`
@@ -1407,7 +1562,7 @@ Password: qazxsw
   - yopmail.com, temp-mail.io, etc.
 - Error: "Throwaway/temporary email addresses are not allowed"
 
-### Applied Locations
+#### Applied Locations
 - User registration (registerUser, registerAdminUser)
 - Email updates
 - Authentication flows
@@ -1419,7 +1574,7 @@ Password: qazxsw
 
 ---
 
-## 🔐 Security Features
+### 🔐 Security Features
 
 ✅ **JWT Authentication** - Token-based, stateless
 ✅ **Token Blacklist** - O(1) logout invalidation
@@ -1433,7 +1588,7 @@ Password: qazxsw
 
 ---
 
-## 📊 Build Status
+### 📊 Build Status
 
 ✅ **Frontend:** No errors, ready to run
 ✅ **Backend:** BUILD SUCCESS - 38 files (8-9s)
@@ -1442,7 +1597,7 @@ Password: qazxsw
 
 ---
 
-## 🆘 Troubleshooting
+### 🆘 Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
@@ -1454,7 +1609,7 @@ Password: qazxsw
 
 ---
 
-## 📄 License
+### 📄 License
 
 Proprietary - Salon Sanaru Management System
 All Rights Reserved © 2026

@@ -1,8 +1,9 @@
 import { AdminDashboardLayout } from "@/components/common/AdminDashboardLayout";
 import { adminService } from "@/services/api";
+import { useNotificationRefresh } from "@/context/NotificationContext";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Filter, AlertTriangle, X } from "lucide-react";
 
 const STATUS_CONFIG = {
   PENDING: { label: "Pending", cls: "bg-orange-100 text-orange-700 font-semibold ring-1 ring-orange-300" },
@@ -23,10 +24,14 @@ const formatTime = (timeString) => {
   return `${formattedHour}:${minute} ${ampm}`;
 };
 
-export default function BookingManagement() {
+function BookingManagementContent() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [dateFilter, setDateFilter] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const { refetch } = useNotificationRefresh();
 
   useEffect(() => { fetchAppointments(); }, []);
 
@@ -45,28 +50,113 @@ export default function BookingManagement() {
 
   const handleAction = async (appointmentId, action) => {
     const messages = {
-      approve: { confirm: "Approve this appointment request?", success: "Appointment approved successfully." },
-      reject: { confirm: "Reject this appointment?", success: "Appointment rejected." },
+      approve: {
+        title: "Approve Appointment?",
+        description: "This appointment will be confirmed and the customer will be notified.",
+        icon: CheckCircle,
+        btnColor: "bg-green-500 hover:bg-green-600",
+        success: "Appointment approved successfully!"
+      },
+      reject: {
+        title: "Reject Appointment?",
+        description: "The customer will be notified that their appointment request was rejected.",
+        icon: XCircle,
+        btnColor: "bg-red-500 hover:bg-red-600",
+        success: "Appointment rejected."
+      },
     };
-    if (!window.confirm(messages[action].confirm)) return;
 
-    try {
-      setActionId(`${appointmentId}-${action}`);
-      if (action === "approve") {
-        await adminService.approveAppointment(appointmentId);
-      } else {
-        await adminService.rejectAppointment(appointmentId);
-      }
+    const config = messages[action];
+    const IconComponent = config.icon;
 
-      toast.success(messages[action].success);
-      await fetchAppointments();
-    } catch (error) {
-      console.error(`Error performing ${action}:`, error);
-      toast.error(error.response?.data?.message || `Failed to ${action} appointment`);
-    } finally {
-      setActionId(null);
-    }
+    const ConfirmationDialog = () => (
+      <div className="flex flex-col gap-4 w-full">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-0.5">
+            <IconComponent className={`h-5 w-5 ${action === 'approve' ? 'text-green-600' : 'text-red-600'}`} />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-gray-900 dark:text-white">{config.title}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{config.description}</p>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => toast.dismiss()}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss();
+              try {
+                setActionId(`${appointmentId}-${action}`);
+                if (action === "approve") {
+                  await adminService.approveAppointment(appointmentId);
+                } else {
+                  await adminService.rejectAppointment(appointmentId);
+                }
+
+                toast.success(config.success, {
+                  description: action === 'approve' ? 'Customer notification sent.' : 'Customer has been notified.',
+                });
+                await fetchAppointments();
+                refetch(); // Update sidebar badges
+              } catch (error) {
+                console.error(`Error performing ${action}:`, error);
+                toast.error(error.response?.data?.message || `Failed to ${action} appointment`);
+              } finally {
+                setActionId(null);
+              }
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${config.btnColor} text-white transition-colors text-sm font-medium`}
+          >
+            {action === 'approve' ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+            {action === 'approve' ? 'Approve' : 'Reject'}
+          </button>
+        </div>
+      </div>
+    );
+
+    toast.custom((t) => <ConfirmationDialog />, {
+      duration: 7000,
+      style: {
+        background: "#fff",
+        border: action === 'approve' ? "2px solid #10b981" : "2px solid #ef4444",
+        padding: "16px",
+        borderRadius: "12px",
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+      },
+    });
   };
+
+  // Filter appointments based on status and date
+  const getFilteredAppointments = () => {
+    return appointments.filter((appt) => {
+      // Filter by status
+      if (statusFilter !== "ALL" && appt.status !== statusFilter) {
+        return false;
+      }
+      
+      // Filter by date - convert both to YYYY-MM-DD format for comparison
+      if (dateFilter) {
+        // dateFilter from input is already in YYYY-MM-DD format
+        // appt.date should also be in YYYY-MM-DD format
+        const appointmentDate = appt.date ? appt.date.toString().trim() : "";
+        const filterDate = dateFilter.toString().trim();
+        
+        if (appointmentDate !== filterDate) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  };
+
+  const filteredAppointments = getFilteredAppointments();
+  const hasActiveFilters = statusFilter !== "ALL" || dateFilter !== "";
 
   return (
     <AdminDashboardLayout>
@@ -78,6 +168,90 @@ export default function BookingManagement() {
           </p>
         </div>
 
+        {/* Filter Controls */}
+        <div className="mb-6 bg-card border border-border rounded-lg p-4">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition font-medium text-sm mb-4"
+          >
+            <Filter className="h-4 w-4" />
+            {showFilters ? "Hide Filters" : "Show Filters"}
+            {hasActiveFilters && (
+              <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-white/20 text-xs font-bold">
+                {(statusFilter !== "ALL" ? 1 : 0) + (dateFilter ? 1 : 0)}
+              </span>
+            )}
+          </button>
+
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+              {/* Status Filter */}
+              <div>
+                <label htmlFor="status-filter" className="block text-sm font-medium text-foreground mb-2">Filter by Status</label>
+                <select
+                  id="status-filter"
+                  name="status-filter"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="CONFIRMED">Confirmed/Approved</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Date Filter */}
+              <div>
+                <label htmlFor="date-filter" className="block text-sm font-medium text-foreground mb-2">Filter by Date</label>
+                <div className="flex gap-2">
+                  <input
+                    id="date-filter"
+                    name="date-filter"
+                    type="date"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  {dateFilter && (
+                    <button
+                      onClick={() => setDateFilter("")}
+                      className="flex items-center gap-1 rounded-lg px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 transition text-sm font-medium"
+                    >
+                      <X className="h-4 w-4" />
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Reset Filters */}
+              {hasActiveFilters && (
+                <button
+                  onClick={() => {
+                    setStatusFilter("ALL");
+                    setDateFilter("");
+                  }}
+                  className="md:col-span-2 px-4 py-2 rounded-lg bg-gray-200 text-foreground hover:bg-gray-300 transition font-medium text-sm"
+                >
+                  Reset All Filters
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Filter Summary */}
+          {hasActiveFilters && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+              Showing <strong>{filteredAppointments.length}</strong> of <strong>{appointments.length}</strong> appointments
+              {statusFilter !== "ALL" && <span> • Status: <strong>{statusFilter.toLowerCase()}</strong></span>}
+              {dateFilter && <span> • Date: <strong>{dateFilter}</strong></span>}
+            </div>
+          )}
+        </div>
+
         <div className="bg-card border border-border rounded-lg overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
@@ -87,6 +261,19 @@ export default function BookingManagement() {
           ) : appointments.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-muted-foreground">No appointments found.</p>
+            </div>
+          ) : filteredAppointments.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground">No appointments match your filters.</p>
+              <button
+                onClick={() => {
+                  setStatusFilter("ALL");
+                  setDateFilter("");
+                }}
+                className="mt-2 text-primary hover:underline text-sm font-medium"
+              >
+                Clear filters to see all appointments
+              </button>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -104,7 +291,7 @@ export default function BookingManagement() {
                   </tr>
                 </thead>
                 <tbody>
-                  {appointments.map((appt) => {
+                  {filteredAppointments.map((appt) => {
                     const { label, cls } = getStatus(appt.status);
                     const isPending = appt.status === "PENDING";
 
@@ -174,6 +361,14 @@ export default function BookingManagement() {
           )}
         </div>
       </div>
+    </AdminDashboardLayout>
+  );
+}
+
+export default function BookingManagement() {
+  return (
+    <AdminDashboardLayout>
+      <BookingManagementContent />
     </AdminDashboardLayout>
   );
 }

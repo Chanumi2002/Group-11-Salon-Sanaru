@@ -16,6 +16,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle 404 responses for holiday overrides gracefully (they're expected)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Silently resolve 404s for holiday-overrides (no override found is normal)
+    if (
+      error.response?.status === 404 &&
+      error.config?.url?.includes('/holiday-overrides/by-date')
+    ) {
+      return Promise.resolve({ status: 404, data: null });
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const authService = {
   // Register a new user
   register: async (userData) => {
@@ -123,6 +138,16 @@ export const adminService = {
   // Reject an appointment
   rejectAppointment: async (appointmentId) => {
     return await api.put(`/appointments/${appointmentId}/reject`);
+  },
+
+  // Get pending appointments count (for admin sidebar badge)
+  getPendingAppointmentCount: async () => {
+    return await api.get('/appointments/pending-count');
+  },
+
+  // Get pending orders count (for admin sidebar badge)
+  getPendingOrderCount: async () => {
+    return await api.get('/orders/pending-approval-count');
   },
 
   // ==================== TIME SLOT OPERATIONS ====================
@@ -393,6 +418,63 @@ export const closedDateService = {
   // Delete closed date
   deleteClosedDate: async (id) => {
     return await api.delete(`/closed-dates/${id}`);
+  },
+};
+
+export const holidayOverrideService = {
+  // Create or update holiday override
+  createOrUpdateOverride: async (overrideData) => {
+    return await api.post('/holiday-overrides', overrideData);
+  },
+
+  // Get all holiday overrides
+  getAllOverrides: async () => {
+    return await api.get('/holiday-overrides');
+  },
+
+  // Get working date overrides only
+  getWorkingDateOverrides: async () => {
+    return await api.get('/holiday-overrides/working-dates');
+  },
+
+  // Get override for a specific date
+  getOverrideByDate: async (date) => {
+    return await api.get('/holiday-overrides/by-date', {
+      params: { date },
+    });
+  },
+
+  // Get custom hours for a date
+  getCustomHours: async (date) => {
+    return await api.get('/holiday-overrides/custom-hours', {
+      params: { date },
+    });
+  },
+
+  // Get overrides within a date range
+  getOverridesBetween: async (startDate, endDate) => {
+    return await api.get('/holiday-overrides/between', {
+      params: { startDate, endDate },
+    });
+  },
+
+  // Check if a date is working date override
+  isWorkingDateOverride: async (date) => {
+    return await api.get('/holiday-overrides/is-working-date', {
+      params: { date },
+    });
+  },
+
+  // Delete holiday override
+  deleteOverride: async (id) => {
+    return await api.delete(`/holiday-overrides/${id}`);
+  },
+
+  // Delete override by date
+  deleteOverrideByDate: async (date) => {
+    return await api.delete('/holiday-overrides/by-date', {
+      params: { date },
+    });
   },
 };
 

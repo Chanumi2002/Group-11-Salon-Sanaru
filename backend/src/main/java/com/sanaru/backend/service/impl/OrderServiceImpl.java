@@ -108,6 +108,19 @@ public class OrderServiceImpl implements OrderService {
             logger.error("Failed to send order confirmation email to {}", user.getEmail(), e);
         }
 
+        // Send admin notification about new order
+        try {
+            emailService.sendNewOrderNotificationToAdmin(
+                    savedOrder.getOrderNumber(),
+                    user.getFirstName() + " " + user.getLastName(),
+                    savedOrder.getTotalAmount().doubleValue(),
+                    savedOrder.getItems().size()
+            );
+            logger.info("New order notification sent to admin for order: {}", savedOrder.getOrderNumber());
+        } catch (Exception e) {
+            logger.error("Failed to send new order notification to admin", e);
+        }
+
         return mapToOrderResponse(savedOrder);
     }
 
@@ -152,14 +165,39 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.CANCELLATION_REQUESTED);
         Order savedOrder = orderRepository.save(order);
 
-        // Send cancellation request notification to admin
-        logger.info("Sending cancellation request notification for order: {}", orderId);
+        // Fetch all required data BEFORE spawning background thread
+        User customer = order.getUser();
+        String customerEmail = customer.getEmail();
+        String customerName = customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : "");
+        String orderNumber = savedOrder.getOrderNumber();
+        double totalAmount = savedOrder.getTotalAmount().doubleValue();
+
+        // Send cancellation request email to customer ASYNCHRONOUSLY
+        new Thread(() -> {
+            logger.info("Sending cancellation request email to customer for order: {}", orderId);
+            try {
+                emailService.sendOrderCancellationRequestEmail(
+                        customerEmail,
+                        customerName,
+                        orderNumber,
+                        totalAmount
+                );
+                logger.info("Cancellation request email sent to: {}", customerEmail);
+            } catch (Exception e) {
+                logger.error("Failed to send cancellation request email for order: {}", orderId, e);
+            }
+        }).start();
+        
+        // Send cancellation request notification to admin ASYNCHRONOUSLY
         try {
-            // Note: You may want to create a separate sendCancellationRequestNotification method
-            // For now, we'll just log it
-            logger.info("Cancellation request notification sent for order: {}", orderId);
+            emailService.sendOrderCancellationRequestNotificationToAdmin(
+                    orderNumber,
+                    customerName,
+                    totalAmount,
+                    "Customer has requested cancellation and refund"
+            );
         } catch (Exception e) {
-            logger.error("Failed to send cancellation request notification for order: {}", orderId, e);
+            logger.error("Failed to send order cancellation notification to admin for order: {}", orderId, e);
         }
 
         return mapToOrderResponse(savedOrder);
@@ -177,21 +215,48 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.CANCELLED);
         Order savedOrder = orderRepository.save(order);
 
-        // Send cancellation confirmation email to customer
+        // Fetch all required data BEFORE spawning background thread
         User customer = order.getUser();
         if (customer != null) {
-            logger.info("Sending cancellation confirmation email to customer: {}", customer.getEmail());
+            String customerEmail = customer.getEmail();
+            String customerName = customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : "");
+            String orderNumber = savedOrder.getOrderNumber();
+            double refundAmount = savedOrder.getTotalAmount().doubleValue();
+
+            // Send refund and cancellation confirmation emails to customer ASYNCHRONOUSLY
+            new Thread(() -> {
+                logger.info("Sending cancellation and refund confirmation emails to customer: {}", customerEmail);
+                try {
+                    // Send cancellation confirmation
+                    emailService.sendOrderCancellationConfirmationEmail(
+                            customerEmail,
+                            customerName,
+                            orderNumber,
+                            refundAmount
+                    );
+                    // Also send refund confirmation
+                    emailService.sendRefundConfirmationEmail(
+                            customerEmail,
+                            customerName,
+                            orderNumber,
+                            refundAmount
+                    );
+                    logger.info("Cancellation and refund emails sent to: {}", customerEmail);
+                } catch (Exception e) {
+                    logger.error("Failed to send cancellation/refund emails to {}", customerEmail, e);
+                }
+            }).start();
+            
+            // Send refund request notification to admin ASYNCHRONOUSLY
             try {
-                double refundAmount = order.getTotalAmount().doubleValue();
-                emailService.sendOrderCancellationConfirmationEmail(
-                        customer.getEmail(),
-                        customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : ""),
-                        order.getOrderNumber(),
-                        refundAmount
+                emailService.sendRefundRequestNotificationToAdmin(
+                        customerName,
+                        orderNumber,
+                        refundAmount,
+                        "Admin approved refund request and processed cancellation"
                 );
-                logger.info("Cancellation confirmation email sent to: {}", customer.getEmail());
             } catch (Exception e) {
-                logger.error("Failed to send cancellation email to {}", customer.getEmail(), e);
+                logger.error("Failed to send refund request notification to admin for order: {}", orderId, e);
             }
         }
 
@@ -209,7 +274,30 @@ public class OrderServiceImpl implements OrderService {
 
         // Revert to CONFIRMED (the typical status before a customer requests cancellation)
         order.setStatus(OrderStatus.CONFIRMED);
-        return mapToOrderResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+
+        // Fetch all required data BEFORE spawning background thread
+        User customer = order.getUser();
+        String customerEmail = customer.getEmail();
+        String customerName = customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : "");
+        String orderNumber = savedOrder.getOrderNumber();
+
+        // Send cancellation rejection email to customer ASYNCHRONOUSLY
+        new Thread(() -> {
+            logger.info("Sending cancellation rejection email to customer for order: {}", orderId);
+            try {
+                emailService.sendCancellationRequestRejectedEmail(
+                        customerEmail,
+                        customerName,
+                        orderNumber
+                );
+                logger.info("Cancellation rejection email sent to: {}", customerEmail);
+            } catch (Exception e) {
+                logger.error("Failed to send cancellation rejection email for order: {}", orderId, e);
+            }
+        }).start();
+
+        return mapToOrderResponse(savedOrder);
     }
 
     @Override
@@ -235,7 +323,32 @@ public class OrderServiceImpl implements OrderService {
             });
         }
         
-        return mapToOrderResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+
+        // Fetch all required data BEFORE spawning background thread
+        User customer = order.getUser();
+        String customerEmail = customer.getEmail();
+        String customerName = customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : "");
+        String orderNumber = savedOrder.getOrderNumber();
+        double totalAmount = savedOrder.getTotalAmount().doubleValue();
+
+        // Send order approval email to customer ASYNCHRONOUSLY
+        new Thread(() -> {
+            logger.info("Sending order approval email to customer for order: {}", orderId);
+            try {
+                emailService.sendOrderApprovedEmail(
+                        customerEmail,
+                        customerName,
+                        orderNumber,
+                        totalAmount
+                );
+                logger.info("Order approval email sent to: {}", customerEmail);
+            } catch (Exception e) {
+                logger.error("Failed to send order approval email for order: {}", orderId, e);
+            }
+        }).start();
+        
+        return mapToOrderResponse(savedOrder);
     }
 
     @Override
@@ -292,5 +405,23 @@ public class OrderServiceImpl implements OrderService {
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    @Override
+    public long getPendingApprovalOrderCount() {
+        return orderRepository.countByStatus(OrderStatus.PENDING);
+    }
+
+    @Override
+    public java.util.Map<String, Integer> getCustomerOrderStatusCounts(String userEmail) {
+        User customer = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userEmail));
+        
+        java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+        counts.put("pending", (int) orderRepository.countByUserIdAndStatus(customer.getId(), OrderStatus.PENDING));
+        counts.put("confirmed", (int) orderRepository.countByUserIdAndStatus(customer.getId(), OrderStatus.CONFIRMED));
+        counts.put("paid", (int) orderRepository.countByUserIdAndStatus(customer.getId(), OrderStatus.PAID));
+        counts.put("cancelled", (int) orderRepository.countByUserIdAndStatus(customer.getId(), OrderStatus.CANCELLED));
+        return counts;
     }
 }

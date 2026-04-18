@@ -75,6 +75,8 @@ public class UserService {
         User saved = userRepository.save(user);
         // Send welcome email asynchronously - failure won't affect this operation
         emailService.sendWelcomeEmailAsync(saved.getEmail(), saved.getFirstName());
+        // Send admin notification about new user registration
+        emailService.sendNewUserRegistrationNotificationToAdmin(saved.getEmail(), saved.getFirstName(), saved.getLastName());
         return saved;
     }
 
