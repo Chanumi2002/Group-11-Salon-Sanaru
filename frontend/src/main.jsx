@@ -87,8 +87,8 @@ if (import.meta.env.DEV) {
     if (message.includes('Cannot update a component')) return;
     // Suppress Google Sign-In multiple initialization warning
     if (message.includes('google.accounts.id.initialize()')) return;
-    // Suppress browser Tracking Prevention warnings about storage access
-    if (message.includes('Tracking Prevention') && message.includes('blocked access to storage')) return;
+    // Suppress browser Tracking Prevention warnings about storage access (Firefox privacy protection)
+    if (message.includes('Tracking Prevention') || message.includes('blocked access to storage') || message.includes('credential_button_library')) return;
     // Suppress Cross-Origin-Opener-Policy postMessage warnings
     if (message.includes('Cross-Origin-Opener-Policy') && message.includes('postMessage')) return;
     originalWarn(...args);
@@ -99,6 +99,11 @@ if (import.meta.env.DEV) {
     
     // Join all arguments to check full context
     const fullText = args.map(a => a?.toString?.() || '').join(' ').toLowerCase();
+    
+    // Suppress Tracking Prevention errors (Firefox privacy feature)
+    if (fullText.includes('tracking prevention') || fullText.includes('blocked access to storage') || fullText.includes('credential_button_library')) {
+      return;
+    }
     
     // Suppress ANY error mention of holiday-overrides (4xx status codes are expected)
     if (fullText.includes('holiday-overrides') || fullText.includes('/api/holiday-overrides')) {

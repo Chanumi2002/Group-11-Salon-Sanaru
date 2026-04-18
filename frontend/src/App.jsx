@@ -57,7 +57,14 @@ import ProtectedRoute from "@/components/common/ProtectedRoute";
 import { AdminProtectedRoute } from "@/components/common/AdminProtectedRoute";
 
 const App = () => (
-  <GoogleOAuthProvider clientId="741049795663-ie03ksnfv4jfu5aesvod0fj1c41uopqr.apps.googleusercontent.com">
+  <GoogleOAuthProvider 
+    clientId="741049795663-ie03ksnfv4jfu5aesvod0fj1c41uopqr.apps.googleusercontent.com"
+    onScriptProps={{
+      async: true,
+      defer: true,
+      nonce: "google-oauth-nonce"
+    }}
+  >
     <ThemeProvider>
       <TooltipProvider>
         <Toaster />

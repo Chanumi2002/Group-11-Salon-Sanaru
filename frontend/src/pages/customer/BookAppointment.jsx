@@ -29,6 +29,8 @@ export default function BookAppointment() {
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [timeSlotIdMap, setTimeSlotIdMap] = useState({}); // Map of time -> timeSlotId
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState(null); // Selected timeSlot ID for booking
 
   const serviceId = searchParams.get('serviceId');
 
@@ -164,6 +166,7 @@ export default function BookAppointment() {
       
       let breaksData = [];
       let timeStrings = [];
+      const idMap = {}; // Map time -> timeSlotId
       
       slots.forEach(slot => {
         if (typeof slot === 'string') {
@@ -174,10 +177,11 @@ export default function BookAppointment() {
         if (typeof slot === 'object') {
           const timeStr = slot.time || slot.startTime;
           if (timeStr) {
-            if (timeStr.length > 5) {
-              timeStrings.push(timeStr.substring(0, 5));
-            } else {
-              timeStrings.push(timeStr);
+            const normalizedTime = timeStr.length > 5 ? timeStr.substring(0, 5) : timeStr;
+            timeStrings.push(normalizedTime);
+            // Store the timeSlotId mapping
+            if (slot.id) {
+              idMap[normalizedTime] = slot.id;
             }
           }
           
@@ -201,6 +205,7 @@ export default function BookAppointment() {
       const filteredTimes = uniqueTimeStrings.filter(time => !timeConflictsWithBreak(time, uniqueBreaks));
       
       setTimeSlots(filteredTimes);
+      setTimeSlotIdMap(idMap); // Store the ID mapping
       
       // If no time slots available, show message
       if (filteredTimes.length === 0) {
@@ -210,6 +215,7 @@ export default function BookAppointment() {
       console.error('Error fetching time slots:', error);
       setTimeSlots([]);
       setBreaks([]);
+      setTimeSlotIdMap({}); // Clear ID map on error
       setAvailabilityInfo('Unable to load time slots');
     }
   };
@@ -238,6 +244,7 @@ export default function BookAppointment() {
     const selectedDate = e.target.value;
     setDate(selectedDate);
     setTime(''); // Reset time when date changes
+    setSelectedTimeSlotId(null); // Reset timeSlotId when date changes
     
     // Fetch holiday override for this specific date (using public endpoint)
     const fetchOverrideForDate = async () => {
@@ -484,7 +491,8 @@ export default function BookAppointment() {
       await customerService.bookAppointment({
         serviceId: selectedService.id,
         date,
-        time: time + ":00" // Format for backend parsing HH:mm:ss
+        time: time + ":00", // Format for backend parsing HH:mm:ss
+        timeSlotId: selectedTimeSlotId // Include the required timeSlotId
       });
       toast.success('Appointment booked successfully!');
       navigate('/customer_dashboard/bookings');
@@ -492,7 +500,7 @@ export default function BookAppointment() {
       console.error('Booking error details:', error);
       console.error('Full response data:', JSON.stringify(error.response?.data, null, 2));
       console.error('Response status:', error.response?.status);
-      console.error('Request data sent:', { serviceId: selectedService.id, date, time: time + ":00" });
+      console.error('Request data sent:', { serviceId: selectedService.id, date, time: time + ":00", timeSlotId: selectedTimeSlotId });
       
       let msg = 'Unable to book appointment. Please try again.';
       
@@ -510,6 +518,13 @@ export default function BookAppointment() {
     } finally {
       setIsBooking(false);
     }
+  };
+
+  // Handler for time slot selection - sets both time and timeSlotId
+  const handleTimeSlotSelect = (slot) => {
+    setTime(slot);
+    const slotId = timeSlotIdMap[slot];
+    setSelectedTimeSlotId(slotId);
   };
 
   const todayDateStr = new Date().toLocaleDateString('en-CA'); // Gets YYYY-MM-DD reliably
@@ -683,7 +698,7 @@ export default function BookAppointment() {
                             <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Morning</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                               {morningSlots.map((slot) => (
-                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
+                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={handleTimeSlotSelect} />
                               ))}
                             </div>
                           </div>
@@ -695,7 +710,7 @@ export default function BookAppointment() {
                             <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Afternoon</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                               {afternoonSlots.map((slot) => (
-                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
+                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={handleTimeSlotSelect} />
                               ))}
                             </div>
                           </div>
@@ -707,7 +722,7 @@ export default function BookAppointment() {
                             <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Evening</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                               {eveningSlots.map((slot) => (
-                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
+                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={handleTimeSlotSelect} />
                               ))}
                             </div>
                           </div>
@@ -742,7 +757,7 @@ export default function BookAppointment() {
                 </Link>
                 <button
                   type="button"
-                  disabled={!date || !time || isBooking}
+                  disabled={!date || !time || !selectedTimeSlotId || isBooking}
                   onClick={handleBook}
                   className="inline-flex items-center rounded-md bg-[#8E1616] px-5 py-2 text-sm font-medium text-white hover:bg-[#741212] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
