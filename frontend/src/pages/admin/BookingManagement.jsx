@@ -138,19 +138,19 @@ function BookingManagementContent() {
       if (statusFilter !== "ALL" && appt.status !== statusFilter) {
         return false;
       }
-      
+
       // Filter by date - convert both to YYYY-MM-DD format for comparison
       if (dateFilter) {
         // dateFilter from input is already in YYYY-MM-DD format
         // appt.date should also be in YYYY-MM-DD format
         const appointmentDate = appt.date ? appt.date.toString().trim() : "";
         const filterDate = dateFilter.toString().trim();
-        
+
         if (appointmentDate !== filterDate) {
           return false;
         }
       }
-      
+
       return true;
     });
   };
@@ -159,8 +159,7 @@ function BookingManagementContent() {
   const hasActiveFilters = statusFilter !== "ALL" || dateFilter !== "";
 
   return (
-    <AdminDashboardLayout>
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
+      <div className="w-full max-w-7xl mx-auto p-4 md:p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Booking Management</h1>
           <p className="text-muted-foreground">
@@ -252,7 +251,7 @@ function BookingManagementContent() {
           )}
         </div>
 
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="w-full bg-card border border-border rounded-lg overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
@@ -276,8 +275,8 @@ function BookingManagementContent() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="w-full overflow-x-auto">
+              <table className="w-full min-w-[900px] text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted">
                     {["ID", "Customer", "Service", "Date", "Time", "Status", "Actions"].map((h) => (
@@ -361,7 +360,6 @@ function BookingManagementContent() {
           )}
         </div>
       </div>
-    </AdminDashboardLayout>
   );
 }
 

@@ -57,7 +57,7 @@ export function AdminDashboardLayout({ children }) {
 
   return (
     <NotificationContext.Provider value={{ refetch }}>
-      <div className="flex min-h-screen bg-[#f4f2ef] text-slate-900 [--background:36_22%_94%] [--foreground:222_47%_11%] [--card:0_0%_100%] [--card-foreground:222_47%_11%] [--muted:36_24%_91%] [--muted-foreground:215_16%_36%] [--accent:0_0%_97%] [--accent-foreground:222_47%_11%] [--border:30_14%_84%]">
+      <div className="min-h-screen overflow-x-hidden bg-[#f4f2ef] text-slate-900 [--background:36_22%_94%] [--foreground:222_47%_11%] [--card:0_0%_100%] [--card-foreground:222_47%_11%] [--muted:36_24%_91%] [--muted-foreground:215_16%_36%] [--accent:0_0%_97%] [--accent-foreground:222_47%_11%] [--border:30_14%_84%] lg:pl-64">
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div
@@ -68,7 +68,7 @@ export function AdminDashboardLayout({ children }) {
 
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-64 h-screen bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          className={`fixed inset-y-0 left-0 z-50 w-64 h-screen overflow-y-auto bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
             } lg:translate-x-0`}
         >
           {/* Header */}
@@ -93,7 +93,7 @@ export function AdminDashboardLayout({ children }) {
           </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-hidden">
+        <nav className="flex-1 px-4 py-6 space-y-1">
           {adminSidebarLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to;
@@ -139,7 +139,7 @@ export function AdminDashboardLayout({ children }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col lg:ml-64">
+      <main className="w-full min-w-0 flex flex-col">
         {/* Top Bar */}
         <header className="h-20 border-b border-border bg-white flex items-center justify-between px-6 lg:px-12">
           <div className="flex items-center">
@@ -165,7 +165,7 @@ export function AdminDashboardLayout({ children }) {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 min-w-0 overflow-auto">
           {children}
         </div>
       </main>
