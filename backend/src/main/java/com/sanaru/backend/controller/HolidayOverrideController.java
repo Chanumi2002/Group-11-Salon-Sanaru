@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
+import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class HolidayOverrideController {
      */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> createOrUpdateOverride(@RequestBody HolidayOverrideRequest request) {
+    public ResponseEntity<?> createOrUpdateOverride(@Valid @RequestBody HolidayOverrideRequest request) {
         try {
             HolidayOverrideResponse response = holidayOverrideService.createOrUpdateOverride(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -47,7 +48,7 @@ public class HolidayOverrideController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updateOverride(@PathVariable Long id, @RequestBody HolidayOverrideRequest request) {
+    public ResponseEntity<?> updateOverride(@PathVariable Long id, @Valid @RequestBody HolidayOverrideRequest request) {
         try {
             HolidayOverrideResponse response = holidayOverrideService.updateOverride(id, request);
             return ResponseEntity.ok(response);
@@ -88,13 +89,7 @@ public class HolidayOverrideController {
     public ResponseEntity<?> getOverrideByDate(@RequestParam LocalDate date) {
         try {
             Optional<HolidayOverrideResponse> override = holidayOverrideService.getOverrideByDate(date);
-            if (override.isPresent()) {
-                return ResponseEntity.ok(override.get());
-            } else {
-                Map<String, String> response = new HashMap<>();
-                response.put("message", "No override found for date: " + date);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-            }
+            return ResponseEntity.ok(override.orElse(null));
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("message", "Error fetching override: " + e.getMessage());

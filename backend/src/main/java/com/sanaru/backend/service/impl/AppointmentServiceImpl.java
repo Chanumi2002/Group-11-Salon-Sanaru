@@ -5,6 +5,7 @@ import com.sanaru.backend.dto.AppointmentResponse;
 import com.sanaru.backend.enums.AppointmentStatus;
 import com.sanaru.backend.model.Appointment;
 import com.sanaru.backend.model.Break;
+import com.sanaru.backend.model.HolidayOverride;
 import com.sanaru.backend.model.TimeSlot;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.AppointmentRepository;
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -53,9 +55,14 @@ public class AppointmentServiceImpl implements AppointmentService {
         com.sanaru.backend.model.Service service = serviceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new NoSuchElementException("Service not found"));
 
-        // Validate timeSlotId exists
-        timeSlotRepository.findById(request.getTimeSlotId())
-                .orElseThrow(() -> new NoSuchElementException("Time slot with ID " + request.getTimeSlotId() + " not found"));
+        // Check if booking is for a holiday override with custom hours (negative timeSlotId)
+        boolean isHolidayOverrideBooking = request.getTimeSlotId() != null && request.getTimeSlotId() < 0;
+
+        if (!isHolidayOverrideBooking) {
+            // Validate timeSlotId exists only for regular bookings
+            timeSlotRepository.findById(request.getTimeSlotId())
+                    .orElseThrow(() -> new NoSuchElementException("Time slot with ID " + request.getTimeSlotId() + " not found"));
+        }
 
         // Check if the requested date is marked as closed
         if (closedDateRepository.findByClosedDate(request.getDate()).isPresent()) {
@@ -85,20 +92,43 @@ public class AppointmentServiceImpl implements AppointmentService {
         LocalTime requestedStartTime = request.getTime();
         LocalTime requestedEndTime = requestedStartTime.plusMinutes(service.getDurationMinutes());
 
-        // Validate that the requested time falls within an active time slot for the day
-        List<TimeSlot> activeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(request.getDate().getDayOfWeek());
-        
-        if (activeSlots == null || activeSlots.isEmpty()) {
-            throw new IllegalArgumentException("No time slots available for the selected date");
-        }
-
+        // Validate time based on booking type
         TimeSlot matchingSlot = null;
         
-        for (TimeSlot slot : activeSlots) {
-            if (!requestedStartTime.isBefore(slot.getStartTime()) && 
-                !requestedEndTime.isAfter(slot.getEndTime())) {
-                matchingSlot = slot;
-                break;
+        if (isHolidayOverrideBooking && holidayOverride.isPresent()) {
+            // For holiday override bookings with custom hours
+            var override = holidayOverride.get();
+            if (override.getUseCustomHours()) {
+                LocalTime customStartTime = override.getCustomStartTime();
+                LocalTime customEndTime = override.getCustomEndTime();
+                
+                // Validate that the requested time falls within custom hours
+                if (!requestedStartTime.isBefore(customStartTime) && !requestedEndTime.isAfter(customEndTime)) {
+                    // Time is within custom hours - create a synthetic TimeSlot object for capacity checking
+                    // Use a dummy capacity for holiday override bookings
+                    matchingSlot = new TimeSlot();
+                    matchingSlot.setId(-1L); // Dummy ID for holiday override
+                    matchingSlot.setCapacity(10); // Default capacity for holiday overrides
+                } else {
+                    throw new IllegalArgumentException("The selected time is outside the custom operating hours for this holiday override");
+                }
+            } else {
+                throw new IllegalArgumentException("Holiday override exists but does not use custom hours");
+            }
+        } else {
+            // Regular booking - validate against active time slots for the day
+            List<TimeSlot> activeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(request.getDate().getDayOfWeek());
+            
+            if (activeSlots == null || activeSlots.isEmpty()) {
+                throw new IllegalArgumentException("No time slots available for the selected date");
+            }
+
+            for (TimeSlot slot : activeSlots) {
+                if (!requestedStartTime.isBefore(slot.getStartTime()) && 
+                    !requestedEndTime.isAfter(slot.getEndTime())) {
+                    matchingSlot = slot;
+                    break;
+                }
             }
         }
 
@@ -107,7 +137,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         // Check for breaks: ensure the appointment doesn't conflict with any breaks
-        if (matchingSlot.getBreaks() != null) {
+        // Skip break checking for dummy holiday override slots (ID = -1)
+        if (matchingSlot.getId() != -1L && matchingSlot.getBreaks() != null) {
             for (Break breakPeriod : matchingSlot.getBreaks()) {
                 if (breakPeriod.getIsActive()) {
                     LocalTime breakStart = breakPeriod.getStartTime();
@@ -306,8 +337,70 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Get day of week for the requested date
         java.time.DayOfWeek dayOfWeek = date.getDayOfWeek();
         
+        // Check if this date has a holiday override with custom capacity
+        Optional<HolidayOverride> holidayOverride = holidayOverrideRepository.findByHolidayDate(date);
+        Integer customCapacityOverride = null;
+        LocalTime customStartTime = null;
+        LocalTime customEndTime = null;
+        
+        if (holidayOverride.isPresent()) {
+            HolidayOverride override = holidayOverride.get();
+            if (override.getCustomCapacity() != null) {
+                customCapacityOverride = override.getCustomCapacity();
+            }
+            // Get custom hours if they exist
+            if (override.getCustomStartTime() != null && override.getCustomEndTime() != null) {
+                customStartTime = override.getCustomStartTime();
+                customEndTime = override.getCustomEndTime();
+            }
+        }
+        
         // Get all base time slots for this day of week
         List<TimeSlot> baseTimeSlots = timeSlotRepository.findByDayOfWeekAndIsActiveTrue(dayOfWeek);
+        
+        // If no base time slots exist but we have custom hours from holiday override, generate synthetic slots
+        if (baseTimeSlots.isEmpty() && customStartTime != null && customEndTime != null) {
+            // Generate synthetic time slots from custom hours
+            int duration = 30; // Default 30-minute slots for synthetic slots
+            List<Map<String, Object>> availabilityList = new java.util.ArrayList<>();
+            
+            LocalTime currentTime = customStartTime;
+            List<Appointment> appointments = appointmentRepository.findByAppointmentDateAndStatusIn(
+                    date,
+                    List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
+            );
+            
+            while (currentTime.plusMinutes(duration).isBefore(customEndTime) || 
+                   currentTime.plusMinutes(duration).equals(customEndTime)) {
+                
+                final LocalTime slotStartTime = currentTime;
+                final LocalTime slotEndTime = currentTime.plusMinutes(duration);
+                
+                // Count appointments that overlap with this slot
+                long bookedCount = appointments.stream()
+                        .filter(apt -> {
+                            LocalTime aptStart = apt.getAppointmentTime();
+                            LocalTime aptEnd = aptStart.plusMinutes(apt.getService().getDurationMinutes());
+                            return aptStart.isBefore(slotEndTime) && aptEnd.isAfter(slotStartTime);
+                        })
+                        .count();
+                
+                int slotCapacity = customCapacityOverride != null ? customCapacityOverride : 1;
+                int availableSpots = Math.max(0, slotCapacity - (int) bookedCount);
+                
+                Map<String, Object> info = new java.util.HashMap<>();
+                info.put("time", slotStartTime.toString().substring(0, 5)); // HH:MM format
+                info.put("booked", bookedCount);
+                info.put("capacity", slotCapacity);
+                info.put("available", availableSpots);
+                info.put("isFull", availableSpots == 0);
+                
+                availabilityList.add(info);
+                currentTime = slotEndTime;
+            }
+            
+            return availabilityList;
+        }
         
         // Get all appointments for this date
         List<Appointment> appointments = appointmentRepository.findByAppointmentDateAndStatusIn(
@@ -356,12 +449,14 @@ public class AppointmentServiceImpl implements AppointmentService {
                         })
                         .count();
                 
-                int availableSpots = Math.max(0, baseSlot.getCapacity() - (int) bookedCount);
+                // Use custom capacity if holiday override is active, otherwise use base slot capacity
+                int slotCapacity = customCapacityOverride != null ? customCapacityOverride : baseSlot.getCapacity();
+                int availableSpots = Math.max(0, slotCapacity - (int) bookedCount);
                 
                 Map<String, Object> info = new java.util.HashMap<>();
                 info.put("time", slotStartTime.toString().substring(0, 5)); // HH:MM format
                 info.put("booked", bookedCount);
-                info.put("capacity", baseSlot.getCapacity());
+                info.put("capacity", slotCapacity);
                 info.put("available", availableSpots);
                 info.put("isFull", availableSpots == 0);
                 

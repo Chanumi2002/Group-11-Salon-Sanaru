@@ -87,6 +87,8 @@ export default function HolidayManagement() {
     customEndTime: "17:00",
     customCapacity: null,
   });
+  
+  const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -145,9 +147,17 @@ export default function HolidayManagement() {
 
   const handleSubmitOverride = async (e) => {
     e.preventDefault();
+    
+    setValidationError("");
 
     if (!formData.holidayDate || !formData.holidayUid) {
-      toast.error("Missing required fields");
+      setValidationError("Missing required fields");
+      return;
+    }
+    
+    // Validate capacity is required when custom hours are enabled
+    if (formData.useCustomHours && (!formData.customCapacity || formData.customCapacity <= 0)) {
+      setValidationError("Capacity is required when using custom hours");
       return;
     }
 
@@ -203,9 +213,9 @@ export default function HolidayManagement() {
       await fetchData();
     } catch (error) {
       console.error("Error saving override:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to save holiday override"
-      );
+      const errorMsg = error.response?.data?.message || "Failed to save holiday override";
+      setValidationError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setActionId(null);
     }
@@ -485,6 +495,15 @@ export default function HolidayManagement() {
               {editingOverride ? "Edit Holiday Override" : "Create Holiday Override"}
             </h3>
 
+            {validationError && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-300 rounded-lg">
+                <p className="text-red-800 text-sm flex items-center gap-2">
+                  <AlertTriangle size={16} />
+                  {validationError}
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmitOverride} className="space-y-6">
               {/* Holiday Info (Read-only) */}
               <div className="bg-gray-50 p-4 rounded-lg">
@@ -581,7 +600,7 @@ export default function HolidayManagement() {
 
                     <div>
                       <label htmlFor="customCapacity" className="block text-sm font-medium text-gray-700 mb-2">
-                        Capacity (Optional)
+                        Capacity <span className="text-red-600">*</span>
                       </label>
                       <input
                         id="customCapacity"
@@ -590,11 +609,11 @@ export default function HolidayManagement() {
                         value={formData.customCapacity || ""}
                         onChange={handleFormChange}
                         min="1"
-                        placeholder="Leave empty to use normal capacity"
+                        placeholder="Required: Enter capacity for this day"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        Optional: Reduce staff capacity on this day
+                        Required: Specify staff capacity for this day
                       </p>
                     </div>
                   </div>
@@ -608,6 +627,7 @@ export default function HolidayManagement() {
                   onClick={() => {
                     setShowOverrideForm(false);
                     setEditingOverride(null);
+                    setValidationError("");
                     setFormData({
                       holidayUid: "",
                       holidayDate: "",

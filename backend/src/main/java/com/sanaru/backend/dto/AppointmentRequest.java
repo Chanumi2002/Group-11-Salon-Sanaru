@@ -20,6 +20,5 @@ public class AppointmentRequest {
     private LocalTime time;
     
     @NotNull(message = "Time Slot ID is required")
-    @Positive(message = "Time Slot ID must be a positive number")
     private Long timeSlotId;
 }

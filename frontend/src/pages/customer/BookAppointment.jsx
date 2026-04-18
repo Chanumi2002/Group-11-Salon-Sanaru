@@ -150,7 +150,7 @@ export default function BookAppointment() {
     }
   };
 
-      const fetchTimeSlots = async (selectedDate) => {
+      const fetchTimeSlots = async (selectedDate, customHoursOverride = null) => {
     try {
       // Get day of week from date - use UTC to avoid timezone issues
       const [year, month, day] = selectedDate.split('-').map(Number);
@@ -202,7 +202,54 @@ export default function BookAppointment() {
       const uniqueTimeStrings = Array.from(new Set(timeStrings)).sort();
       
       // Filter out times that conflict with breaks
-      const filteredTimes = uniqueTimeStrings.filter(time => !timeConflictsWithBreak(time, uniqueBreaks));
+      let filteredTimes = uniqueTimeStrings.filter(time => !timeConflictsWithBreak(time, uniqueBreaks));
+      
+      // If custom hours are provided (from holiday override), filter times to within custom hours
+      const hoursToUse = customHoursOverride || customHours;
+      if (hoursToUse && hoursToUse.startTime && hoursToUse.endTime) {
+        const [customStartHour, customStartMin] = hoursToUse.startTime.substring(0, 5).split(':').map(Number);
+        const [customEndHour, customEndMin] = hoursToUse.endTime.substring(0, 5).split(':').map(Number);
+        
+        const customStartMinutes = customStartHour * 60 + customStartMin;
+        const customEndMinutes = customEndHour * 60 + customEndMin;
+        
+        // If there are base time slots, filter them to custom hours
+        if (filteredTimes.length > 0) {
+          filteredTimes = filteredTimes.filter(timeStr => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const timeInMinutes = hours * 60 + minutes;
+            return timeInMinutes >= customStartMinutes && timeInMinutes < customEndMinutes;
+          });
+        } else {
+          // NO base time slots exist for this day, but we have custom hours from holiday override
+          // Generate time slots from custom hours (30-minute intervals)
+          const appointmentDuration = 30; // Default duration
+          const generatedSlots = [];
+          const generatedIdMap = {};
+          
+          let currentMinutes = customStartMinutes;
+          while (currentMinutes + appointmentDuration <= customEndMinutes) {
+            const hours = Math.floor(currentMinutes / 60);
+            const minutes = currentMinutes % 60;
+            const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            generatedSlots.push(timeStr);
+            
+            // Use negative IDs for generated holiday override slots
+            // Negative ID convention: -(HHMM) where H=hours, M=minutes
+            // E.g., 09:00 -> -900, 15:30 -> -1530
+            const timeCode = hours * 100 + minutes;
+            generatedIdMap[timeStr] = -timeCode; // Negative to mark as holiday override
+            
+            currentMinutes += appointmentDuration;
+          }
+          
+          filteredTimes = generatedSlots;
+          setTimeSlotIdMap(generatedIdMap); // Use generated ID map
+          setTimeSlots(generatedSlots);
+          setAvailabilityInfo(`${generatedSlots.length} slots available (custom holiday hours)`);
+          return;
+        }
+      }
       
       setTimeSlots(filteredTimes);
       setTimeSlotIdMap(idMap); // Store the ID mapping
@@ -250,16 +297,11 @@ export default function BookAppointment() {
     const fetchOverrideForDate = async () => {
       try {
         const overrideRes = await axios.get('http://localhost:8080/api/holiday-overrides/by-date', {
-          params: { date: selectedDate },
-          // Suppress default error logging for this request
-          validateStatus: (status) => {
-            // Accept all status codes (200, 404, etc.) without throwing
-            return true;
-          }
+          params: { date: selectedDate }
         });
         
-        // Check if we got a 404 response (expected when no override exists)
-        if (overrideRes.status === 404 || !overrideRes.data) {
+        // Check if response is null (no override for this date)
+        if (!overrideRes.data) {
           setCurrentOverride(null);
           return null;
         }
@@ -271,8 +313,9 @@ export default function BookAppointment() {
           setDateMessage(`📌 ${override.holidaySummary} - Marked as WORKING DATE`);
           
           // Check if custom hours are set
+          let customHoursData = null;
           if (override.useCustomHours) {
-            const customHoursData = {
+            customHoursData = {
               startTime: override.customStartTime,
               endTime: override.customEndTime
             };
@@ -285,7 +328,7 @@ export default function BookAppointment() {
           // Fetch time slots and booked slots in parallel for faster loading
           setSlotsLoading(true);
           Promise.all([
-            fetchTimeSlots(selectedDate),
+            fetchTimeSlots(selectedDate, customHoursData), // Pass custom hours to filter time slots
             fetchBookedSlots(selectedDate)
           ])
             .catch(error => {
@@ -305,7 +348,7 @@ export default function BookAppointment() {
         return override; // Return override even if no specific conditions match
       } catch (error) {
         // Silently ignore all errors from holiday override fetch
-        // 404 is expected and handled above by validateStatus
+        // When no override exists, API returns null (no error)
         setCurrentOverride(null);
         return null;
       }
@@ -351,7 +394,7 @@ export default function BookAppointment() {
         // Fetch time slots and booked slots in parallel for faster loading
         setSlotsLoading(true);
         Promise.all([
-          fetchTimeSlots(selectedDate),
+          fetchTimeSlots(selectedDate, null), // No custom hours for regular dates
           fetchBookedSlots(selectedDate)
         ])
           .catch(error => {
