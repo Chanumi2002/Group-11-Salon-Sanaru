@@ -3,6 +3,7 @@ package com.sanaru.backend.controller;
 import com.sanaru.backend.dto.TimeSlotRequest;
 import com.sanaru.backend.dto.TimeSlotResponse;
 import com.sanaru.backend.service.TimeSlotService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class TimeSlotController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<TimeSlotResponse> createTimeSlot(@RequestBody TimeSlotRequest request) {
+    public ResponseEntity<TimeSlotResponse> createTimeSlot(@Valid @RequestBody TimeSlotRequest request) {
         TimeSlotResponse response = timeSlotService.createTimeSlot(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -41,7 +42,7 @@ public class TimeSlotController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<TimeSlotResponse> updateTimeSlot(@PathVariable Long id, @RequestBody TimeSlotRequest request) {
+    public ResponseEntity<TimeSlotResponse> updateTimeSlot(@PathVariable Long id, @Valid @RequestBody TimeSlotRequest request) {
         TimeSlotResponse response = timeSlotService.updateTimeSlot(id, request);
         return ResponseEntity.ok(response);
     }

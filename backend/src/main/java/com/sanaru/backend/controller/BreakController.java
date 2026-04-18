@@ -3,6 +3,7 @@ package com.sanaru.backend.controller;
 import com.sanaru.backend.dto.BreakRequest;
 import com.sanaru.backend.dto.BreakResponse;
 import com.sanaru.backend.service.BreakService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class BreakController {
     @PostMapping
     public ResponseEntity<BreakResponse> addBreak(
             @PathVariable Long timeSlotId,
-            @RequestBody BreakRequest request) {
+            @Valid @RequestBody BreakRequest request) {
         BreakResponse response = breakService.addBreak(timeSlotId, request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -38,7 +39,7 @@ public class BreakController {
     public ResponseEntity<BreakResponse> updateBreak(
             @PathVariable Long timeSlotId,
             @PathVariable Long breakId,
-            @RequestBody BreakRequest request) {
+            @Valid @RequestBody BreakRequest request) {
         BreakResponse response = breakService.updateBreak(breakId, request);
         return ResponseEntity.ok(response);
     }
