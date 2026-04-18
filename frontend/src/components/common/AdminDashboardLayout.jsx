@@ -68,7 +68,7 @@ export function AdminDashboardLayout({ children }) {
 
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-64 h-screen bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          className={`fixed inset-y-0 left-0 z-50 w-64 h-screen overflow-y-auto bg-white border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
             } lg:translate-x-0`}
         >
           {/* Header */}
@@ -93,7 +93,7 @@ export function AdminDashboardLayout({ children }) {
           </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-hidden">
+        <nav className="flex-1 px-4 py-6 space-y-1">
           {adminSidebarLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to;
