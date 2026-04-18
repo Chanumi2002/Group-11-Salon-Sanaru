@@ -53,11 +53,9 @@ public class AppointmentServiceImpl implements AppointmentService {
         com.sanaru.backend.model.Service service = serviceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new NoSuchElementException("Service not found"));
 
-        // Validate timeSlotId if provided
-        if (request.getTimeSlotId() != null && request.getTimeSlotId() > 0) {
-            timeSlotRepository.findById(request.getTimeSlotId())
-                    .orElseThrow(() -> new NoSuchElementException("Time slot with ID " + request.getTimeSlotId() + " not found"));
-        }
+        // Validate timeSlotId exists
+        timeSlotRepository.findById(request.getTimeSlotId())
+                .orElseThrow(() -> new NoSuchElementException("Time slot with ID " + request.getTimeSlotId() + " not found"));
 
         // Check if the requested date is marked as closed
         if (closedDateRepository.findByClosedDate(request.getDate()).isPresent()) {
@@ -201,11 +199,15 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .orElseThrow(() -> new NoSuchElementException("Appointment not found"));
 
         if (!appointment.getCustomer().getId().equals(customer.getId())) {
-            throw new IllegalArgumentException("You are not authorized to cancel this appointment");
+            throw new NoSuchElementException("Appointment not found");
+        }
+
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new IllegalArgumentException("This appointment is already cancelled and cannot be cancelled again");
         }
 
         if (appointment.getStatus() != AppointmentStatus.PENDING && appointment.getStatus() != AppointmentStatus.CONFIRMED) {
-            throw new IllegalStateException("Only pending or confirmed appointments can be cancelled");
+            throw new IllegalArgumentException("Only pending or confirmed appointments can be cancelled");
         }
 
         appointment.setStatus(AppointmentStatus.CANCELLED);

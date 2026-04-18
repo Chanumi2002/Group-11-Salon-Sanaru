@@ -30,7 +30,7 @@ public class AppointmentController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @GetMapping({"", "/history"})
+    @GetMapping({"", "/history", "/my"})
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<List<AppointmentResponse>> getMyAppointments(Principal principal) {
         String userEmail = principal.getName();
