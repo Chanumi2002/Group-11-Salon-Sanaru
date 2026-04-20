@@ -1,0 +1,481 @@
+import axios from 'axios';
+
+const API_BASE_URL = '/api';
+const BACKEND_BASE_URL = '';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+// Add token to requests if available
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle 404 responses for holiday overrides gracefully (they're expected)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Silently resolve 404s for holiday-overrides (no override found is normal)
+    if (
+      error.response?.status === 404 &&
+      error.config?.url?.includes('/holiday-overrides/by-date')
+    ) {
+      return Promise.resolve({ status: 404, data: null });
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const authService = {
+  // Register a new user
+  register: async (userData) => {
+    return await api.post('/auth/register', userData);
+  },
+
+  // Login user
+  login: async (credentials) => {
+    return await api.post('/auth/login', credentials);
+  },
+
+  // Get current user profile
+  getProfile: async () => {
+    return await api.get('/auth/profile');
+  },
+
+  // Update user profile
+  updateProfile: async (userData) => {
+    return await api.put('/auth/profile', userData);
+  },
+
+  // Change password
+  changePassword: async (currentPassword, newPassword, confirmPassword) => {
+    return await api.put('/auth/change-password', { currentPassword, newPassword, confirmPassword });
+  },
+
+  // Delete account
+  deleteProfile: async () => {
+    return await api.delete('/auth/profile');
+  },
+
+  // Logout user
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('gender');
+  },
+
+  // OAuth2: redirect to backend to start Google/Facebook login
+  getOAuthLoginUrl: (provider) => {
+    return `${BACKEND_BASE_URL}/oauth2/authorization/${provider}`;
+  },
+};
+
+export const adminService = {
+  // Get all customers
+  getCustomers: async () => {
+    return await api.get('/admin/customers');
+  },
+
+  // Get customer count
+  getCustomerCount: async () => {
+    return await api.get('/admin/customers/count');
+  },
+
+  // Block a customer
+  blockCustomer: async (customerId) => {
+    return await api.put(`/admin/customers/${customerId}/block`);
+  },
+
+  // Unblock a customer
+  unblockCustomer: async (customerId) => {
+    return await api.put(`/admin/customers/${customerId}/unblock`);
+  },
+
+  // Delete a customer
+  deleteCustomer: async (customerId) => {
+    return await api.delete(`/admin/customers/${customerId}`);
+  },
+
+  // ==================== ORDER & PAYMENT OPERATIONS ====================
+
+  // Get all orders for admin management
+  getOrders: async () => {
+    return await api.get('/admin/orders');
+  },
+
+  // Story 5: Admin approves a cancellation request → CANCELLED
+  cancelOrder: async (orderId) => {
+    return await api.put(`/admin/orders/${orderId}/cancel`);
+  },
+
+  // Story 5: Admin rejects a cancellation request → reverts to CONFIRMED
+  rejectCancelOrder: async (orderId) => {
+    return await api.put(`/admin/orders/${orderId}/reject-cancel`);
+  },
+
+  // Admin manually approves an order
+  approveOrder: async (orderId) => {
+    return await api.put(`/admin/orders/${orderId}/approve`);
+  },
+
+  // ==================== APPOINTMENT OPERATIONS ====================
+
+  // Get all appointments
+  getAllAppointments: async () => {
+    return await api.get('/appointments/all');
+  },
+
+  // Approve an appointment
+  approveAppointment: async (appointmentId) => {
+    return await api.put(`/appointments/${appointmentId}/approve`);
+  },
+
+  // Reject an appointment
+  rejectAppointment: async (appointmentId) => {
+    return await api.put(`/appointments/${appointmentId}/reject`);
+  },
+
+  // Get pending appointments count (for admin sidebar badge)
+  getPendingAppointmentCount: async () => {
+    return await api.get('/appointments/pending-count');
+  },
+
+  // Get pending orders count (for admin sidebar badge)
+  getPendingOrderCount: async () => {
+    return await api.get('/orders/pending-approval-count');
+  },
+
+  // ==================== TIME SLOT OPERATIONS ====================
+
+  // Get all time slots
+  getAllTimeSlots: async () => {
+    return await api.get('/time-slots');
+  },
+
+  // Get available time slots for a specific day
+  getAvailableSlots: async (dayOfWeek) => {
+    return await api.get(`/time-slots/available/${dayOfWeek}`);
+  },
+
+  // Create new time slot
+  createTimeSlot: async (timeSlotData) => {
+    return await api.post('/time-slots', timeSlotData);
+  },
+
+  // Update time slot
+  updateTimeSlot: async (timeSlotId, timeSlotData) => {
+    return await api.put(`/time-slots/${timeSlotId}`, timeSlotData);
+  },
+
+  // Delete time slot
+  deleteTimeSlot: async (timeSlotId) => {
+    return await api.delete(`/time-slots/${timeSlotId}`);
+  },
+
+  // Toggle time slot active/inactive
+  toggleTimeSlot: async (timeSlotId) => {
+    return await api.put(`/time-slots/${timeSlotId}/toggle`);
+  },
+
+  // ==================== BREAK OPERATIONS ====================
+
+  // Add a break to a time slot
+  addBreak: async (timeSlotId, breakData) => {
+    return await api.post(`/time-slots/${timeSlotId}/breaks`, breakData);
+  },
+
+  // Get breaks for a time slot
+  getBreaks: async (timeSlotId) => {
+    return await api.get(`/time-slots/${timeSlotId}/breaks`);
+  },
+
+  // Update a break
+  updateBreak: async (timeSlotId, breakId, breakData) => {
+    return await api.put(`/time-slots/${timeSlotId}/breaks/${breakId}`, breakData);
+  },
+
+  // Delete a break
+  deleteBreak: async (timeSlotId, breakId) => {
+    return await api.delete(`/time-slots/${timeSlotId}/breaks/${breakId}`);
+  },
+
+  // Get all categories
+  getCategories: async () => {
+    return await api.get('/categories');
+  },
+
+  // Get category by ID
+  getCategoryById: async (categoryId) => {
+    return await api.get(`/categories/${categoryId}`);
+  },
+
+  // Create new category with image
+  createCategory: async (formData) => {
+    return await api.post('/admin/categories', formData, {
+    });
+  },
+
+  // Update category with image
+  updateCategory: async (categoryId, formData) => {
+    return await api.put(`/admin/categories/${categoryId}`, formData, {
+    });
+  },
+
+  // Delete category
+  deleteCategory: async (categoryId) => {
+    return await api.delete(`/admin/categories/${categoryId}`);
+  },
+
+  // ==================== PRODUCT OPERATIONS ====================
+
+  // Get all products
+  getProducts: async () => {
+    return await api.get('/products');
+  },
+
+  // Get product by ID
+  getProductById: async (productId) => {
+    return await api.get(`/products/${productId}`);
+  },
+
+  // Create new product with image
+  createProduct: async (formData) => {
+    return await api.post('/admin/products', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Update product with image
+  updateProduct: async (productId, formData) => {
+    return await api.put(`/admin/products/${productId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Delete product
+  deleteProduct: async (productId) => {
+    return await api.delete(`/admin/products/${productId}`);
+  },
+
+  // ==================== INVENTORY OPERATIONS (STORY 1) ====================
+
+  // Get low stock alerts
+  getLowStockAlerts: async () => {
+    return await api.get('/admin/inventory/low-stock');
+  },
+
+  // Update product stock
+  updateProductStock: async (productId, updateData) => {
+    return await api.patch(`/admin/products/${productId}/stock`, updateData);
+  },
+
+  // ==================== SERVICE OPERATIONS ====================
+
+  // Get all services
+  getServices: async () => {
+    return await api.get('/admin/services');
+  },
+
+  // Get service by ID
+  getServiceById: async (serviceId) => {
+    return await api.get(`/admin/services/${serviceId}`);
+  },
+
+  // Create new service with image
+  createService: async (formData) => {
+    return await api.post('/admin/services', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Update service with image
+  updateService: async (serviceId, formData) => {
+    return await api.put(`/admin/services/${serviceId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Delete service
+  deleteService: async (serviceId) => {
+    return await api.delete(`/admin/services/${serviceId}`);
+  },
+
+  // ==================== FEEDBACK/REVIEW OPERATIONS ====================
+
+  // Get all feedbacks for admin moderation
+  getAllFeedbacks: async () => {
+    return await api.get('/admin/feedbacks');
+  },
+
+  // Get feedbacks by type
+  getFeedbacksByType: async (feedbackType) => {
+    return await api.get('/admin/feedbacks/type', { params: { type: feedbackType } });
+  },
+
+  // Get feedbacks for a specific target
+  getFeedbacksForTarget: async (targetId, feedbackType) => {
+    return await api.get(`/admin/feedbacks/target/${targetId}`, { params: { type: feedbackType } });
+  },
+
+  // Get feedback statistics
+  getFeedbackStats: async () => {
+    return await api.get('/admin/feedbacks/stats/general');
+  },
+
+  // Delete feedback (admin moderation)
+  deleteFeedback: async (feedbackId) => {
+    return await api.delete(`/admin/feedback/${feedbackId}`);
+  },
+
+  // Approve feedback (make it visible to customers and guests)
+  approveFeedback: async (feedbackId) => {
+    return await api.put(`/admin/feedback/${feedbackId}/approve`);
+  },
+
+  // Get unapproved feedbacks count
+  getUnapprovedFeedbackCount: async () => {
+    return await api.get('/admin/feedbacks/count');
+  },
+};
+
+export const customerService = {
+  // Submit feedback/review
+  submitFeedback: async (feedbackData) => {
+    return await api.post('/customer/feedback', feedbackData);
+  },
+
+  // Get customer's feedbacks
+  getMyFeedbacks: async () => {
+    return await api.get('/customer/feedbacks');
+  },
+
+  // Delete customer's own feedback
+  deleteMyFeedback: async (feedbackId) => {
+    return await api.delete(`/customer/feedback/${feedbackId}`);
+  },
+
+  // Book an appointment
+  bookAppointment: async (appointmentData) => {
+    return await api.post('/appointments', appointmentData);
+  },
+
+  // Get my appointments
+  getMyBookings: async () => {
+    return await api.get('/appointments');
+  },
+
+  // Get all appointments for a specific date (for availability check)
+  getAppointmentsByDate: async (date) => {
+    return await api.get(`/appointments/by-date/${date}`);
+  },
+
+  // Get slot availability info for a specific date
+  getSlotAvailability: async (date) => {
+    return await api.get(`/appointments/availability/${date}`);
+  },
+
+  // Cancel an appointment
+  cancelAppointment: async (appointmentId) => {
+    return await api.put(`/appointments/${appointmentId}/cancel`);
+  },
+};
+
+// ==================== CLOSED DATES OPERATIONS ====================
+export const closedDateService = {
+  // Add closed date
+  addClosedDate: async (closedDateData) => {
+    return await api.post('/closed-dates', closedDateData);
+  },
+
+  // Get all closed dates
+  getAllClosedDates: async () => {
+    return await api.get('/closed-dates');
+  },
+
+  // Get active closed dates only
+  getActiveClosedDates: async () => {
+    return await api.get('/closed-dates/active');
+  },
+
+  // Update closed date
+  updateClosedDate: async (id, closedDateData) => {
+    return await api.put(`/closed-dates/${id}`, closedDateData);
+  },
+
+  // Delete closed date
+  deleteClosedDate: async (id) => {
+    return await api.delete(`/closed-dates/${id}`);
+  },
+};
+
+export const holidayOverrideService = {
+  // Create or update holiday override
+  createOrUpdateOverride: async (overrideData) => {
+    return await api.post('/holiday-overrides', overrideData);
+  },
+
+  // Get all holiday overrides
+  getAllOverrides: async () => {
+    return await api.get('/holiday-overrides');
+  },
+
+  // Get working date overrides only
+  getWorkingDateOverrides: async () => {
+    return await api.get('/holiday-overrides/working-dates');
+  },
+
+  // Get override for a specific date
+  getOverrideByDate: async (date) => {
+    return await api.get('/holiday-overrides/by-date', {
+      params: { date },
+    });
+  },
+
+  // Get custom hours for a date
+  getCustomHours: async (date) => {
+    return await api.get('/holiday-overrides/custom-hours', {
+      params: { date },
+    });
+  },
+
+  // Get overrides within a date range
+  getOverridesBetween: async (startDate, endDate) => {
+    return await api.get('/holiday-overrides/between', {
+      params: { startDate, endDate },
+    });
+  },
+
+  // Check if a date is working date override
+  isWorkingDateOverride: async (date) => {
+    return await api.get('/holiday-overrides/is-working-date', {
+      params: { date },
+    });
+  },
+
+  // Delete holiday override
+  deleteOverride: async (id) => {
+    return await api.delete(`/holiday-overrides/${id}`);
+  },
+
+  // Delete override by date
+  deleteOverrideByDate: async (date) => {
+    return await api.delete('/holiday-overrides/by-date', {
+      params: { date },
+    });
+  },
+};
+
+export default api;
