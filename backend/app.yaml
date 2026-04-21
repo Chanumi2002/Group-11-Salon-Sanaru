@@ -1,0 +1,25 @@
+runtime: java17
+
+env: standard
+instance_class: F2
+
+env_variables:
+  SPRING_DATASOURCE_URL: "jdbc:mysql://CLOUD_SQL_INSTANCE_CONNECTION_NAME/sanaru_db"
+  SPRING_DATASOURCE_USERNAME: "root"
+  SPRING_DATASOURCE_PASSWORD: "${DB_PASSWORD}"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+  JWT_SECRET: "SanaruSalonSecretKey2026SanaruSalonSecretKey2026SanaruSalonSecretKey2026"
+  JWT_EXPIRATION: "86400"
+
+handlers:
+- url: /.*
+  script: this field is required, but ignored
+
+# Configure Cloud SQL connections
+cloud_sql_instances:
+  - "PROJECT_ID:REGION:INSTANCE_NAME"
+
+# Scale settings (adjust as needed)
+automatic_scaling:
+  min_instances: 1
+  max_instances: 3

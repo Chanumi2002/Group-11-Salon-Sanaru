@@ -1,0 +1,60 @@
+steps:
+  # Step 1: Build the backend (Spring Boot)
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    id: 'build-backend'
+    args:
+      - run
+      - --help
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+    dir: 'backend'
+
+  - name: 'gcr.io/cloud-builders/mvn'
+    id: 'maven-build'
+    args:
+      - 'clean'
+      - 'package'
+      - '-DskipTests'
+    dir: 'backend'
+
+  # Step 2: Build the frontend (Node.js)
+  - name: 'gcr.io/cloud-builders/npm'
+    id: 'npm-install'
+    args:
+      - 'install'
+    dir: 'frontend'
+
+  - name: 'gcr.io/cloud-builders/npm'
+    id: 'npm-build'
+    args:
+      - 'run'
+      - 'build'
+    dir: 'frontend'
+
+  # Step 3: Deploy backend to App Engine
+  - name: 'gcr.io/cloud-builders/appengine-go'
+    id: 'deploy-backend'
+    args:
+      - 'deploy'
+      - '--version=prod'
+    dir: 'backend'
+    env:
+      - 'CLOUDSDK_APP_REGION=us-central1'
+
+  # Step 4: Deploy frontend to App Engine
+  - name: 'gcr.io/cloud-builders/appengine-go'
+    id: 'deploy-frontend'
+    args:
+      - 'deploy'
+      - '--version=prod'
+    dir: 'frontend'
+    env:
+      - 'CLOUDSDK_APP_REGION=us-central1'
+
+# Build timeout (in seconds)
+timeout: '3600s'
+
+# Store images in Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/backend:latest'
+  - 'gcr.io/$PROJECT_ID/frontend:latest'
