@@ -247,7 +247,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         if (!isCancellationAllowed(appointment)) {
-            throw new IllegalArgumentException("This booking can no longer be cancelled because the cancellation window has ended.");
+            throw new IllegalArgumentException("This booking can no longer be cancelled.");
         }
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
