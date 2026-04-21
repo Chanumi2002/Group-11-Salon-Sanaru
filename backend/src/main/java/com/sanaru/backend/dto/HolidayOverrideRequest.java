@@ -3,6 +3,7 @@ package com.sanaru.backend.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -20,5 +21,6 @@ public class HolidayOverrideRequest {
     private Boolean useCustomHours;
     private LocalTime customStartTime;
     private LocalTime customEndTime;
-    private Integer customCapacity;
+    @Positive(message = "Capacity must be a positive number when using custom hours")
+    private Integer customCapacity;          // Required when useCustomHours is true
 }

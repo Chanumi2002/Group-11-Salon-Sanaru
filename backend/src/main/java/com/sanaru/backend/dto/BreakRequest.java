@@ -1,12 +1,20 @@
 package com.sanaru.backend.dto;
 
 import lombok.Data;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalTime;
 
 @Data
 public class BreakRequest {
-    private String breakName;      // "Lunch", "Coffee", "Prayer", etc.
-    private LocalTime startTime;   // Break start time (e.g., 13:00)
-    private LocalTime endTime;     // Break end time (e.g., 14:00)
-    private Boolean isActive;      // Whether break is active
+    @NotBlank(message = "Break name is required")
+    private String breakName;
+    
+    @NotNull(message = "Start time is required")
+    private LocalTime startTime;
+    
+    @NotNull(message = "End time is required")
+    private LocalTime endTime;
+    
+    private Boolean isActive;
 }

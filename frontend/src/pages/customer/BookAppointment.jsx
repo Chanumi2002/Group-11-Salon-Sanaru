@@ -29,6 +29,8 @@ export default function BookAppointment() {
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [timeSlotIdMap, setTimeSlotIdMap] = useState({}); // Map of time -> timeSlotId
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState(null); // Selected timeSlot ID for booking
 
   const serviceId = searchParams.get('serviceId');
 
@@ -148,7 +150,7 @@ export default function BookAppointment() {
     }
   };
 
-      const fetchTimeSlots = async (selectedDate) => {
+      const fetchTimeSlots = async (selectedDate, customHoursOverride = null) => {
     try {
       // Get day of week from date - use UTC to avoid timezone issues
       const [year, month, day] = selectedDate.split('-').map(Number);
@@ -164,6 +166,7 @@ export default function BookAppointment() {
       
       let breaksData = [];
       let timeStrings = [];
+      const idMap = {}; // Map time -> timeSlotId
       
       slots.forEach(slot => {
         if (typeof slot === 'string') {
@@ -174,10 +177,11 @@ export default function BookAppointment() {
         if (typeof slot === 'object') {
           const timeStr = slot.time || slot.startTime;
           if (timeStr) {
-            if (timeStr.length > 5) {
-              timeStrings.push(timeStr.substring(0, 5));
-            } else {
-              timeStrings.push(timeStr);
+            const normalizedTime = timeStr.length > 5 ? timeStr.substring(0, 5) : timeStr;
+            timeStrings.push(normalizedTime);
+            // Store the timeSlotId mapping
+            if (slot.id) {
+              idMap[normalizedTime] = slot.id;
             }
           }
           
@@ -198,9 +202,57 @@ export default function BookAppointment() {
       const uniqueTimeStrings = Array.from(new Set(timeStrings)).sort();
       
       // Filter out times that conflict with breaks
-      const filteredTimes = uniqueTimeStrings.filter(time => !timeConflictsWithBreak(time, uniqueBreaks));
+      let filteredTimes = uniqueTimeStrings.filter(time => !timeConflictsWithBreak(time, uniqueBreaks));
+      
+      // If custom hours are provided (from holiday override), filter times to within custom hours
+      const hoursToUse = customHoursOverride || customHours;
+      if (hoursToUse && hoursToUse.startTime && hoursToUse.endTime) {
+        const [customStartHour, customStartMin] = hoursToUse.startTime.substring(0, 5).split(':').map(Number);
+        const [customEndHour, customEndMin] = hoursToUse.endTime.substring(0, 5).split(':').map(Number);
+        
+        const customStartMinutes = customStartHour * 60 + customStartMin;
+        const customEndMinutes = customEndHour * 60 + customEndMin;
+        
+        // If there are base time slots, filter them to custom hours
+        if (filteredTimes.length > 0) {
+          filteredTimes = filteredTimes.filter(timeStr => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const timeInMinutes = hours * 60 + minutes;
+            return timeInMinutes >= customStartMinutes && timeInMinutes < customEndMinutes;
+          });
+        } else {
+          // NO base time slots exist for this day, but we have custom hours from holiday override
+          // Generate time slots from custom hours (30-minute intervals)
+          const appointmentDuration = 30; // Default duration
+          const generatedSlots = [];
+          const generatedIdMap = {};
+          
+          let currentMinutes = customStartMinutes;
+          while (currentMinutes + appointmentDuration <= customEndMinutes) {
+            const hours = Math.floor(currentMinutes / 60);
+            const minutes = currentMinutes % 60;
+            const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            generatedSlots.push(timeStr);
+            
+            // Use negative IDs for generated holiday override slots
+            // Negative ID convention: -(HHMM) where H=hours, M=minutes
+            // E.g., 09:00 -> -900, 15:30 -> -1530
+            const timeCode = hours * 100 + minutes;
+            generatedIdMap[timeStr] = -timeCode; // Negative to mark as holiday override
+            
+            currentMinutes += appointmentDuration;
+          }
+          
+          filteredTimes = generatedSlots;
+          setTimeSlotIdMap(generatedIdMap); // Use generated ID map
+          setTimeSlots(generatedSlots);
+          setAvailabilityInfo(`${generatedSlots.length} slots available (custom holiday hours)`);
+          return;
+        }
+      }
       
       setTimeSlots(filteredTimes);
+      setTimeSlotIdMap(idMap); // Store the ID mapping
       
       // If no time slots available, show message
       if (filteredTimes.length === 0) {
@@ -210,6 +262,7 @@ export default function BookAppointment() {
       console.error('Error fetching time slots:', error);
       setTimeSlots([]);
       setBreaks([]);
+      setTimeSlotIdMap({}); // Clear ID map on error
       setAvailabilityInfo('Unable to load time slots');
     }
   };
@@ -238,21 +291,17 @@ export default function BookAppointment() {
     const selectedDate = e.target.value;
     setDate(selectedDate);
     setTime(''); // Reset time when date changes
+    setSelectedTimeSlotId(null); // Reset timeSlotId when date changes
     
     // Fetch holiday override for this specific date (using public endpoint)
     const fetchOverrideForDate = async () => {
       try {
         const overrideRes = await axios.get('http://localhost:8080/api/holiday-overrides/by-date', {
-          params: { date: selectedDate },
-          // Suppress default error logging for this request
-          validateStatus: (status) => {
-            // Accept all status codes (200, 404, etc.) without throwing
-            return true;
-          }
+          params: { date: selectedDate }
         });
         
-        // Check if we got a 404 response (expected when no override exists)
-        if (overrideRes.status === 404 || !overrideRes.data) {
+        // Check if response is null (no override for this date)
+        if (!overrideRes.data) {
           setCurrentOverride(null);
           return null;
         }
@@ -264,8 +313,9 @@ export default function BookAppointment() {
           setDateMessage(`📌 ${override.holidaySummary} - Marked as WORKING DATE`);
           
           // Check if custom hours are set
+          let customHoursData = null;
           if (override.useCustomHours) {
-            const customHoursData = {
+            customHoursData = {
               startTime: override.customStartTime,
               endTime: override.customEndTime
             };
@@ -278,7 +328,7 @@ export default function BookAppointment() {
           // Fetch time slots and booked slots in parallel for faster loading
           setSlotsLoading(true);
           Promise.all([
-            fetchTimeSlots(selectedDate),
+            fetchTimeSlots(selectedDate, customHoursData), // Pass custom hours to filter time slots
             fetchBookedSlots(selectedDate)
           ])
             .catch(error => {
@@ -298,7 +348,7 @@ export default function BookAppointment() {
         return override; // Return override even if no specific conditions match
       } catch (error) {
         // Silently ignore all errors from holiday override fetch
-        // 404 is expected and handled above by validateStatus
+        // When no override exists, API returns null (no error)
         setCurrentOverride(null);
         return null;
       }
@@ -344,7 +394,7 @@ export default function BookAppointment() {
         // Fetch time slots and booked slots in parallel for faster loading
         setSlotsLoading(true);
         Promise.all([
-          fetchTimeSlots(selectedDate),
+          fetchTimeSlots(selectedDate, null), // No custom hours for regular dates
           fetchBookedSlots(selectedDate)
         ])
           .catch(error => {
@@ -484,7 +534,8 @@ export default function BookAppointment() {
       await customerService.bookAppointment({
         serviceId: selectedService.id,
         date,
-        time: time + ":00" // Format for backend parsing HH:mm:ss
+        time: time + ":00", // Format for backend parsing HH:mm:ss
+        timeSlotId: selectedTimeSlotId // Include the required timeSlotId
       });
       toast.success('Appointment booked successfully!');
       navigate('/customer_dashboard/bookings');
@@ -492,7 +543,7 @@ export default function BookAppointment() {
       console.error('Booking error details:', error);
       console.error('Full response data:', JSON.stringify(error.response?.data, null, 2));
       console.error('Response status:', error.response?.status);
-      console.error('Request data sent:', { serviceId: selectedService.id, date, time: time + ":00" });
+      console.error('Request data sent:', { serviceId: selectedService.id, date, time: time + ":00", timeSlotId: selectedTimeSlotId });
       
       let msg = 'Unable to book appointment. Please try again.';
       
@@ -510,6 +561,13 @@ export default function BookAppointment() {
     } finally {
       setIsBooking(false);
     }
+  };
+
+  // Handler for time slot selection - sets both time and timeSlotId
+  const handleTimeSlotSelect = (slot) => {
+    setTime(slot);
+    const slotId = timeSlotIdMap[slot];
+    setSelectedTimeSlotId(slotId);
   };
 
   const todayDateStr = new Date().toLocaleDateString('en-CA'); // Gets YYYY-MM-DD reliably
@@ -683,7 +741,7 @@ export default function BookAppointment() {
                             <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Morning</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                               {morningSlots.map((slot) => (
-                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
+                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={handleTimeSlotSelect} />
                               ))}
                             </div>
                           </div>
@@ -695,7 +753,7 @@ export default function BookAppointment() {
                             <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Afternoon</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                               {afternoonSlots.map((slot) => (
-                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
+                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={handleTimeSlotSelect} />
                               ))}
                             </div>
                           </div>
@@ -707,7 +765,7 @@ export default function BookAppointment() {
                             <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Evening</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                               {eveningSlots.map((slot) => (
-                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={setTime} />
+                                <TimeSlotButton key={slot} slot={slot} availability={slotAvailability[slot]} isSelected={time === slot} onSelect={handleTimeSlotSelect} />
                               ))}
                             </div>
                           </div>
@@ -742,7 +800,7 @@ export default function BookAppointment() {
                 </Link>
                 <button
                   type="button"
-                  disabled={!date || !time || isBooking}
+                  disabled={!date || !time || !selectedTimeSlotId || isBooking}
                   onClick={handleBook}
                   className="inline-flex items-center rounded-md bg-[#8E1616] px-5 py-2 text-sm font-medium text-white hover:bg-[#741212] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
