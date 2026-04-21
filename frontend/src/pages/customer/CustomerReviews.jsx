@@ -3,7 +3,7 @@ import { customerService } from '@/services/api';
 import { toast } from 'sonner';
 import { Trash2, Star, Loader, Plus } from 'lucide-react';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import ReviewForm from '@/components/ReviewForm';
 
 export default function CustomerReviews() {

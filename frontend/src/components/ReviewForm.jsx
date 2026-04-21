@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { customerService } from '@/services/api';
 import { toast } from 'sonner';
 import { Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 
 export default function ReviewForm({ onReviewAdded, onCancel, productId, serviceId, itemName }) {
   const [formData, setFormData] = useState({

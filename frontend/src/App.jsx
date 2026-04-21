@@ -8,49 +8,49 @@ import { CartProvider } from "./context/CartContext";
 import { FeedbackProvider } from "./context/FeedbackContext";
 
 // Public pages
-import Index from "./pages/public/Index";
-import Login from "./pages/public/Login";
-import Register from "./pages/public/Register";
-import OAuthCallback from "./pages/public/OAuthCallback";
-import NotFound from "./pages/public/NotFound";
-import Shop from "./pages/public/Shop";
-import Services from "./pages/public/Services";
-import GuestProducts from "./pages/public/GuestProducts";
-import GuestProductDetails from "./pages/public/GuestProductDetails";
-import GuestServiceDetails from "./pages/public/GuestServiceDetails";
-import ProductsByCategory from "./pages/public/ProductsByCategory";
-import ShopProductDetails from "./pages/public/ShopProductDetails";
-import About from "./pages/public/About";
-import PaymentSuccess from "./pages/public/PaymentSuccess";
-import PaymentCancel from "./pages/public/PaymentCancel";
-import CartPage from "./pages/CartPage";
+import Index from "./pages/public/Index.jsx";
+import Login from "./pages/public/Login.jsx";
+import Register from "./pages/public/Register.jsx";
+import OAuthCallback from "./pages/public/OAuthCallback.jsx";
+import NotFound from "./pages/public/NotFound.jsx";
+import Shop from "./pages/public/Shop.jsx";
+import Services from "./pages/public/Services.jsx";
+import GuestProducts from "./pages/public/GuestProducts.jsx";
+import GuestProductDetails from "./pages/public/GuestProductDetails.jsx";
+import GuestServiceDetails from "./pages/public/GuestServiceDetails.jsx";
+import ProductsByCategory from "./pages/public/ProductsByCategory.jsx";
+import ShopProductDetails from "./pages/public/ShopProductDetails.jsx";
+import About from "./pages/public/About.jsx";
+import PaymentSuccess from "./pages/public/PaymentSuccess.jsx";
+import PaymentCancel from "./pages/public/PaymentCancel.jsx";
+import CartPage from "./pages/CartPage.jsx";
 
 // Customer pages
-import CustomerDashboard from "./pages/customer/CustomerDashboard";
-import Homepage from "./pages/customer/Homepage";
-import Profile from "./pages/customer/Profile";
-import CustomerServices from "./pages/customer/CustomerServices";
-import BookAppointment from "./pages/customer/BookAppointment";
-import CustomerOrders from "./pages/customer/CustomerOrders";
-import AiRecommendation from "./pages/customer/AiRecommendation";
-import CustomerShop from "./pages/customer/CustomerShop";
-import CustomerReviews from "./pages/customer/CustomerReviews";
-import CustomerBookings from "./pages/customer/CustomerBookings";
-import WriteReview from "./pages/customer/WriteReview";
+import CustomerDashboard from "./pages/customer/CustomerDashboard.jsx";
+import Homepage from "./pages/customer/Homepage.jsx";
+import Profile from "./pages/customer/Profile.jsx";
+import CustomerServices from "./pages/customer/CustomerServices.jsx";
+import BookAppointment from "./pages/customer/BookAppointment.jsx";
+import CustomerOrders from "./pages/customer/CustomerOrders.jsx";
+import AiRecommendation from "./pages/customer/AiRecommendation.jsx";
+import CustomerShop from "./pages/customer/CustomerShop.jsx";
+import CustomerReviews from "./pages/customer/CustomerReviews.jsx";
+import CustomerBookings from "./pages/customer/CustomerBookings.jsx";
+import WriteReview from "./pages/customer/WriteReview.jsx";
 
 // Admin pages
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProfile from "./pages/admin/AdminProfile";
-import AdminUsers from "./pages/admin/AdminUsers";
-import CategoryPage from "./pages/admin/CategoryPage";
-import ProductPage from "./pages/admin/ProductPage";
-import ServicePage from "./pages/admin/ServicePage";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminTransactions from "./pages/admin/AdminTransactions";
-import AdminInventory from "./pages/admin/AdminInventory";
-import AdminFeedback from "./pages/admin/AdminFeedback";
-import BookingManagement from "./pages/admin/BookingManagement";
-import AdminTimeSlots from "./pages/admin/AdminTimeSlots";
+import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
+import AdminProfile from "./pages/admin/AdminProfile.jsx";
+import AdminUsers from "./pages/admin/AdminUsers.jsx";
+import CategoryPage from "./pages/admin/CategoryPage.jsx";
+import ProductPage from "./pages/admin/ProductPage.jsx";
+import ServicePage from "./pages/admin/ServicePage.jsx";
+import AdminOrders from "./pages/admin/AdminOrders.jsx";
+import AdminTransactions from "./pages/admin/AdminTransactions.jsx";
+import AdminInventory from "./pages/admin/AdminInventory.jsx";
+import AdminFeedback from "./pages/admin/AdminFeedback.jsx";
+import BookingManagement from "./pages/admin/BookingManagement.jsx";
+import AdminTimeSlots from "./pages/admin/AdminTimeSlots.jsx";
 
 // Route protection
 import ProtectedRoute from "@/components/common/ProtectedRoute";

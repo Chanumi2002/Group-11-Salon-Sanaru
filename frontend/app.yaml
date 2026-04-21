@@ -1,0 +1,29 @@
+runtime: nodejs20
+
+env: standard
+instance_class: F1
+
+# Build command
+build:
+  steps:
+    - name: "npm"
+      args: ["install"]
+    - name: "npm"
+      args: ["run", "build"]
+
+# Serve the dist folder as static files
+handlers:
+  - url: /
+    static_files: dist/index.html
+    upload: dist/index.html
+  - url: /(.*\.[^\.]+)
+    static_files: dist/\1
+    upload: dist/(.*)
+  - url: /.*
+    static_files: dist/index.html
+    upload: dist/index.html
+
+# Scale settings
+automatic_scaling:
+  min_instances: 1
+  max_instances: 2
