@@ -4,11 +4,14 @@ import com.sanaru.backend.dto.ProductRequest;
 import com.sanaru.backend.dto.ProductResponse;
 import com.sanaru.backend.model.Category;
 import com.sanaru.backend.model.Product;
+import com.sanaru.backend.repository.CartItemRepository;
 import com.sanaru.backend.repository.CategoryRepository;
+import com.sanaru.backend.repository.OrderItemRepository;
 import com.sanaru.backend.repository.ProductRepository;
 import com.sanaru.backend.service.ProductService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -24,13 +27,20 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final CartItemRepository cartItemRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
-    public ProductServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository) {
+    public ProductServiceImpl(ProductRepository productRepository,
+                              CategoryRepository categoryRepository,
+                              CartItemRepository cartItemRepository,
+                              OrderItemRepository orderItemRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     // CREATE
@@ -126,9 +136,22 @@ public class ProductServiceImpl implements ProductService {
 
     // DELETE
     @Override
+    @Transactional
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with id " + id));
+
+        // Preserve historical order records. Products already used in orders cannot be hard-deleted.
+        if (orderItemRepository.existsByProductId(id)) {
+            throw new IllegalArgumentException("This product cannot be deleted because it is linked to existing orders.");
+        }
+
+        // Clear non-historical relations that can safely be removed.
+        cartItemRepository.deleteByProductId(id);
+        if (product.getCategories() != null) {
+            product.getCategories().clear();
+        }
+
         productRepository.delete(product);
     }
 
