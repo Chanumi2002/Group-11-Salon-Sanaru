@@ -134,7 +134,7 @@ export default function CustomerBookings() {
                           </button>
                         ) : (
                           <p className="text-sm text-red-700 font-medium">
-                            This booking can no longer be cancelled because the cancellation window has ended.
+                            This booking can no longer be cancelled.
                           </p>
                         )}
                       </div>
