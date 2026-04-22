@@ -39,7 +39,7 @@ A comprehensive appointment management and review system enabling customers to b
 
 ### 📋 Sprint 4 User Stories (8 Work Items - 32 Points)
 
-**Sprint:** 8 Apr - 23 Apr | **Status:** 0 Complete | 19 In Review | 13 Done
+**Sprint:** 8 Apr - 23 Apr | **Status:** 8 Complete | 16 In Review | 16 Done
 
 ### Epic 2: Appointment Management (5 Stories - 19 Points)
 
@@ -48,7 +48,7 @@ A comprehensive appointment management and review system enabling customers to b
 | SS-37 | STORY 1 - Book Appointment | 🔄 IN REVIEW | 5 | DK |
 | SS-38 | STORY 2 - Cancel Appointment | 🔄 IN REVIEW | 3 | DK |
 | SS-39 | STORY 3 - View Booking History | 🔄 IN REVIEW | 3 | DK |
-| SS-41 | STORY 4 - Admin Appointment Approval | 🔄 IN REVIEW | 3 | DK |
+| SS-41 | STORY 4 - Admin Appointment Approval | ✅ DONE | 3 | DK |
 | SS-42 | STORY 5 - Time Slot Management | 🔄 IN REVIEW | 5 | K |
 
 ### Epic 8: Review & Rating System (3 Stories - 13 Points)
@@ -72,7 +72,13 @@ A comprehensive appointment management and review system enabling customers to b
 
 ---
 
-## 📊 API Endpoints (Sprint 4)
+## � References (Sprint 4)
+
+- [Sri Lanka Holidays Library](https://github.com/Dilshan-H/srilanka-holidays.git) - Holiday management and public holiday detection for appointment scheduling
+
+---
+
+## �📊 API Endpoints (Sprint 4)
 
 ### Appointment Endpoints
 ```
