@@ -72,7 +72,7 @@ export function DashboardLayout({ children }) {
           </div>
         </div>
 
-        <nav className="flex-1 py-6 px-3 space-y-1.5 overflow-y-hidden">
+        <nav className="flex-1 py-6 px-3 space-y-1.5 overflow-y-auto">
           {sidebarLinks.map((link) => {
             const active =
               location.pathname === link.to || location.pathname.startsWith(link.to + "/");
