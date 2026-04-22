@@ -18,6 +18,7 @@ import com.sanaru.backend.service.AppointmentService;
 import com.sanaru.backend.service.EmailService;
 import com.sanaru.backend.service.HolidayService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +29,9 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +45,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final HolidayOverrideRepository holidayOverrideRepository;
     private final HolidayService holidayService;
     private final EmailService emailService;
+    @Value("${app.timezone:UTC}")
+    private String appTimeZone = "UTC";
 
     @Override
     public AppointmentResponse createAppointment(AppointmentRequest request, String userEmail) {
@@ -239,6 +244,10 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         if (appointment.getStatus() != AppointmentStatus.PENDING && appointment.getStatus() != AppointmentStatus.CONFIRMED) {
             throw new IllegalArgumentException("Only pending or confirmed appointments can be cancelled");
+        }
+
+        if (!isCancellationAllowed(appointment)) {
+            throw new IllegalArgumentException("This booking can no longer be cancelled.");
         }
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
@@ -471,15 +480,39 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private AppointmentResponse mapToResponse(Appointment appointment) {
         AppointmentResponse response = new AppointmentResponse();
+        LocalDateTime bookingStartDateTime = LocalDateTime.of(appointment.getAppointmentDate(), appointment.getAppointmentTime());
+        LocalDateTime bookingEndDateTime = bookingStartDateTime.plusMinutes(appointment.getService().getDurationMinutes());
+        LocalDateTime cancellationCutoffDateTime = bookingEndDateTime.minusMinutes(30);
+
         response.setId(appointment.getId());
         response.setCustomerId(appointment.getCustomer().getId());
         response.setCustomerName(appointment.getCustomer().getFirstName() + " " + appointment.getCustomer().getLastName());
         response.setServiceId(appointment.getService().getId());
         response.setServiceName(appointment.getService().getName());
+        response.setServiceDurationMinutes(appointment.getService().getDurationMinutes());
         response.setDate(appointment.getAppointmentDate());
         response.setTime(appointment.getAppointmentTime());
+        response.setBookingEndTime(bookingEndDateTime);
+        response.setCancellationCutoffTime(cancellationCutoffDateTime);
+        response.setCancellable(isCancellationAllowed(appointment));
         response.setStatus(appointment.getStatus());
         return response;
+    }
+
+    private boolean isCancellationAllowed(Appointment appointment) {
+        if (appointment.getStatus() != AppointmentStatus.PENDING && appointment.getStatus() != AppointmentStatus.CONFIRMED) {
+            return false;
+        }
+
+        LocalDateTime bookingStartDateTime = LocalDateTime.of(appointment.getAppointmentDate(), appointment.getAppointmentTime());
+        LocalDateTime bookingEndDateTime = bookingStartDateTime.plusMinutes(appointment.getService().getDurationMinutes());
+        LocalDateTime cancellationCutoffDateTime = bookingEndDateTime.minusMinutes(30);
+
+        return getCurrentDateTime().isBefore(cancellationCutoffDateTime);
+    }
+
+    protected LocalDateTime getCurrentDateTime() {
+        return LocalDateTime.now(ZoneId.of(appTimeZone));
     }
 
     @Override

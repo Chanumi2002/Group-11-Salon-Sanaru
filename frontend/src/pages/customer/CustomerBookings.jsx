@@ -123,13 +123,21 @@ export default function CustomerBookings() {
                       </button>
                     )}
                     {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
-                      <button
-                        onClick={() => handleCancelBooking(booking.id)}
-                        className="flex items-center gap-2 rounded-full border border-red-200 bg-red-50 hover:bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 transition whitespace-nowrap md:ml-4 mt-4 md:mt-0"
-                      >
-                        <XCircle className="h-4 w-4" />
-                        Cancel Booking
-                      </button>
+                      <div className="md:ml-4 mt-4 md:mt-0">
+                        {booking.cancellable ? (
+                          <button
+                            onClick={() => handleCancelBooking(booking.id)}
+                            className="flex items-center gap-2 rounded-full border border-red-200 bg-red-50 hover:bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 transition whitespace-nowrap"
+                          >
+                            <XCircle className="h-4 w-4" />
+                            Cancel Booking
+                          </button>
+                        ) : (
+                          <p className="text-sm text-red-700 font-medium">
+                            This booking can no longer be cancelled.
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
