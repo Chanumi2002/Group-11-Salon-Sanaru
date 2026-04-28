@@ -1,5 +1,3 @@
-const TOKEN_KEYS = ['token', 'authToken', 'accessToken', 'jwtToken'];
-
 const normalizeRole = (role) => {
   const value = String(role || '').trim().toUpperCase();
 
@@ -12,17 +10,13 @@ const normalizeRole = (role) => {
 
 export const getStoredToken = () => {
   try {
-    for (const key of TOKEN_KEYS) {
-      const value = localStorage.getItem(key);
-      if (value && value.trim()) {
-        return value;
-      }
-    }
+    const token = localStorage.getItem('token');
+    return token && token.trim() ? token : null;
   } catch (error) {
     // Handle Tracking Prevention or private mode localStorage access
     console.debug('localStorage access restricted');
+    return null;
   }
-  return null;
 };
 
 export const getStoredRole = () => {

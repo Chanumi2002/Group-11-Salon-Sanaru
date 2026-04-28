@@ -7,16 +7,13 @@ import com.sanaru.backend.model.Product;
 import com.sanaru.backend.repository.CategoryRepository;
 import com.sanaru.backend.repository.ProductRepository;
 import com.sanaru.backend.service.CategoryService;
+import com.sanaru.backend.service.S3Service;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,9 +23,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
-
-    @Value("${app.upload.dir:uploads/categories}")
-    private String uploadDir;
+    private final S3Service s3Service;
 
     @Override
     public CategoryResponse createCategory(CategoryRequest request, MultipartFile imageFile) throws IOException {
@@ -39,16 +34,10 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = new Category();
         category.setName(request.getName());
 
-        // handle image upload
+        // handle image upload to S3
         if (imageFile != null && !imageFile.isEmpty()) {
-            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-            String fileName = System.currentTimeMillis() + "_" + imageFile.getOriginalFilename().replaceAll("\\s+", "_");
-            Path filePath = uploadPath.resolve(fileName).normalize();
-            imageFile.transferTo(filePath.toFile());
-            category.setImagePath("uploads/categories/" + fileName);
+            String imageUrl = s3Service.uploadFile("product-category-images", imageFile);
+            category.setImagePath(imageUrl);
         }
 
         Category saved = categoryRepository.save(category);
@@ -76,16 +65,10 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(() -> new RuntimeException("Category not found"));
         category.setName(request.getName());
 
-        // handle updating image
+        // handle updating image to S3
         if (imageFile != null && !imageFile.isEmpty()) {
-            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-            String fileName = System.currentTimeMillis() + "_" + imageFile.getOriginalFilename().replaceAll("\\s+", "_");
-            Path filePath = uploadPath.resolve(fileName).normalize();
-            imageFile.transferTo(filePath.toFile());
-            category.setImagePath("uploads/categories/" + fileName);
+            String imageUrl = s3Service.uploadFile("product-category-images", imageFile);
+            category.setImagePath(imageUrl);
         }
 
         Category updated = categoryRepository.save(category);
@@ -114,7 +97,7 @@ public class CategoryServiceImpl implements CategoryService {
         CategoryResponse response = new CategoryResponse();
         response.setId(category.getId());
         response.setName(category.getName());
-        response.setImagePath(category.getImagePath()); // include image path
+        response.setImagePath(category.getImagePath()); // include image path / URL
         return response;
     }
 }

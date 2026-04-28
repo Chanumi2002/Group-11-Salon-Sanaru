@@ -36,6 +36,15 @@ public class Order {
     @Column(nullable = false, length = 50)
     private OrderStatus status;
 
+    @Column(name = "delivery_address", columnDefinition = "TEXT")
+    private String deliveryAddress;
+
+    @Column(name = "delivery_fee", precision = 10, scale = 2)
+    private BigDecimal deliveryFee;
+
+    @Column(name = "requires_delivery")
+    private Boolean requiresDelivery = false;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 

@@ -56,15 +56,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow both localhost:3000 and localhost:5173 for frontend development
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -81,27 +81,44 @@ public class SecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        // Public auth endpoints
-                        .requestMatchers("/api/auth/register", "/api/auth/register-admin", "/api/auth/login",
-                                "/api/auth/oauth2/google", "/error",
-                                "/oauth2/**", "/login/oauth2/**").permitAll()
+                        // First, explicitly require auth for these specific auth endpoints
+                        .requestMatchers("/api/auth/profile", "/api/auth/change-password", "/api/auth/logout")
+                        .authenticated()
+                        // Public auth endpoints (broader patterns for all auth variants)
+                        .requestMatchers(
+                                "/health",
+                                "/v1/auth/**",
+                                "/api/v1/auth/**",
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/register-admin",
+                                "/api/auth/oauth2/**",
+                                "/auth/**",
+                                "/oauth2/**",
+                                "/login/oauth2/**",
+                                "/error")
+                        .permitAll()
                         // Public endpoints for customers / guests
-                    .requestMatchers("/api/products/**", "/api/categories/**", "/api/services/**", "/api/reviews/**", "/uploads/**").permitAll()
-                    // Public read-only endpoints for closed dates (write operations secured by @PreAuthorize)
-                    .requestMatchers("/api/closed-dates/**").permitAll()
-                    // Public holidays endpoint for appointment booking
-                    .requestMatchers("/api/holidays/**").permitAll()
-                    // Public holiday override read endpoints for appointment booking
-                    .requestMatchers("/api/holiday-overrides/by-date", "/api/holiday-overrides/working-dates", "/api/holiday-overrides/is-working-date", "/api/holiday-overrides/custom-hours").permitAll()
-                    // Public payment provider callback endpoint
-                    .requestMatchers("/api/v1/payments/payhere/notify", "/api/v1/payments/payhere/cancel").permitAll()
-                        // Authenticated endpoints
-                        .requestMatchers("/api/auth/profile", "/api/auth/change-password").authenticated()
+                        .requestMatchers("/api/products/**", "/api/categories/**", "/api/services/**",
+                                "/api/reviews/**", "/uploads/**")
+                        .permitAll()
+                        // Public read-only endpoints for closed dates (write operations secured by
+                        // @PreAuthorize)
+                        .requestMatchers("/api/closed-dates/**").permitAll()
+                        // Public holidays endpoint for appointment booking
+                        .requestMatchers("/api/holidays/**").permitAll()
+                        // Public holiday override read endpoints for appointment booking
+                        .requestMatchers("/api/holiday-overrides/by-date", "/api/holiday-overrides/working-dates",
+                                "/api/holiday-overrides/is-working-date", "/api/holiday-overrides/custom-hours")
+                        .permitAll()
+                        // Public payment provider callback endpoint
+                        .requestMatchers("/api/v1/payments/payhere/notify", "/api/v1/payments/payhere/cancel")
+                        .permitAll()
+                        // Authenticated endpoints removed from here as they are at the top
                         // Admin endpoints
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").permitAll()
                         // Any other request must be authenticated
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(unauthorizedHandler())
                         .accessDeniedHandler(accessDeniedHandler()))

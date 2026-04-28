@@ -27,6 +27,9 @@ export default function CartPage() {
   const [removingItemId, setRemovingItemId] = useState(null);
   const [isClearingCart, setIsClearingCart] = useState(false);
   const [isPreparingPayment, setIsPreparingPayment] = useState(false);
+  const [requiresDelivery, setRequiresDelivery] = useState(false);
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryError, setDeliveryError] = useState('');
 
   useEffect(() => {
     if (!isCustomerLoggedIn) {
@@ -97,10 +100,22 @@ export default function CartPage() {
       return;
     }
 
+    // Validate delivery address if delivery is required
+    if (requiresDelivery) {
+      if (!deliveryAddress.trim()) {
+        setDeliveryError('Please enter a delivery address');
+        return;
+      }
+      setDeliveryError('');
+    }
+
     try {
       setIsPreparingPayment(true);
 
-      const orderResponse = await checkout();
+      const orderResponse = await checkout({
+        deliveryAddress: requiresDelivery ? deliveryAddress : null,
+        requiresDelivery,
+      });
       const orderId = Number(orderResponse?.orderId);
 
       if (!orderId) {
@@ -134,6 +149,9 @@ export default function CartPage() {
       setIsPreparingPayment(false);
     }
   };
+
+  const deliveryFee = requiresDelivery ? 400 : 0;
+  const totalWithDelivery = Number(cart?.totalAmount || 0) + deliveryFee;
 
   return (
     <DashboardLayout>
@@ -211,9 +229,62 @@ export default function CartPage() {
                   <span>Total items</span>
                   <span>{cartItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0)}</span>
                 </div>
-                <div className="mt-2 flex items-center justify-between text-xl font-semibold text-[#8B1A1A]">
-                  <span>Total amount</span>
+                <div className="mt-2 flex items-center justify-between text-sm text-[#6C6461]">
+                  <span>Subtotal</span>
                   <span>Rs. {Number(cart.totalAmount || 0).toFixed(2)}</span>
+                </div>
+
+                {/* Delivery Section */}
+                <div className="mt-4 border-t border-[#E1D6D2] pt-4">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={requiresDelivery}
+                      onChange={(e) => {
+                        setRequiresDelivery(e.target.checked);
+                        setDeliveryError('');
+                      }}
+                      className="h-4 w-4 rounded border-[#D0BCBA] text-[#8E1616]"
+                    />
+                    <span className="text-sm font-medium text-[#1A1717]">Add delivery (Rs. 400)</span>
+                  </label>
+
+                  {requiresDelivery && (
+                    <div className="mt-3 space-y-2">
+                      <label className="block text-xs font-semibold text-[#1A1717]">
+                        Delivery Address
+                      </label>
+                      <textarea
+                        value={deliveryAddress}
+                        onChange={(e) => {
+                          setDeliveryAddress(e.target.value);
+                          if (deliveryError) setDeliveryError('');
+                        }}
+                        placeholder="Enter your complete delivery address..."
+                        className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-[#B8ADAA] focus:outline-none focus:ring-2 ${
+                          deliveryError
+                            ? 'border-[#D84040] focus:ring-[#D84040]/30'
+                            : 'border-[#D0BCBA] focus:ring-[#8E1616]/30'
+                        }`}
+                        rows="3"
+                      />
+                      {deliveryError && (
+                        <p className="text-xs text-[#D84040] font-medium">{deliveryError}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {requiresDelivery && (
+                  <div className="mt-3 flex items-center justify-between text-sm text-[#6C6461]">
+                    <span>Delivery Fee</span>
+                    <span>Rs. {deliveryFee.toFixed(2)}</span>
+                  </div>
+                )}
+
+                <div className="mt-3 flex items-center justify-between text-xl font-semibold text-[#8B1A1A] border-t border-[#E1D6D2] pt-3">
+                  <span>Total amount</span>
+                  <span>Rs. {totalWithDelivery.toFixed(2)}</span>
                 </div>
 
                 <p className="mt-3 text-xs text-[#7D746F]">

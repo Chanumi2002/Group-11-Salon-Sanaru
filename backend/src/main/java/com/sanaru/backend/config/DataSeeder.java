@@ -32,7 +32,7 @@ public class DataSeeder implements CommandLineRunner {
             req.setFirstName("Salon");
             req.setLastName("Sanaru");
             req.setGender(Gender.FEMALE);
-            req.setPhone(null);
+            req.setPhone("0772285519");
 
             userService.registerAdminUser(req);
             System.out.println("[DataSeeder] seeded admin user: " + adminEmail);

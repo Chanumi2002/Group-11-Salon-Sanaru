@@ -88,7 +88,7 @@ class PaymentServiceImplTest {
         PaymentCallbackResponse response = paymentService.handlePayHereNotify(buildPayload("ORD-001", "2"));
 
         // Then: transaction is SUCCESS, order is PAID
-        assertEquals(OrderStatus.PAID,      order.getStatus());
+        assertEquals(OrderStatus.PAID, order.getStatus());
         assertEquals(PaymentStatus.SUCCESS, transaction.getStatus());
         assertEquals("PAY-123",             transaction.getProviderPaymentRef());
         assertTrue(response.isProcessed());

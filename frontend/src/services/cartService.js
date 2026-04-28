@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const cartApi = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://sa-b8f7feda25334cddb6709bee5393ffbd.ecs.ap-southeast-2.on.aws/api',
   timeout: 10000,
 });
 
@@ -13,17 +13,9 @@ class CartServiceError extends Error {
   }
 }
 
-const tokenKeys = ['token', 'authToken', 'accessToken', 'jwtToken'];
-
 export const getAuthToken = () => {
-  for (const key of tokenKeys) {
-    const token = localStorage.getItem(key);
-    if (token) {
-      return token;
-    }
-  }
-
-  return null;
+  const token = localStorage.getItem('token');
+  return token && token.trim() ? token : null;
 };
 
 const getAuthConfig = () => {
@@ -106,6 +98,11 @@ export const cartService = {
   requestCancellation: (orderId) =>
     withErrorHandling(() =>
       cartApi.put(`/orders/${orderId}/cancel-request`, null, getAuthConfig()),
+    ),
+
+  markOrderAsReceived: (orderId) =>
+    withErrorHandling(() =>
+      cartApi.put(`/orders/${orderId}/mark-received`, null, getAuthConfig()),
     ),
 };
 

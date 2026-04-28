@@ -5,6 +5,7 @@ import com.sanaru.backend.dto.ServiceResponse;
 import com.sanaru.backend.model.Service;
 import com.sanaru.backend.repository.ServiceRepository;
 import com.sanaru.backend.service.SalonServiceService;
+import com.sanaru.backend.service.S3Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,16 +27,17 @@ public class SalonServiceServiceImpl implements SalonServiceService {
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png");
     private static final Set<Integer> ALLOWED_DURATIONS = Set.of(15, 30, 45, 60, 90, 120);
     private static final String DEFAULT_IMAGE_CONTENT_TYPE = "image/jpeg";
-    private static final String DB_IMAGE_PLACEHOLDER = "db://image";
     private static final int DEFAULT_DURATION_MINUTES = 30;
 
     private final ServiceRepository serviceRepository;
+    private final S3Service s3Service;
 
     @Value("${app.service.image.max-size-bytes:1048576}")
     private long maxImageSizeBytes;
 
-    public SalonServiceServiceImpl(ServiceRepository serviceRepository) {
+    public SalonServiceServiceImpl(ServiceRepository serviceRepository, S3Service s3Service) {
         this.serviceRepository = serviceRepository;
+        this.s3Service = s3Service;
     }
 
     @Override
@@ -49,9 +51,11 @@ public class SalonServiceServiceImpl implements SalonServiceService {
         service.setPrice(request.getPrice());
         service.setDurationMinutes(request.getDurationMinutes());
         service.setActive(request.getActive());
-        service.setImageData(imageFile.getBytes());
+        
+        // Upload to S3
+        String imageUrl = s3Service.uploadFile("service-images", imageFile);
+        service.setImagePath(imageUrl);
         service.setImageContentType(normalizeContentType(imageFile.getContentType()));
-        service.setImagePath(DB_IMAGE_PLACEHOLDER);
 
         return mapToResponse(serviceRepository.save(service));
     }
@@ -71,9 +75,12 @@ public class SalonServiceServiceImpl implements SalonServiceService {
 
         if (imageFile != null && !imageFile.isEmpty()) {
             validateImageFile(imageFile, false);
-            existing.setImageData(imageFile.getBytes());
+            // Upload to S3
+            String imageUrl = s3Service.uploadFile("service-images", imageFile);
+            existing.setImagePath(imageUrl);
             existing.setImageContentType(normalizeContentType(imageFile.getContentType()));
-            existing.setImagePath(DB_IMAGE_PLACEHOLDER);
+            // Clear old byte data if it exists
+            existing.setImageData(null);
         }
 
         return mapToResponse(serviceRepository.save(existing));
@@ -124,6 +131,8 @@ public class SalonServiceServiceImpl implements SalonServiceService {
             return new ServiceImageData(service.getImageData(), normalizeContentType(service.getImageContentType()));
         }
 
+        // Note: For S3 images, the frontend should ideally use the direct S3 URL returned in mapToResponse.
+        // This endpoint remains for legacy database/local files.
         Path fallbackPath = resolveLegacyImagePath(service.getImagePath());
         if (fallbackPath != null && Files.exists(fallbackPath)) {
             try {
@@ -215,10 +224,7 @@ public class SalonServiceServiceImpl implements SalonServiceService {
     }
 
     private Path resolveLegacyImagePath(String imagePath) {
-        if (!StringUtils.hasText(imagePath)) {
-            return null;
-        }
-        if (imagePath.startsWith("db://")) {
+        if (!StringUtils.hasText(imagePath) || imagePath.startsWith("http") || imagePath.startsWith("db://")) {
             return null;
         }
 
@@ -238,12 +244,19 @@ public class SalonServiceServiceImpl implements SalonServiceService {
                 service.getDurationMinutes() == null ? DEFAULT_DURATION_MINUTES : service.getDurationMinutes()
         );
         response.setActive(!Boolean.FALSE.equals(service.getActive()));
-        if (StringUtils.hasText(service.getImagePath()) && !service.getImagePath().startsWith("db://")) {
-            response.setImagePath(service.getImagePath());
+        
+        String imagePath = service.getImagePath();
+        if (StringUtils.hasText(imagePath)) {
+            if (imagePath.startsWith("http")) {
+                response.setImageUrl(imagePath);
+            } else if (!imagePath.startsWith("db://")) {
+                response.setImagePath(imagePath);
+                response.setImageUrl("/api/services/" + service.getId() + "/image");
+            } else {
+                response.setImageUrl("/api/services/" + service.getId() + "/image");
+            }
         }
-        if (StringUtils.hasText(service.getImageContentType()) || StringUtils.hasText(service.getImagePath())) {
-            response.setImageUrl("/api/services/" + service.getId() + "/image");
-        }
+        
         response.setCreatedAt(service.getCreatedAt());
         response.setUpdatedAt(service.getUpdatedAt());
         return response;

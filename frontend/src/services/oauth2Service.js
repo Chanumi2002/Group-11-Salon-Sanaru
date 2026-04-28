@@ -1,7 +1,7 @@
-import axios from 'axios';
+import api from '@/services/api';
 
-const BACKEND_BASE_URL = '' || 'http://localhost:8080';
-const FRONTEND_BASE_URL = 'http://localhost:5173';
+const BACKEND_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8080';
+const FRONTEND_BASE_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
 
 // Flag to prevent multiple Google Sign-In initializations
 let googleInitialized = false;
@@ -18,10 +18,9 @@ export const oauth2Service = {
     try {
       // The credential is a JWT token from Google
       // We'll send it to our backend for verification
-      const response = await axios.post(
-        `${BACKEND_BASE_URL}/api/auth/oauth2/google`,
-        { token: credentialResponse.credential },
-        { headers: { 'Content-Type': 'application/json' } }
+      const response = await api.post(
+        '/auth/oauth2/google',
+        { token: credentialResponse.credential }
       );
 
       if (response.data.token) {
@@ -59,7 +58,7 @@ export const oauth2Service = {
 
       if (token) {
         localStorage.setItem('token', token);
-        
+
         const email = searchParams.get('email');
         const role = searchParams.get('role');
         const gender = searchParams.get('gender');
@@ -88,14 +87,14 @@ export const oauth2Service = {
     if (googleInitialized) {
       return true; // Already initialized
     }
-    
+
     if (window.google && window.google.accounts) {
       // Check if already initialized by checking for internal state
       if (window.google.accounts.id?._initialized) {
         googleInitialized = true;
         return true;
       }
-      
+
       window.google.accounts.id.initialize({
         client_id: clientId || 'YOUR_GOOGLE_CLIENT_ID',
         callback: (response) => {

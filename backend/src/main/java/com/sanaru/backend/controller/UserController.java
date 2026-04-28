@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/api/user")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = { "http://localhost:5173", "https://main.d28ild61q8tb54.amplifyapp.com" })
 public class UserController {
 
     @Autowired

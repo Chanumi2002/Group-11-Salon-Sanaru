@@ -48,7 +48,7 @@ export default function AdminProfile() {
     // If role is missing, fetch it from backend
     if (!role) {
       const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-      fetch(`${backendUrl}/api/auth/profile`, {
+      fetch(`${backendUrl}/api/v1/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

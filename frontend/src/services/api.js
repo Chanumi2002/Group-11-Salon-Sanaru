@@ -1,7 +1,16 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api';
-const BACKEND_BASE_URL = '';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://sa-b8f7feda25334cddb6709bee5393ffbd.ecs.ap-southeast-2.on.aws/api';
+
+const BACKEND_BASE_URL = API_BASE_URL;
+
+// Get token from localStorage
+const getStoredToken = () => {
+  const token = localStorage.getItem('token');
+  return token && token.trim() ? token : null;
+};
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,7 +18,7 @@ const api = axios.create({
 
 // Add token to requests if available
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = getStoredToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -63,15 +72,22 @@ export const authService = {
   },
 
   // Logout user
-  logout: () => {
+  logout: async () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('gender');
   },
 
-  // OAuth2: redirect to backend to start Google/Facebook login
-  getOAuthLoginUrl: (provider) => {
-    return `${BACKEND_BASE_URL}/oauth2/authorization/${provider}`;
+  // Google OAuth login
+  loginWithGoogle: async (token) => {
+    return await api.post('/auth/oauth2/google', { token });
+  },
+
+  // Register admin user
+  registerAdmin: async (userData, secret) => {
+    return await api.post('/auth/register-admin', userData, {
+      params: { secret }
+    });
   },
 };
 
@@ -121,6 +137,11 @@ export const adminService = {
   // Admin manually approves an order
   approveOrder: async (orderId) => {
     return await api.put(`/admin/orders/${orderId}/approve`);
+  },
+
+  // Admin updates delivery status
+  updateDeliveryStatus: async (orderId, status) => {
+    return await api.put(`/orders/${orderId}/delivery-status`, { status });
   },
 
   // ==================== APPOINTMENT OPERATIONS ====================

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, ReceiptText, ShoppingBag, XCircle, MessageSquare } from 'lucide-react';
+import { Loader2, ReceiptText, ShoppingBag, XCircle, MessageSquare, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { cartService } from '@/services/cartService';
@@ -15,6 +15,9 @@ const STATUS_CONFIG = {
   FAILED:                   { label: 'Failed',               badge: 'bg-red-100 text-red-700' },
   CANCELLED:                { label: 'Cancelled',            badge: 'bg-red-100 text-red-700' },
   CANCELLATION_REQUESTED:   { label: 'Cancellation Pending', badge: 'bg-orange-100 text-orange-700' },
+  PROCESSING:               { label: 'Processing',           badge: 'bg-blue-100 text-blue-700' },
+  GIVEN_TO_DELIVERY_PARTNER: { label: 'Given to Delivery',   badge: 'bg-purple-100 text-purple-700' },
+  DELIVERED:                { label: 'Delivered',            badge: 'bg-emerald-100 text-emerald-700 font-semibold' },
 };
 
 const getStatusConfig = (status) =>
@@ -22,7 +25,12 @@ const getStatusConfig = (status) =>
 
 /** Can the customer still request cancellation for this order? */
 const canRequestCancellation = (status) =>
-  status !== 'CANCELLED' && status !== 'CANCELLATION_REQUESTED' && status !== 'FAILED';
+  status !== 'CANCELLED' && status !== 'CANCELLATION_REQUESTED' && status !== 'FAILED' && 
+  status !== 'DELIVERED' && status !== 'PROCESSING' && status !== 'GIVEN_TO_DELIVERY_PARTNER';
+
+/** Can the customer mark this order as received? */
+const canMarkAsReceived = (status) =>
+  status === 'DELIVERED';
 
 const toMoney = (value) => {
   const amount = Number(value || 0);
@@ -39,6 +47,7 @@ export default function CustomerOrders() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState(null);
+  const [receivingId, setReceivingId] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -84,6 +93,23 @@ export default function CustomerOrders() {
       toast.error(error?.message || 'Failed to submit cancellation request.');
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const handleMarkAsReceived = async (orderId) => {
+    if (!window.confirm('Confirm that you have received this order?')) return;
+    try {
+      setReceivingId(orderId);
+      await cartService.markOrderAsReceived(orderId);
+      toast.success('Order marked as received. Thank you!');
+      // Refresh list
+      const payload = await cartService.getOrderHistory();
+      const list = Array.isArray(payload) ? payload : (payload?.orders ?? payload?.data ?? []);
+      setOrders(list);
+    } catch (error) {
+      toast.error(error?.message || 'Failed to mark order as received.');
+    } finally {
+      setReceivingId(null);
     }
   };
 
@@ -137,9 +163,14 @@ export default function CustomerOrders() {
                           Payment: <span className="font-medium text-gray-600">{paymentStatus}</span>
                         </p>
                       )}
+                      {order.requiresDelivery && order.deliveryAddress && (
+                        <p className="mt-1 text-xs text-blue-600">
+                          <span className="font-medium">Delivery to:</span> {order.deliveryAddress}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Right: status badge + total + cancel button */}
+                    {/* Right: status badge + total + buttons */}
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge}`}>
                         {label}
@@ -147,6 +178,20 @@ export default function CustomerOrders() {
                       <p className="text-sm font-bold text-[#8E1616]">
                         Rs. {toMoney(order.totalAmount ?? order.amount ?? order.total)}
                       </p>
+                      {canMarkAsReceived(status) && (
+                        <button
+                          onClick={() => handleMarkAsReceived(orderId)}
+                          disabled={receivingId === orderId}
+                          className="flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-200 disabled:opacity-50"
+                        >
+                          {receivingId === orderId ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-3 w-3" />
+                          )}
+                          {receivingId === orderId ? 'Confirming…' : 'Confirm Received'}
+                        </button>
+                      )}
                       {canRequestCancellation(status) && (
                         <button
                           onClick={() => handleRequestCancellation(orderId)}

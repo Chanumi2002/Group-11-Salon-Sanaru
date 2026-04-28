@@ -3,9 +3,14 @@ package com.sanaru.backend.enums;
 public enum OrderStatus {
     PENDING,
     PENDING_PAYMENT,
-    PAID,               // legacy – kept for backward-compat with existing DB rows
-    CONFIRMED,          // Story 5: set automatically on successful payment
+    PAID,                       // legacy – kept for backward-compat with existing DB rows
+    CONFIRMED,                  // Story 5: set automatically on successful payment
     FAILED,
     CANCELLED,
-    CANCELLATION_REQUESTED  // customer has requested cancellation; awaiting admin review
+    CANCELLATION_REQUESTED,     // customer has requested cancellation; awaiting admin review
+    
+    // Delivery statuses
+    PROCESSING,                 // Admin is processing the order
+    GIVEN_TO_DELIVERY_PARTNER,  // Order given to delivery partner
+    DELIVERED                   // Order delivered to customer
 }

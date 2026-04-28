@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,7 +30,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 public class AuthController {
 
     @Autowired
@@ -163,6 +161,11 @@ public class AuthController {
     @PostMapping("/oauth2/google")
     public ResponseEntity<AuthResponse> loginWithGoogle(@Valid @RequestBody OAuth2TokenRequest request) {
         try {
+            if (request.getToken() == null || request.getToken().isBlank()) {
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, "Token is required"));
+            }
+            
             // Verify the token with Google
             Map<String, Object> userInfo = oAuth2Service.verifyGoogleToken(request.getToken());
             String email = (String) userInfo.get("email");
@@ -192,6 +195,7 @@ public class AuthController {
             }
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            System.err.println("OAuth2 Google login error: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body(new AuthResponse(null, "Google authentication failed: " + e.getMessage()));

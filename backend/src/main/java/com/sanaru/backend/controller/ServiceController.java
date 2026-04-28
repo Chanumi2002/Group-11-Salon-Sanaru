@@ -25,7 +25,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = { "http://localhost:5173", "https://main.d28ild61q8tb54.amplifyapp.com" })
 @RequiredArgsConstructor
 public class ServiceController {
 
@@ -38,8 +38,7 @@ public class ServiceController {
             @RequestParam("price") String price,
             @RequestParam("durationMinutes") String durationMinutes,
             @RequestParam(value = "active", defaultValue = "true") String active,
-            @RequestParam("image") MultipartFile imageFile
-    ) throws IOException {
+            @RequestParam("image") MultipartFile imageFile) throws IOException {
         ServiceRequest request = new ServiceRequest();
         request.setName(name);
         request.setDescription(description);
@@ -51,8 +50,7 @@ public class ServiceController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of(
                         "message", "Service created successfully",
-                        "service", created
-                ));
+                        "service", created));
     }
 
     @PutMapping(value = "/admin/services/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -63,8 +61,7 @@ public class ServiceController {
             @RequestParam("price") String price,
             @RequestParam("durationMinutes") String durationMinutes,
             @RequestParam(value = "active", defaultValue = "true") String active,
-            @RequestParam(value = "image", required = false) MultipartFile imageFile
-    ) throws IOException {
+            @RequestParam(value = "image", required = false) MultipartFile imageFile) throws IOException {
         ServiceRequest request = new ServiceRequest();
         request.setName(name);
         request.setDescription(description);
@@ -75,8 +72,7 @@ public class ServiceController {
         ServiceResponse updated = salonServiceService.updateService(id, request, imageFile);
         return ResponseEntity.ok(Map.of(
                 "message", "Service updated successfully",
-                "service", updated
-        ));
+                "service", updated));
     }
 
     @GetMapping("/admin/services")

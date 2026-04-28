@@ -2,6 +2,7 @@ import { useState } from "react";
 import { DashboardLayout } from "@/components/common/DashboardLayout";
 import { Button } from "@/components/ui/Button";
 import { Sparkles, Loader2, User, Droplets, Wind, AlertCircle } from "lucide-react";
+import api from "@/services/api";
 
 export default function AiRecommendation() {
   const [formData, setFormData] = useState({
@@ -28,30 +29,16 @@ export default function AiRecommendation() {
     setResult(null);
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/v1/ai/recommendation", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("Unauthorized. Please log in again.");
-        }
-        if (response.status === 400) {
-          throw new Error("Please fill out all required fields properly.");
-        }
-        throw new Error("Unable to generate recommendation. Please try again.");
-      }
-
-      const data = await response.json();
-      setResult(data);
+      const response = await api.post("/v1/ai/recommendation", formData);
+      setResult(response.data);
     } catch (err) {
-      setError(err.message || "Something went wrong.");
+      if (err.response?.status === 401) {
+        setError("Unauthorized. Please log in again.");
+      } else if (err.response?.status === 400) {
+        setError("Please fill out all required fields properly.");
+      } else {
+        setError(err.message || "Something went wrong.");
+      }
     } finally {
       setLoading(false);
     }
@@ -248,8 +235,8 @@ export default function AiRecommendation() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {result.beautyTips?.map((tip, idx) => (
                     <div key={idx} className="bg-white/80 p-5 rounded-xl shadow-sm text-sm md:text-base text-orange-900 font-medium border border-orange-100 flex items-start gap-3">
-                       <span className="text-orange-400 mt-0.5">•</span>
-                       {tip}
+                      <span className="text-orange-400 mt-0.5">•</span>
+                      {tip}
                     </div>
                   ))}
                 </div>

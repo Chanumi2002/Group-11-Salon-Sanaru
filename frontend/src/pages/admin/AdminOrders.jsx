@@ -16,7 +16,12 @@ const STATUS_CONFIG = {
   FAILED: { label: "Failed", cls: "bg-red-100 text-red-700" },
   CANCELLED: { label: "Cancelled", cls: "bg-red-100 text-red-700" },
   CANCELLATION_REQUESTED: { label: "Cancellation Pending", cls: "bg-orange-100 text-orange-700 font-semibold ring-1 ring-orange-300" },
+  PROCESSING: { label: "Processing", cls: "bg-blue-100 text-blue-700" },
+  GIVEN_TO_DELIVERY_PARTNER: { label: "Given to Delivery", cls: "bg-purple-100 text-purple-700" },
+  DELIVERED: { label: "Delivered", cls: "bg-emerald-100 text-emerald-700 font-semibold" },
 };
+
+const DELIVERY_STATUSES = ["PROCESSING", "GIVEN_TO_DELIVERY_PARTNER", "DELIVERED"];
 
 const getStatus = (s) =>
   STATUS_CONFIG[s] ?? { label: s ?? "—", cls: "bg-gray-100 text-gray-600" };
@@ -31,6 +36,7 @@ function AdminOrdersContent() {
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null); // orderId currently being acted on
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [updatingDeliveryStatusId, setUpdatingDeliveryStatusId] = useState(null);
   const { refetch } = useNotificationRefresh();
 
   // Dialog state
@@ -123,6 +129,20 @@ function AdminOrdersContent() {
   const handleCancelDialog = () => {
     setDialogOpen(false);
     setPendingAction(null);
+  };
+
+  const handleDeliveryStatusChange = async (orderId, newStatus) => {
+    try {
+      setUpdatingDeliveryStatusId(orderId);
+      const response = await adminService.updateDeliveryStatus(orderId, newStatus);
+      toast.success(`Delivery status updated to ${getStatus(newStatus).label}`);
+      await fetchOrders();
+    } catch (error) {
+      console.error("Error updating delivery status:", error);
+      toast.error(error.response?.data?.message || "Failed to update delivery status");
+    } finally {
+      setUpdatingDeliveryStatusId(null);
+    }
   };
 
   return (
@@ -256,29 +276,65 @@ function AdminOrdersContent() {
                             )}
                           </td>
                         </tr>
-                        {/* Expanded Section for Items */}
+                        {/* Expanded Section for Items & Delivery */}
                         {isExpanded && (
                           <tr className="bg-muted/30 border-b border-border">
                             <td colSpan="6" className="px-6 py-4">
-                              <div className="rounded-md border border-border bg-card p-4">
-                                <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3">
-                                  <Package className="h-4 w-4 text-primary" /> Order Items ({order.items?.length || 0})
-                                </h4>
-                                {order.items && order.items.length > 0 ? (
-                                  <ul className="space-y-2">
-                                    {order.items.map((item, idx) => (
-                                      <li key={idx} className="flex justify-between items-center text-sm border-b border-border/50 pb-2 last:border-0 last:pb-0">
-                                        <div className="flex flex-col">
-                                          <span className="font-medium text-foreground">{item.productName}</span>
-                                          <span className="text-xs text-muted-foreground">{item.quantity} x {toMoney(item.unitPrice)}</span>
-                                        </div>
-                                        <span className="font-semibold text-foreground">{toMoney(item.subTotal)}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="text-sm text-muted-foreground">No items available for this order.</p>
+                              <div className="space-y-4">
+                                {/* Delivery Address Section */}
+                                {order.requiresDelivery && (
+                                  <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
+                                    <h4 className="text-sm font-semibold text-blue-900 mb-2">Delivery Details</h4>
+                                    <p className="text-xs text-blue-700">
+                                      <span className="font-medium">Address:</span> {order.deliveryAddress || "Not provided"}
+                                    </p>
+                                    <p className="text-xs text-blue-700 mt-1">
+                                      <span className="font-medium">Delivery Fee:</span> {toMoney(order.deliveryFee)}
+                                    </p>
+                                    
+                                    {/* Delivery Status Update */}
+                                    <div className="mt-3 flex items-center gap-2">
+                                      <label className="text-xs font-medium text-blue-900">Update Status:</label>
+                                      <select
+                                        value={order.status}
+                                        onChange={(e) => handleDeliveryStatusChange(order.orderId, e.target.value)}
+                                        disabled={updatingDeliveryStatusId === order.orderId || !DELIVERY_STATUSES.includes(order.status)}
+                                        className="text-xs rounded border border-blue-300 bg-white px-2 py-1 text-blue-900 disabled:opacity-60"
+                                      >
+                                        {DELIVERY_STATUSES.map((status) => (
+                                          <option key={status} value={status}>
+                                            {getStatus(status).label}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      {updatingDeliveryStatusId === order.orderId && (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+                                      )}
+                                    </div>
+                                  </div>
                                 )}
+
+                                {/* Order Items Section */}
+                                <div className="rounded-md border border-border bg-card p-4">
+                                  <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3">
+                                    <Package className="h-4 w-4 text-primary" /> Order Items ({order.items?.length || 0})
+                                  </h4>
+                                  {order.items && order.items.length > 0 ? (
+                                    <ul className="space-y-2">
+                                      {order.items.map((item, idx) => (
+                                        <li key={idx} className="flex justify-between items-center text-sm border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                                          <div className="flex flex-col">
+                                            <span className="font-medium text-foreground">{item.productName}</span>
+                                            <span className="text-xs text-muted-foreground">{item.quantity} x {toMoney(item.unitPrice)}</span>
+                                          </div>
+                                          <span className="font-semibold text-foreground">{toMoney(item.subTotal)}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground">No items available for this order.</p>
+                                  )}
+                                </div>
                               </div>
                             </td>
                           </tr>

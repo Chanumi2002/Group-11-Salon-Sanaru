@@ -21,7 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = { "http://localhost:5173", "https://main.d28ild61q8tb54.amplifyapp.com" })
 public class AdminController {
 
     @Autowired
@@ -102,7 +102,8 @@ public class AdminController {
     }
 
     /**
-     * Story 5 – Admin rejects a customer cancellation request → reverts to CONFIRMED.
+     * Story 5 – Admin rejects a customer cancellation request → reverts to
+     * CONFIRMED.
      * PUT /api/admin/orders/{orderId}/reject-cancel
      */
     @PutMapping("/orders/{orderId}/reject-cancel")

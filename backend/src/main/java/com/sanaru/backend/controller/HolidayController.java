@@ -15,7 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/holidays")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = { "http://localhost:5173", "https://main.d28ild61q8tb54.amplifyapp.com" })
 public class HolidayController {
 
     private List<Holiday> holidays = new ArrayList<>();
@@ -42,18 +42,18 @@ public class HolidayController {
     private void loadHolidays() {
         try {
             InputStream is = getClass().getResourceAsStream("/holidays/2026.json");
-            
+
             if (is == null) {
                 System.err.println("Holiday file not found: /holidays/2026.json");
                 return;
             }
-            
+
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new JavaTimeModule()); // Explicitly register JavaTimeModule for LocalDate handling
-            
+
             Holiday[] holidayArray = mapper.readValue(is, Holiday[].class);
             holidays = Arrays.asList(holidayArray);
-            
+
             System.out.println("Successfully loaded " + holidays.size() + " holidays from 2026.json");
         } catch (Exception e) {
             System.err.println("Error loading holidays: " + e.getMessage());

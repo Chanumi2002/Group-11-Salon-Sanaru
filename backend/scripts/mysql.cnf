@@ -1,0 +1,58 @@
+[mysqld]
+# Basic Settings
+server-id=1
+log_bin=/var/log/mysql/mysql-bin.log
+binlog_format=mixed
+
+# Security Settings
+# Use /tmp for PID and socket files with restricted permissions
+pid-file=/tmp/mysqld/mysqld.pid
+socket=/tmp/mysqld/mysqld.sock
+
+# Character Set and Collation
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+init_connect='SET NAMES utf8mb4'
+
+# File Permission Settings
+# Set restrictive umask to prevent world-readable files
+umask=0077
+
+# Performance Settings
+max_connections=100
+default-storage-engine=InnoDB
+innodb_buffer_pool_size=256M
+
+# Enable function creation in binary log
+log_bin_trust_function_creators=1
+
+# SSL Configuration (Optional - for production)
+# skip-ssl=false
+# ssl-ca=/etc/mysql/certs/ca.pem
+# ssl-cert=/etc/mysql/certs/server-cert.pem
+# ssl-key=/etc/mysql/certs/server-key.pem
+
+# Logging
+log_error=/var/log/mysql/error.log
+slow_query_log=1
+slow_query_log_file=/var/log/mysql/slow-query.log
+long_query_time=2
+
+# Timezone
+default-time-zone='+00:00'
+
+[mysqld_safe]
+# Set restrictive umask for socket and pid files
+umask=0077
+
+[mysql]
+# Socket location for client connections
+socket=/tmp/mysqld/mysqld.sock
+# No SSL required by default
+# ssl=false
+
+[mysqldump]
+quick
+quote-names
+max_allowed_packet=16M
+socket=/tmp/mysqld/mysqld.sock

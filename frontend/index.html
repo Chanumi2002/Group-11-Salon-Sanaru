@@ -8,7 +8,7 @@
     <!-- Allow Cross-Origin Cookies for Google Sign-In -->
     <meta http-equiv="Permissions-Policy" content="cross-origin-cookies=(self 'https://accounts.google.com' 'https://ssl.gstatic.com')" />
     <!-- Enhanced Content Security Policy for Google Sign-In -->
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://accounts.google.com https://ssl.gstatic.com https://*.gstatic.com; frame-src 'self' https://accounts.google.com; connect-src 'self' https://accounts.google.com https://ssl.gstatic.com https://*.gstatic.com http://localhost:8080; img-src 'self' https: data:; font-src 'self' https://fonts.gstatic.com;" />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://accounts.google.com https://ssl.gstatic.com https://*.gstatic.com; frame-src 'self' https://accounts.google.com; connect-src 'self' https://accounts.google.com https://ssl.gstatic.com https://*.gstatic.com http://localhost:8080 https://sa-b8f7feda25334cddb6709bee5393ffbd.ecs.ap-southeast-2.on.aws https://*.ecs.ap-southeast-2.on.aws; img-src 'self' https: data:; font-src 'self' https://fonts.gstatic.com;" />
     <!-- Google Sign-In with SameSite=None for cross-site cookie support -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>

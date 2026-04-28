@@ -39,7 +39,7 @@ export default function BookAppointment() {
     const loadHolidays = async () => {
       try {
         setIsHolidaysLoading(true);
-        const holidaysRes = await axios.get('http://localhost:8080/api/holidays');
+        const holidaysRes = await axios.get('https://sa-b8f7feda25334cddb6709bee5393ffbd.ecs.ap-southeast-2.on.aws/api/holidays');
         console.log('Holidays loaded:', holidaysRes.data);
         setHolidays(holidaysRes.data || []);
       } catch (error) {
@@ -117,11 +117,11 @@ export default function BookAppointment() {
     try {
       const response = await customerService.getSlotAvailability(selectedDate);
       const availabilityData = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
-      
+
       const availabilityMap = {};
       let totalAvailable = 0;
       let totalCapacity = 0;
-      
+
       availabilityData.forEach(slot => {
         availabilityMap[slot.time] = {
           available: slot.available,
@@ -132,9 +132,9 @@ export default function BookAppointment() {
         totalAvailable += slot.available;
         totalCapacity += slot.capacity;
       });
-      
+
       setSlotAvailability(availabilityMap);
-      
+
       const totalBooked = totalCapacity - totalAvailable;
       if (totalBooked === 0) {
         setAvailabilityInfo(`All ${totalCapacity} spots available`);
@@ -150,30 +150,30 @@ export default function BookAppointment() {
     }
   };
 
-      const fetchTimeSlots = async (selectedDate, customHoursOverride = null) => {
+  const fetchTimeSlots = async (selectedDate, customHoursOverride = null) => {
     try {
       // Get day of week from date - use UTC to avoid timezone issues
       const [year, month, day] = selectedDate.split('-').map(Number);
       const dateObj = new Date(Date.UTC(year, month - 1, day));
       const jsDay = dateObj.getUTCDay();
-      
+
       const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
       const dayOfWeek = dayNames[jsDay];
 
       // Fetch available slots
       const response = await adminService.getAvailableSlots(dayOfWeek);
       const slots = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
-      
+
       let breaksData = [];
       let timeStrings = [];
       const idMap = {}; // Map time -> timeSlotId
-      
+
       slots.forEach(slot => {
         if (typeof slot === 'string') {
           timeStrings.push(slot);
           return;
         }
-        
+
         if (typeof slot === 'object') {
           const timeStr = slot.time || slot.startTime;
           if (timeStr) {
@@ -184,35 +184,35 @@ export default function BookAppointment() {
               idMap[normalizedTime] = slot.id;
             }
           }
-          
+
           if (slot.breaks && Array.isArray(slot.breaks)) {
             breaksData = breaksData.concat(slot.breaks);
           }
         }
       });
-      
+
       // Deduplicate breaks by name
       const uniqueBreaks = Array.from(
         new Map(breaksData.map(brk => [brk.breakName, brk])).values()
       );
-      
+
       setBreaks(uniqueBreaks);
-      
+
       // Deduplicate times using Set and sort
       const uniqueTimeStrings = Array.from(new Set(timeStrings)).sort();
-      
+
       // Filter out times that conflict with breaks
       let filteredTimes = uniqueTimeStrings.filter(time => !timeConflictsWithBreak(time, uniqueBreaks));
-      
+
       // If custom hours are provided (from holiday override), filter times to within custom hours
       const hoursToUse = customHoursOverride || customHours;
       if (hoursToUse && hoursToUse.startTime && hoursToUse.endTime) {
         const [customStartHour, customStartMin] = hoursToUse.startTime.substring(0, 5).split(':').map(Number);
         const [customEndHour, customEndMin] = hoursToUse.endTime.substring(0, 5).split(':').map(Number);
-        
+
         const customStartMinutes = customStartHour * 60 + customStartMin;
         const customEndMinutes = customEndHour * 60 + customEndMin;
-        
+
         // If there are base time slots, filter them to custom hours
         if (filteredTimes.length > 0) {
           filteredTimes = filteredTimes.filter(timeStr => {
@@ -226,23 +226,23 @@ export default function BookAppointment() {
           const appointmentDuration = 30; // Default duration
           const generatedSlots = [];
           const generatedIdMap = {};
-          
+
           let currentMinutes = customStartMinutes;
           while (currentMinutes + appointmentDuration <= customEndMinutes) {
             const hours = Math.floor(currentMinutes / 60);
             const minutes = currentMinutes % 60;
             const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
             generatedSlots.push(timeStr);
-            
+
             // Use negative IDs for generated holiday override slots
             // Negative ID convention: -(HHMM) where H=hours, M=minutes
             // E.g., 09:00 -> -900, 15:30 -> -1530
             const timeCode = hours * 100 + minutes;
             generatedIdMap[timeStr] = -timeCode; // Negative to mark as holiday override
-            
+
             currentMinutes += appointmentDuration;
           }
-          
+
           filteredTimes = generatedSlots;
           setTimeSlotIdMap(generatedIdMap); // Use generated ID map
           setTimeSlots(generatedSlots);
@@ -250,10 +250,10 @@ export default function BookAppointment() {
           return;
         }
       }
-      
+
       setTimeSlots(filteredTimes);
       setTimeSlotIdMap(idMap); // Store the ID mapping
-      
+
       // If no time slots available, show message
       if (filteredTimes.length === 0) {
         setAvailabilityInfo('No time slots available for this day');
@@ -292,26 +292,26 @@ export default function BookAppointment() {
     setDate(selectedDate);
     setTime(''); // Reset time when date changes
     setSelectedTimeSlotId(null); // Reset timeSlotId when date changes
-    
+
     // Fetch holiday override for this specific date (using public endpoint)
     const fetchOverrideForDate = async () => {
       try {
-        const overrideRes = await axios.get('http://localhost:8080/api/holiday-overrides/by-date', {
+        const overrideRes = await axios.get('https://sa-b8f7feda25334cddb6709bee5393ffbd.ecs.ap-southeast-2.on.aws/api/holiday-overrides/by-date', {
           params: { date: selectedDate }
         });
-        
+
         // Check if response is null (no override for this date)
         if (!overrideRes.data) {
           setCurrentOverride(null);
           return null;
         }
-        
+
         const override = overrideRes.data;
         setCurrentOverride(override);
-        
+
         if (override && override.isWorkingDate) {
           setDateMessage(`📌 ${override.holidaySummary} - Marked as WORKING DATE`);
-          
+
           // Check if custom hours are set
           let customHoursData = null;
           if (override.useCustomHours) {
@@ -323,7 +323,7 @@ export default function BookAppointment() {
           } else {
             setCustomHours(null);
           }
-          
+
           setBreaks([]); // Reset breaks
           // Fetch time slots and booked slots in parallel for faster loading
           setSlotsLoading(true);
@@ -353,22 +353,22 @@ export default function BookAppointment() {
         return null;
       }
     };
-    
+
     fetchOverrideForDate().then((override) => {
       // Skip ALL holiday/closed date checks if override marked this as a working date
       if (override && override.isWorkingDate === true) {
         return;
       }
-      
+
       // If override marked as closed, also skip
       if (override && override.isWorkingDate === false) {
         return;
       }
-      
+
       // ONLY proceed with holiday/closed date checks if NO override exists
       // Check if date is a holiday
       const holidayInfo = getHolidayInfo(selectedDate);
-      
+
       if (holidayInfo) {
         setDateMessage(`🏖️ ${holidayInfo.summary} - Salon is closed on this date`);
         setSlotAvailability({});
@@ -377,7 +377,7 @@ export default function BookAppointment() {
         setCustomHours(null);
         return;
       }
-      
+
       // Check if date is marked as closed
       const isClosed = closedDates.some(cd => cd.closedDate === selectedDate);
       if (isClosed) {
@@ -403,37 +403,37 @@ export default function BookAppointment() {
           .finally(() => setSlotsLoading(false));
       }
     })
-    .catch(() => {
-      // Silently suppress any errors from the override fetch promise chain
-    });
+      .catch(() => {
+        // Silently suppress any errors from the override fetch promise chain
+      });
   };
 
   // Helper function to check if a time conflicts with any break
   const timeConflictsWithBreak = (timeString, breaksData) => {
     if (!breaksData || breaksData.length === 0) return false;
-    
+
     // Parse the time string "HH:MM"
     const [hours, minutes] = timeString.split(':').map(Number);
     const appointmentTime = hours * 60 + minutes; // Convert to minutes since midnight
-    
+
     // Check if this time falls within any break period
     return breaksData.some(brk => {
       // Parse break times - handle both "HH:MM" and "HH:MM:SS" formats
       let breakStartStr = brk.startTime || '';
       let breakEndStr = brk.endTime || '';
-      
+
       // Extract HH:MM if format is HH:MM:SS
       if (breakStartStr.length > 5) breakStartStr = breakStartStr.substring(0, 5);
       if (breakEndStr.length > 5) breakEndStr = breakEndStr.substring(0, 5);
-      
+
       const [breakStartHour, breakStartMin] = breakStartStr.split(':').map(Number);
       const [breakEndHour, breakEndMin] = breakEndStr.split(':').map(Number);
-      
+
       if (isNaN(breakStartHour) || isNaN(breakEndHour)) return false;
-      
+
       const breakStart = breakStartHour * 60 + breakStartMin;
       const breakEnd = breakEndHour * 60 + breakEndMin;
-      
+
       // Appointment time conflicts if: appointmentTime >= breakStart AND appointmentTime < breakEnd
       // * Break 12:20-13:00: Appointment at 13:00 is ALLOWED (appointment at break end time is OK)
       // * Break 12:30-13:15: Appointment at 13:00 is BLOCKED (still within break period)
@@ -445,26 +445,26 @@ export default function BookAppointment() {
   // Helper function to check if a time is within custom hours
   const isTimeWithinCustomHours = (timeString, customHoursData) => {
     if (!customHoursData || !customHoursData.startTime || !customHoursData.endTime) return true;
-    
+
     // Parse time string "HH:MM"
     const [hours, minutes] = timeString.split(':').map(Number);
     const appointmentTime = hours * 60 + minutes;
-    
+
     // Parse custom hours
     let customStartStr = customHoursData.startTime || '';
     let customEndStr = customHoursData.endTime || '';
-    
+
     if (customStartStr.length > 5) customStartStr = customStartStr.substring(0, 5);
     if (customEndStr.length > 5) customEndStr = customEndStr.substring(0, 5);
-    
+
     const [startHour, startMin] = customStartStr.split(':').map(Number);
     const [endHour, endMin] = customEndStr.split(':').map(Number);
-    
+
     if (isNaN(startHour) || isNaN(endHour)) return true;
-    
+
     const customStart = startHour * 60 + startMin;
     const customEnd = endHour * 60 + endMin;
-    
+
     return appointmentTime >= customStart && appointmentTime < customEnd;
   };
 
@@ -473,7 +473,7 @@ export default function BookAppointment() {
     return slotsToFilter.filter(slot => {
       const availability = slotAvailability[slot];
       const isBooked = availability?.isFull;
-      
+
       // Show slot if: (it's available and showAvailable is true) OR (it's booked and showBooked is true)
       if (isBooked) return showBooked;
       return showAvailable;
@@ -513,7 +513,7 @@ export default function BookAppointment() {
       // Override allows booking - proceed directly to API call
     } else {
       // No override - check holidays and closed dates
-      
+
       // Check if selected date is a holiday
       const holidayInfo = getHolidayInfo(date);
       if (holidayInfo) {
@@ -544,9 +544,9 @@ export default function BookAppointment() {
       console.error('Full response data:', JSON.stringify(error.response?.data, null, 2));
       console.error('Response status:', error.response?.status);
       console.error('Request data sent:', { serviceId: selectedService.id, date, time: time + ":00", timeSlotId: selectedTimeSlotId });
-      
+
       let msg = 'Unable to book appointment. Please try again.';
-      
+
       if (error.response?.data?.message) {
         msg = error.response.data.message;
       } else if (typeof error.response?.data === 'string') {
@@ -556,7 +556,7 @@ export default function BookAppointment() {
       } else if (error.message) {
         msg = error.message;
       }
-      
+
       toast.error(msg);
     } finally {
       setIsBooking(false);
@@ -577,33 +577,31 @@ export default function BookAppointment() {
     const isBooked = availability?.isFull;
     const available = availability?.available || 0;
     const capacity = availability?.capacity || 0;
-    
+
     return (
       <button
         type="button"
         disabled={isBooked}
         onClick={() => !isBooked && onSelect(slot)}
         title={isBooked ? '❌ Fully booked' : `${available} spots available`}
-        className={`py-3 px-2 text-sm font-semibold rounded-lg border-2 transition-all duration-200 relative group ${
-          isSelected
+        className={`py-3 px-2 text-sm font-semibold rounded-lg border-2 transition-all duration-200 relative group ${isSelected
             ? 'bg-[#8E1616] text-white border-[#8E1616] shadow-md shadow-red-200'
             : isBooked
-            ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-60'
-            : 'bg-white text-gray-700 border-green-400 hover:border-[#8E1616] hover:text-[#8E1616] hover:bg-red-50 hover:shadow-md'
-        }`}
+              ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-60'
+              : 'bg-white text-gray-700 border-green-400 hover:border-[#8E1616] hover:text-[#8E1616] hover:bg-red-50 hover:shadow-md'
+          }`}
       >
         <div className="flex flex-col items-center">
           <span>{slot}</span>
-          <span className={`text-xs mt-1 font-medium ${
-            isSelected ? 'text-white' 
-            : isBooked ? 'text-gray-500' 
-            : 'text-green-600'
-          }`}>
-            {isSelected 
-              ? '✓ Selected' 
-              : isBooked 
-              ? '✗ Full' 
-              : `${available}/${capacity}`
+          <span className={`text-xs mt-1 font-medium ${isSelected ? 'text-white'
+              : isBooked ? 'text-gray-500'
+                : 'text-green-600'
+            }`}>
+            {isSelected
+              ? '✓ Selected'
+              : isBooked
+                ? '✗ Full'
+                : `${available}/${capacity}`
             }
           </span>
         </div>
@@ -667,7 +665,7 @@ export default function BookAppointment() {
                 {dateMessage && (
                   <p className="text-sm text-amber-600 font-medium">{dateMessage}</p>
                 )}
-                
+
                 {/* Display custom hours for overridden holiday */}
                 {customHours && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -677,7 +675,7 @@ export default function BookAppointment() {
                     </p>
                   </div>
                 )}
-                
+
                 {/* Display breaks for the selected date */}
                 {date && breaks.length > 0 && (
                   <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">

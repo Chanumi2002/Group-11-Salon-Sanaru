@@ -4,6 +4,7 @@ import com.sanaru.backend.dto.RegisterRequest;
 import com.sanaru.backend.dto.UpdateProfileRequest;
 import com.sanaru.backend.dto.UserResponse;
 import com.sanaru.backend.enums.Role;
+import com.sanaru.backend.enums.Gender;
 import com.sanaru.backend.model.User;
 import com.sanaru.backend.repository.UserRepository;
 import com.sanaru.backend.repository.FeedbackRepository;
@@ -214,7 +215,7 @@ public class UserService {
 
     /**
      * Find user by email or create from OAuth (Google/Facebook). New users get a
-     * random encoded password.
+     * random encoded password, default phone, and PREFER_NOT_TO_SAY as default gender.
      */
     public User findOrCreateFromOAuth(String email, String fullName) {
         if (email == null || email.isBlank()) {
@@ -230,8 +231,10 @@ public class UserService {
                     user.setLastName(parts.length > 1 ? parts[1] : parts[0]);
                     user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                     user.setRole(Role.CUSTOMER);
-                    user.setPhone(null);
-                    user.setGender(null);
+                    // Set placeholder phone for OAuth users - they can update this later
+                    user.setPhone("0000000000");
+                    // Set default gender for OAuth users - they can update this later
+                    user.setGender(Gender.PREFER_NOT_TO_SAY);
                     User saved = userRepository.save(user);
                     // Send welcome email to new OAuth users asynchronously
                     emailService.sendWelcomeEmailAsync(saved.getEmail(), saved.getFirstName());

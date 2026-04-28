@@ -17,12 +17,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = { "http://localhost:5173", "https://main.d28ild61q8tb54.amplifyapp.com" })
 @RequiredArgsConstructor
 public class ProductController {
 
     private final ProductService productService;
-
 
     // ADMIN ENDPOINTS
 
@@ -39,12 +38,11 @@ public class ProductController {
     public ResponseEntity<Map<String, Object>> updateProductStock(
             @PathVariable Long id,
             @RequestBody @jakarta.validation.Valid com.sanaru.backend.dto.InventoryUpdateRequest request) {
-        
+
         ProductResponse updatedProduct = productService.updateProductStock(id, request);
         return ResponseEntity.ok(Map.of(
                 "message", "Stock updated successfully",
-                "product", updatedProduct
-        ));
+                "product", updatedProduct));
     }
 
     // CREATE PRODUCT
@@ -56,24 +54,24 @@ public class ProductController {
             @RequestParam("image") MultipartFile imageFile,
             @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
             @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
-            @RequestParam(value = "lowStockThreshold", required = false) Integer lowStockThreshold
-    ) throws IOException {
+            @RequestParam(value = "lowStockThreshold", required = false) Integer lowStockThreshold) throws IOException {
 
         ProductRequest productRequest = new ProductRequest();
         productRequest.setName(name);
         productRequest.setDescription(description);
         productRequest.setPrice(new BigDecimal(price));
         productRequest.setCategoryIds(categoryIds);
-        if (stockQuantity != null) productRequest.setStockQuantity(stockQuantity);
-        if (lowStockThreshold != null) productRequest.setLowStockThreshold(lowStockThreshold);
+        if (stockQuantity != null)
+            productRequest.setStockQuantity(stockQuantity);
+        if (lowStockThreshold != null)
+            productRequest.setLowStockThreshold(lowStockThreshold);
 
         ProductResponse createdProduct = productService.createProduct(productRequest, imageFile);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of(
                         "message", "Product created successfully",
-                        "product", createdProduct
-                ));
+                        "product", createdProduct));
     }
 
     // UPDATE PRODUCT
@@ -86,23 +84,23 @@ public class ProductController {
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
             @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
             @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
-            @RequestParam(value = "lowStockThreshold", required = false) Integer lowStockThreshold
-    ) throws IOException {
+            @RequestParam(value = "lowStockThreshold", required = false) Integer lowStockThreshold) throws IOException {
 
         ProductRequest productRequest = new ProductRequest();
         productRequest.setName(name);
         productRequest.setDescription(description);
         productRequest.setPrice(new BigDecimal(price));
         productRequest.setCategoryIds(categoryIds);
-        if (stockQuantity != null) productRequest.setStockQuantity(stockQuantity);
-        if (lowStockThreshold != null) productRequest.setLowStockThreshold(lowStockThreshold);
+        if (stockQuantity != null)
+            productRequest.setStockQuantity(stockQuantity);
+        if (lowStockThreshold != null)
+            productRequest.setLowStockThreshold(lowStockThreshold);
 
         ProductResponse updatedProduct = productService.updateProduct(id, productRequest, imageFile);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Product updated successfully",
-                "product", updatedProduct
-        ));
+                "product", updatedProduct));
     }
 
     // DELETE PRODUCT
@@ -111,7 +109,6 @@ public class ProductController {
         productService.deleteProduct(id);
         return ResponseEntity.ok(Map.of("message", "Product deleted successfully"));
     }
-
 
     // PUBLIC ENDPOINTS (GUEST/CUSTOMER)
     // GET ALL PRODUCTS
@@ -123,8 +120,7 @@ public class ProductController {
 
         if (category != null || minPrice != null || maxPrice != null) {
             return ResponseEntity.ok(
-                    productService.getProductsFiltered(category, minPrice, maxPrice)
-            );
+                    productService.getProductsFiltered(category, minPrice, maxPrice));
         }
 
         return ResponseEntity.ok(productService.getAllProducts());

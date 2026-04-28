@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  mysql:
+    build:
+      context: .
+      dockerfile: mysql.dockerfile
+    container_name: sanaru-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-SanaruRoot2026!}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sanaru_db}
+      MYSQL_USER: ${MYSQL_USER:-sanaru_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-SanaruPassword2026!}
+      TZ: 'UTC'
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/scripts:/docker-entrypoint-initdb.d
+    networks:
+      - sanaru-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      mysqld
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --log_bin_trust_function_creators=1
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sanaru-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sanaru_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&connectTimeout=10000
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-sanaru_user}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-SanaruPassword2026!}
+      SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: ${JWT_SECRET:-SanaruSalonSecretKey2026SanaruSalonSecretKey2026SanaruSalonSecretKey2026}
+      JWT_EXPIRATION: 86400
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - sanaru-network
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  sanaru-network:
+    driver: bridge

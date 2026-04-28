@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Edit2, Loader2, ToggleLeft, ToggleRight, Calendar, AlertTriangle, Clock } from "lucide-react";
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_URL = import.meta.env.VITE_API_BASE_URL || "https://sa-b8f7feda25334cddb6709bee5393ffbd.ecs.ap-southeast-2.on.aws/api";
 
 /**
  * Format date string or Date object to readable format
@@ -12,7 +12,7 @@ const formatDate = (dateInput) => {
   if (!dateInput) return "Invalid Date";
   try {
     let date;
-    
+
     if (typeof dateInput === "string") {
       // Parse YYYY-MM-DD format manually to avoid timezone issues
       const [year, month, day] = dateInput.split("-").map(Number);
@@ -22,12 +22,12 @@ const formatDate = (dateInput) => {
     } else {
       return "Invalid Date";
     }
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) {
       return "Invalid Date";
     }
-    
+
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -44,10 +44,10 @@ const formatDate = (dateInput) => {
  */
 const isUpcomingHoliday = (dateInput) => {
   if (!dateInput) return false;
-  
+
   try {
     let date;
-    
+
     if (typeof dateInput === "string") {
       const [year, month, day] = dateInput.split("-").map(Number);
       date = new Date(year, month - 1, day);
@@ -56,11 +56,11 @@ const isUpcomingHoliday = (dateInput) => {
     } else {
       return false;
     }
-    
+
     // Get today's date at midnight
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Compare dates
     return date >= today;
   } catch (e) {
@@ -75,7 +75,7 @@ export default function HolidayManagement() {
   const [actionId, setActionId] = useState(null);
   const [showOverrideForm, setShowOverrideForm] = useState(false);
   const [editingOverride, setEditingOverride] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     holidayUid: "",
     holidayDate: "",
@@ -87,7 +87,7 @@ export default function HolidayManagement() {
     customEndTime: "17:00",
     customCapacity: null,
   });
-  
+
   const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
@@ -110,7 +110,7 @@ export default function HolidayManagement() {
       if (holidaysRes.data && holidaysRes.data.length > 0) {
         console.log("First holiday:", holidaysRes.data[0]);
       }
-      
+
       setSystemHolidays(holidaysRes.data || []);
       setOverrides(overridesRes.data || []);
     } catch (error) {
@@ -147,14 +147,14 @@ export default function HolidayManagement() {
 
   const handleSubmitOverride = async (e) => {
     e.preventDefault();
-    
+
     setValidationError("");
 
     if (!formData.holidayDate || !formData.holidayUid) {
       setValidationError("Missing required fields");
       return;
     }
-    
+
     // Validate capacity is required when custom hours are enabled
     if (formData.useCustomHours && (!formData.customCapacity || formData.customCapacity <= 0)) {
       setValidationError("Capacity is required when using custom hours");
@@ -163,7 +163,7 @@ export default function HolidayManagement() {
 
     try {
       setActionId("submit");
-      
+
       const payload = {
         holidayUid: formData.holidayUid,
         holidayDate: formData.holidayDate,
@@ -196,7 +196,7 @@ export default function HolidayManagement() {
             : "Holiday override created successfully"
         );
       }
-      
+
       setFormData({
         holidayUid: "",
         holidayDate: "",
@@ -307,84 +307,82 @@ export default function HolidayManagement() {
                 {systemHolidays
                   .filter((holiday) => isUpcomingHoliday(holiday.start || holiday.startDate))
                   .map((holiday, idx) => {
-                  const override = getOverrideStatus(holiday);
-                  const isOverridden = !!override;
+                    const override = getOverrideStatus(holiday);
+                    const isOverridden = !!override;
 
-                  return (
-                    <tr
-                      key={idx}
-                      className="border-b hover:bg-gray-50 transition"
-                    >
-                      <td className="px-4 py-3 text-gray-700">
-                        {formatDate(holiday.start || holiday.startDate)}
-                        {(holiday.end || holiday.endDate) &&
-                          (holiday.end || holiday.endDate) !== (holiday.start || holiday.startDate) && (
-                            <>
-                              {" - "}
-                              {formatDate(holiday.end || holiday.endDate)}
-                            </>
+                    return (
+                      <tr
+                        key={idx}
+                        className="border-b hover:bg-gray-50 transition"
+                      >
+                        <td className="px-4 py-3 text-gray-700">
+                          {formatDate(holiday.start || holiday.startDate)}
+                          {(holiday.end || holiday.endDate) &&
+                            (holiday.end || holiday.endDate) !== (holiday.start || holiday.startDate) && (
+                              <>
+                                {" - "}
+                                {formatDate(holiday.end || holiday.endDate)}
+                              </>
+                            )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700">
+                          {holiday.summary}
+                        </td>
+                        <td className="px-4 py-3">
+                          {isOverridden ? (
+                            <span
+                              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${override.isWorkingDate
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                                }`}
+                            >
+                              {override.isWorkingDate ? (
+                                <>
+                                  <ToggleRight size={16} />
+                                  WORKING DATE
+                                </>
+                              ) : (
+                                <>
+                                  <AlertTriangle size={16} />
+                                  CLOSED
+                                </>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                              <AlertTriangle size={16} />
+                              CLOSED
+                            </span>
                           )}
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">
-                        {holiday.summary}
-                      </td>
-                      <td className="px-4 py-3">
-                        {isOverridden ? (
-                          <span
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-                              override.isWorkingDate
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {override.isWorkingDate ? (
-                              <>
-                                <ToggleRight size={16} />
-                                WORKING DATE
-                              </>
-                            ) : (
-                              <>
-                                <AlertTriangle size={16} />
-                                CLOSED
-                              </>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                            <AlertTriangle size={16} />
-                            CLOSED
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => handleToggleHoliday(holiday)}
-                          className={`px-3 py-1 rounded text-sm font-medium transition ${
-                            isOverridden
-                              ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
-                              : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                          }`}
-                        >
-                          {isOverridden ? "Edit" : "Override"}
-                        </button>
-                        {isOverridden && (
+                        </td>
+                        <td className="px-4 py-3">
                           <button
-                            onClick={() => handleDeleteOverride(override.id)}
-                            disabled={actionId === `delete-${override.id}`}
-                            className="ml-2 px-3 py-1 rounded text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 transition"
+                            onClick={() => handleToggleHoliday(holiday)}
+                            className={`px-3 py-1 rounded text-sm font-medium transition ${isOverridden
+                                ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                                : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                              }`}
                           >
-                            {actionId === `delete-${override.id}` ? (
-                              <Loader2 className="inline animate-spin mr-1" size={14} />
-                            ) : (
-                              <Trash2 className="inline mr-1" size={14} />
-                            )}
-                            Revert
+                            {isOverridden ? "Edit" : "Override"}
                           </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                          {isOverridden && (
+                            <button
+                              onClick={() => handleDeleteOverride(override.id)}
+                              disabled={actionId === `delete-${override.id}`}
+                              className="ml-2 px-3 py-1 rounded text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 transition"
+                            >
+                              {actionId === `delete-${override.id}` ? (
+                                <Loader2 className="inline animate-spin mr-1" size={14} />
+                              ) : (
+                                <Trash2 className="inline mr-1" size={14} />
+                              )}
+                              Revert
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>
@@ -412,11 +410,10 @@ export default function HolidayManagement() {
                         {override.holidaySummary}
                       </h3>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          override.isWorkingDate
+                        className={`px-2 py-1 rounded text-xs font-medium ${override.isWorkingDate
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
-                        }`}
+                          }`}
                       >
                         {override.isWorkingDate ? "WORKING" : "CLOSED"}
                       </span>

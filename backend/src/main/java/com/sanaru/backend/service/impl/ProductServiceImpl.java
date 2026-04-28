@@ -9,16 +9,13 @@ import com.sanaru.backend.repository.CategoryRepository;
 import com.sanaru.backend.repository.OrderItemRepository;
 import com.sanaru.backend.repository.ProductRepository;
 import com.sanaru.backend.service.ProductService;
-import org.springframework.beans.factory.annotation.Value;
+import com.sanaru.backend.service.S3Service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,18 +26,18 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final CartItemRepository cartItemRepository;
     private final OrderItemRepository orderItemRepository;
-
-    @Value("${app.upload.dir:uploads}")
-    private String uploadDir;
+    private final S3Service s3Service;
 
     public ProductServiceImpl(ProductRepository productRepository,
                               CategoryRepository categoryRepository,
                               CartItemRepository cartItemRepository,
-                              OrderItemRepository orderItemRepository) {
+                              OrderItemRepository orderItemRepository,
+                              S3Service s3Service) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.cartItemRepository = cartItemRepository;
         this.orderItemRepository = orderItemRepository;
+        this.s3Service = s3Service;
     }
 
     // CREATE
@@ -56,7 +53,8 @@ public class ProductServiceImpl implements ProductService {
         }
         validateImageFile(imageFile);
 
-        String imagePath = saveImageFile(imageFile);
+        // Upload to S3
+        String imagePath = s3Service.uploadFile("product-images", imageFile);
 
         Product product = new Product();
         product.setName(dto.getName());
@@ -94,11 +92,11 @@ public class ProductServiceImpl implements ProductService {
         product.setPrice(dto.getPrice());
 
         if (imageFile != null && !imageFile.isEmpty()) {
-
             // Image validation
             validateImageFile(imageFile);
 
-            String imagePath = saveImageFile(imageFile);
+            // Upload to S3
+            String imagePath = s3Service.uploadFile("product-images", imageFile);
             product.setImagePath(imagePath);
         }
 
@@ -254,26 +252,5 @@ public class ProductServiceImpl implements ProductService {
         response.setOutOfStock(product.getStockQuantity() <= 0);
 
         return response;
-    }
-
-    // FILE SAVE
-    private String saveImageFile(MultipartFile imageFile) throws IOException {
-        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        String originalName = imageFile.getOriginalFilename();
-        if (originalName == null || originalName.isBlank()) {
-            originalName = "image";
-        }
-
-        String fileName = System.currentTimeMillis() + "_" + originalName.replaceAll("\\s+", "_");
-
-        Path filePath = uploadPath.resolve(fileName).normalize();
-        imageFile.transferTo(filePath.toFile());
-
-        return "uploads/" + fileName;
     }
 }

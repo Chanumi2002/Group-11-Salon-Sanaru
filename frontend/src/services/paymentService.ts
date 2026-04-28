@@ -19,22 +19,8 @@ export class PaymentRequestError extends Error {
   }
 }
 
-const tokenKeys = ['token', 'authToken', 'accessToken', 'jwtToken'] as const;
-
 const resolveToken = (): string | null => {
-  const primaryToken = getAuthToken();
-  if (primaryToken) {
-    return primaryToken;
-  }
-
-  for (const key of tokenKeys) {
-    const token = localStorage.getItem(key);
-    if (token) {
-      return token;
-    }
-  }
-
-  return null;
+  return getAuthToken();
 };
 
 const getErrorMessage = (error: unknown): string => {

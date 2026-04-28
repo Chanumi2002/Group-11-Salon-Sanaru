@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = { "http://localhost:5173", "https://main.d28ild61q8tb54.amplifyapp.com" })
 @RequiredArgsConstructor
 public class CategoryController {
 
@@ -36,25 +36,22 @@ public class CategoryController {
 
     // ADMIN ENDPOINTS
 
-
     // Create category
-    @PostMapping(value = "/admin/categories", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/admin/categories", consumes = { "multipart/form-data" })
     public ResponseEntity<CategoryResponse> createCategory(
             @RequestParam("name") String name,
-            @RequestParam(value = "image", required = false) MultipartFile imageFile
-    ) throws IOException {
+            @RequestParam(value = "image", required = false) MultipartFile imageFile) throws IOException {
         CategoryRequest request = new CategoryRequest();
         request.setName(name);
         return new ResponseEntity<>(categoryService.createCategory(request, imageFile), HttpStatus.CREATED);
     }
 
     // Update category
-    @PutMapping(value = "/admin/categories/{id}", consumes = {"multipart/form-data"})
+    @PutMapping(value = "/admin/categories/{id}", consumes = { "multipart/form-data" })
     public ResponseEntity<CategoryResponse> updateCategory(
             @PathVariable Long id,
             @RequestParam("name") String name,
-            @RequestParam(value = "image", required = false) MultipartFile imageFile
-    ) throws IOException {
+            @RequestParam(value = "image", required = false) MultipartFile imageFile) throws IOException {
         CategoryRequest request = new CategoryRequest();
         request.setName(name);
         return ResponseEntity.ok(categoryService.updateCategory(id, request, imageFile));

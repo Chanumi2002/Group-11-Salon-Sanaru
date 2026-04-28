@@ -20,4 +20,9 @@ public class OrderResponse {
     private String paymentStatus;
     private String transactionId;
     private LocalDateTime paymentDate;
+
+    // Delivery fields
+    private String deliveryAddress;
+    private BigDecimal deliveryFee;
+    private Boolean requiresDelivery;
 }

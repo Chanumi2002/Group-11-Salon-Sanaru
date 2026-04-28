@@ -46,21 +46,22 @@ public class GroqRecommendationServiceImpl implements AiRecommendationService {
 
         String systemPrompt = "You are an expert beauty consultant at Salon Sanaru. " +
                 "Provide personalized beauty recommendations based on user characteristics. " +
-                "Return ONLY a valid JSON object matching exactly this structure with strings arrays where applicable: " +
+                "Return ONLY a valid JSON object matching exactly this structure with strings arrays where applicable: "
+                +
                 "{\"recommendedServices\": [\"string\"], \"recommendedProducts\": [\"string\"], \"beautyTips\": [\"string\"], \"explanation\": \"string\"}";
 
-        String userPrompt = String.format("My details: \nSkin Type: %s\nHair Type: %s\nFace Shape: %s\nAge: %s\nConcerns: %s\n\n" +
-                "Please give me recommendations.",
-                request.getSkinType(), request.getHairType(), request.getFaceShape(), request.getAge(), request.getConcerns());
+        String userPrompt = String.format(
+                "My details: \nSkin Type: %s\nHair Type: %s\nFace Shape: %s\nAge: %s\nConcerns: %s\n\n" +
+                        "Please give me recommendations.",
+                request.getSkinType(), request.getHairType(), request.getFaceShape(), request.getAge(),
+                request.getConcerns());
 
         Map<String, Object> requestBody = Map.of(
                 "model", apiModel,
                 "messages", List.of(
                         Map.of("role", "system", "content", systemPrompt),
-                        Map.of("role", "user", "content", userPrompt)
-                ),
-                "response_format", Map.of("type", "json_object")
-        );
+                        Map.of("role", "user", "content", userPrompt)),
+                "response_format", Map.of("type", "json_object"));
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
@@ -69,9 +70,9 @@ public class GroqRecommendationServiceImpl implements AiRecommendationService {
                     apiUrl,
                     HttpMethod.POST,
                     entity,
-                    new ParameterizedTypeReference<Map<String, Object>>() {}
-            );
-            
+                    new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
+
             Map<String, Object> response = responseEntity.getBody();
 
             if (response != null && response.containsKey("choices")) {
@@ -79,6 +80,21 @@ public class GroqRecommendationServiceImpl implements AiRecommendationService {
                 if (!choices.isEmpty()) {
                     Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
                     String content = (String) message.get("content");
+
+                    // Sanitize potential markdown JSON wrapping from LLM
+                    if (content != null) {
+                        content = content.trim();
+                        if (content.startsWith("```json")) {
+                            content = content.substring(7);
+                        } else if (content.startsWith("```")) {
+                            content = content.substring(3);
+                        }
+                        if (content.endsWith("```")) {
+                            content = content.substring(0, content.length() - 3);
+                        }
+                        content = content.trim();
+                    }
+
                     return objectMapper.readValue(content, RecommendationResponse.class);
                 }
             }

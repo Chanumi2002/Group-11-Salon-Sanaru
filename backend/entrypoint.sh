@@ -54,5 +54,5 @@ echo ""
 
 exec java \
   -Dspring.profiles.active=railway \
-  -Dspring.jpa.hibernate.ddl-auto=validate \
+  -Dspring.jpa.hibernate.ddl-auto=update \
   -jar app.jar

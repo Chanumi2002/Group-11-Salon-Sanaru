@@ -20,7 +20,7 @@ export function resolveImageUrl(rawPath) {
 
   if (uploadsIndex >= 0) {
     const uploadsPath = normalized.slice(uploadsIndex);
-    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://sa-b8f7feda25334cddb6709bee5393ffbd.ecs.ap-southeast-2.on.aws/api';
     const baseUrl = backendUrl.replace('/api', '');
     return `${baseUrl}/${uploadsPath}`;
   }

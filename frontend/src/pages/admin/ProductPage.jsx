@@ -257,161 +257,181 @@ export default function ProductPage() {
 
         {/* Form Modal */}
         {isFormOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-card border border-border rounded-lg shadow-lg max-w-md w-full p-6 my-8">
-              <h2 className="text-2xl font-bold mb-4 text-foreground">
-                {editingId ? 'Edit Product' : 'Add New Product'}
-              </h2>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            <div className="bg-card border border-border rounded-xl shadow-2xl max-w-4xl w-full p-6 sm:p-8 my-auto relative">
+              <div className="flex justify-between items-center mb-6 border-b border-border pb-4">
+                <h2 className="text-2xl font-bold text-foreground">
+                  {editingId ? 'Edit Product' : 'Add New Product'}
+                </h2>
+                <button 
+                  onClick={handleClose}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Product Name */}
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-                    Product Name
-                  </label>
-                  <input
-                    id="name"
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Enter product name"
-                    disabled={isSubmitting}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                  />
-                </div>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Left Column: Basic Details */}
+                  <div className="space-y-5">
+                    {/* Product Name */}
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                        Product Name
+                      </label>
+                      <input
+                        id="name"
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="Enter product name"
+                        disabled={isSubmitting}
+                        className="w-full px-4 py-2.5 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-shadow"
+                      />
+                    </div>
 
-                {/* Description */}
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    placeholder="Enter product description"
-                    disabled={isSubmitting}
-                    rows="3"
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 resize-none"
-                  />
-                </div>
+                    {/* Category */}
+                    <div>
+                      <label htmlFor="categoryId" className="block text-sm font-medium text-foreground mb-2">
+                        Category
+                      </label>
+                      <select
+                        id="categoryId"
+                        name="categoryId"
+                        value={formData.categoryId}
+                        onChange={handleInputChange}
+                        disabled={isSubmitting}
+                        className="w-full px-4 py-2.5 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-shadow"
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                {/* Price */}
-                <div>
-                  <label htmlFor="price" className="block text-sm font-medium text-foreground mb-2">
-                    Price
-                  </label>
-                  <input
-                    id="price"
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    max="99999999.99"
-                    disabled={isSubmitting}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Maximum price: 99,999,999.99</p>
-                </div>
+                    {/* Description */}
+                    <div>
+                      <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        placeholder="Enter product description"
+                        disabled={isSubmitting}
+                        rows="4"
+                        className="w-full px-4 py-2.5 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 resize-none transition-shadow"
+                      />
+                    </div>
 
-                {/* Stock Quantity */}
-                <div>
-                  <label htmlFor="stockQuantity" className="block text-sm font-medium text-foreground mb-2">
-                    Stock Quantity
-                  </label>
-                  <input
-                    id="stockQuantity"
-                    type="number"
-                    name="stockQuantity"
-                    value={formData.stockQuantity}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    min="0"
-                    disabled={isSubmitting}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                  />
-                </div>
+                    {/* Price */}
+                    <div>
+                      <label htmlFor="price" className="block text-sm font-medium text-foreground mb-2">
+                        Price (Rs.)
+                      </label>
+                      <input
+                        id="price"
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0"
+                        max="99999999.99"
+                        disabled={isSubmitting}
+                        className="w-full px-4 py-2.5 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-shadow"
+                      />
+                    </div>
+                  </div>
 
-                {/* Low Stock Threshold */}
-                <div>
-                  <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-foreground mb-2">
-                    Low Stock Threshold
-                  </label>
-                  <input
-                    id="lowStockThreshold"
-                    type="number"
-                    name="lowStockThreshold"
-                    value={formData.lowStockThreshold}
-                    onChange={handleInputChange}
-                    placeholder="5"
-                    min="0"
-                    disabled={isSubmitting}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                  />
-                </div>
+                  {/* Right Column: Inventory & Image */}
+                  <div className="space-y-5 flex flex-col">
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Stock Quantity */}
+                      <div>
+                        <label htmlFor="stockQuantity" className="block text-sm font-medium text-foreground mb-2">
+                          Stock Quantity
+                        </label>
+                        <input
+                          id="stockQuantity"
+                          type="number"
+                          name="stockQuantity"
+                          value={formData.stockQuantity}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                          min="0"
+                          disabled={isSubmitting}
+                          className="w-full px-4 py-2.5 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-shadow"
+                        />
+                      </div>
 
-                {/* Category */}
-                <div>
-                  <label htmlFor="categoryId" className="block text-sm font-medium text-foreground mb-2">
-                    Category
-                  </label>
-                  <select
-                    id="categoryId"
-                    name="categoryId"
-                    value={formData.categoryId}
-                    onChange={handleInputChange}
-                    disabled={isSubmitting}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                      {/* Low Stock Threshold */}
+                      <div>
+                        <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-foreground mb-2">
+                          Low Stock Alert
+                        </label>
+                        <input
+                          id="lowStockThreshold"
+                          type="number"
+                          name="lowStockThreshold"
+                          value={formData.lowStockThreshold}
+                          onChange={handleInputChange}
+                          placeholder="5"
+                          min="0"
+                          disabled={isSubmitting}
+                          className="w-full px-4 py-2.5 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-shadow"
+                        />
+                      </div>
+                    </div>
 
-                {/* Image Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Product Image
-                  </label>
-                  <ImageUpload
-                    onFileSelect={handleFileSelect}
-                    previewUrl={previewUrl}
-                    onRemove={handleRemoveImage}
-                    isLoading={isSubmitting}
-                    maxSize={MAX_PRODUCT_PHOTO_MB}
-                    acceptedTypes={['image/jpeg', 'image/png']}
-                  />
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Maximum photo size: {MAX_PRODUCT_PHOTO_MB}MB (JPG or PNG)
-                  </p>
+                    {/* Image Upload */}
+                    <div className="flex-1 flex flex-col pt-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Product Image
+                      </label>
+                      <div className="flex-1 min-h-[200px] bg-muted/10 rounded-lg p-2 border border-dashed border-border/60 hover:border-blue-500/50 transition-colors flex flex-col justify-center">
+                        <ImageUpload
+                          onFileSelect={handleFileSelect}
+                          previewUrl={previewUrl}
+                          onRemove={handleRemoveImage}
+                          isLoading={isSubmitting}
+                          maxSize={MAX_PRODUCT_PHOTO_MB}
+                          acceptedTypes={['image/jpeg', 'image/png']}
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground text-center">
+                        Max size: {MAX_PRODUCT_PHOTO_MB}MB (JPG, PNG)
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-4 pt-6 border-t border-border mt-8">
                   <button
                     type="button"
                     onClick={handleClose}
                     disabled={isSubmitting}
-                    className="flex-1 px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
+                    className="flex-1 px-6 py-3 border border-input bg-background text-foreground font-medium rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
                   >
-                    {isSubmitting && <Loader size={16} className="animate-spin" />}
-                    {editingId ? 'Update' : 'Create'}
+                    {isSubmitting && <Loader size={18} className="animate-spin" />}
+                    {editingId ? 'Update Product' : 'Create Product'}
                   </button>
                 </div>
               </form>

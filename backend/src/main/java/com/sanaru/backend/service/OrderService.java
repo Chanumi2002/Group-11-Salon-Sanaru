@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface OrderService {
 
-    OrderResponse checkout();
+    OrderResponse checkout(String deliveryAddress, boolean requiresDelivery);
 
     List<OrderResponse> getMyOrders();
 
@@ -26,6 +26,12 @@ public interface OrderService {
 
     /** Admin: manually approve an order regardless of payment state → sets order to CONFIRMED */
     OrderResponse adminApproveOrder(Long orderId);
+
+    /** Admin: update delivery status (PROCESSING, GIVEN_TO_DELIVERY_PARTNER, DELIVERED) */
+    OrderResponse updateDeliveryStatus(Long orderId, String newStatus);
+
+    /** Customer: mark order as received when delivered */
+    OrderResponse markOrderAsReceived(Long orderId);
     
     long getPendingApprovalOrderCount();
     

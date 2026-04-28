@@ -37,8 +37,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(nullable = false)
-    @NotBlank(message = "Phone number is required")
+    @Column(nullable = true)
     @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be exactly 10 digits")
     private String phone;
 
@@ -46,7 +45,6 @@ public class User implements UserDetails {
     private Role role;
 
     @Enumerated(EnumType.STRING)
-    @NotNull(message = "Gender is required")
     private Gender gender;
 
     private Boolean enabled = true;

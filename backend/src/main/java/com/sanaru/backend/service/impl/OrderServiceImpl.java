@@ -41,7 +41,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse checkout() {
+    public OrderResponse checkout(String deliveryAddress, boolean requiresDelivery) {
         User user = getCurrentUser();
 
         List<CartItem> cartItems = cartItemRepository.findByUserId(user.getId());
@@ -54,6 +54,15 @@ public class OrderServiceImpl implements OrderService {
         order.setUser(user);
         order.setStatus(OrderStatus.PENDING);
         order.setOrderNumber(generateOrderNumber());
+        order.setDeliveryAddress(deliveryAddress);
+        order.setRequiresDelivery(requiresDelivery);
+
+        // Set delivery fee (400 Rs if delivery required, 0 otherwise)
+        if (requiresDelivery) {
+            order.setDeliveryFee(new BigDecimal("400.00"));
+        } else {
+            order.setDeliveryFee(BigDecimal.ZERO);
+        }
 
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -78,6 +87,11 @@ public class OrderServiceImpl implements OrderService {
 
             totalAmount = totalAmount.add(subTotal);
             orderItems.add(orderItem);
+        }
+
+        // Add delivery fee to total if delivery is required
+        if (requiresDelivery) {
+            totalAmount = totalAmount.add(order.getDeliveryFee());
         }
 
         order.setTotalAmount(totalAmount);
@@ -384,6 +398,11 @@ public class OrderServiceImpl implements OrderService {
         response.setTotalAmount(order.getTotalAmount());
         response.setCreatedAt(order.getCreatedAt());
         response.setItems(itemResponses);
+        
+        // Add delivery fields
+        response.setDeliveryAddress(order.getDeliveryAddress());
+        response.setDeliveryFee(order.getDeliveryFee());
+        response.setRequiresDelivery(order.getRequiresDelivery());
 
         paymentTransactionService.findLatestByOrderId(order.getId()).ifPresent(transaction -> {
             response.setPaymentStatus(transaction.getStatus().name());
@@ -423,5 +442,83 @@ public class OrderServiceImpl implements OrderService {
         counts.put("paid", (int) orderRepository.countByUserIdAndStatus(customer.getId(), OrderStatus.PAID));
         counts.put("cancelled", (int) orderRepository.countByUserIdAndStatus(customer.getId(), OrderStatus.CANCELLED));
         return counts;
+    }
+
+    @Override
+    public OrderResponse updateDeliveryStatus(Long orderId, String newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        try {
+            OrderStatus status = OrderStatus.valueOf(newStatus.toUpperCase());
+            
+            // Validate valid delivery status transitions
+            if (status != OrderStatus.PROCESSING && 
+                status != OrderStatus.GIVEN_TO_DELIVERY_PARTNER && 
+                status != OrderStatus.DELIVERED) {
+                throw new RuntimeException("Invalid delivery status: " + newStatus);
+            }
+
+            order.setStatus(status);
+            Order savedOrder = orderRepository.save(order);
+
+            // Send email notifications based on status change
+            if (status == OrderStatus.PROCESSING) {
+                sendDeliveryStatusEmail(order, "Your order is being processed");
+            } else if (status == OrderStatus.GIVEN_TO_DELIVERY_PARTNER) {
+                sendDeliveryStatusEmail(order, "Your order has been handed to delivery partner");
+            } else if (status == OrderStatus.DELIVERED) {
+                sendDeliveryStatusEmail(order, "Your order has been delivered. Please confirm receipt in your account.");
+            }
+
+            return mapToOrderResponse(savedOrder);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid order status: " + newStatus);
+        }
+    }
+
+    @Override
+    public OrderResponse markOrderAsReceived(Long orderId) {
+        User user = getCurrentUser();
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        // Verify order belongs to current user
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("You are not authorized to mark this order as received");
+        }
+
+        // Order must be in DELIVERED status to mark as received
+        if (order.getStatus() != OrderStatus.DELIVERED) {
+            throw new RuntimeException("Order must be in DELIVERED status to mark as received. Current status: " + order.getStatus());
+        }
+
+        // Mark as received (we'll use a custom status or could add a new field)
+        // For now, we can add a received timestamp or use another approach
+        order.setUpdatedAt(java.time.LocalDateTime.now());
+        Order savedOrder = orderRepository.save(order);
+
+        logger.info("Order {} marked as received by customer", orderId);
+
+        return mapToOrderResponse(savedOrder);
+    }
+
+    private void sendDeliveryStatusEmail(Order order, String message) {
+        new Thread(() -> {
+            try {
+                User customer = order.getUser();
+                if (customer != null) {
+                    logger.info("Sending delivery status update email to: {}", customer.getEmail());
+                    emailService.sendOrderStatusUpdateEmail(
+                            customer.getEmail(),
+                            customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : ""),
+                            order.getOrderNumber(),
+                            message
+                    );
+                }
+            } catch (Exception e) {
+                logger.error("Failed to send delivery status email for order: {}", order.getId(), e);
+            }
+        }).start();
     }
 }

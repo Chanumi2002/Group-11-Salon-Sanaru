@@ -62,4 +62,39 @@ public class OrderController {
         Map<String, Integer> counts = orderService.getCustomerOrderStatusCounts(userDetails.getUsername());
         return ResponseEntity.ok(counts);
     }
+
+    /**
+     * Admin: Update order delivery status
+     * PUT /api/orders/{orderId}/delivery-status
+     */
+    @PutMapping("/{orderId}/delivery-status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateDeliveryStatus(
+            @PathVariable Long orderId,
+            @RequestBody Map<String, String> request) {
+        try {
+            String newStatus = request.get("status");
+            if (newStatus == null || newStatus.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Status is required"));
+            }
+            OrderResponse response = orderService.updateDeliveryStatus(orderId, newStatus);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Customer: Mark order as received (delivered)
+     * PUT /api/orders/{orderId}/mark-received
+     */
+    @PutMapping("/{orderId}/mark-received")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<?> markOrderAsReceived(@PathVariable Long orderId) {
+        try {
+            OrderResponse response = orderService.markOrderAsReceived(orderId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
 }

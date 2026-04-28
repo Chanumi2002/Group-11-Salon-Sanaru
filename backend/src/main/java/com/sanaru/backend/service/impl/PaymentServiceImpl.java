@@ -280,13 +280,13 @@ public class PaymentServiceImpl implements PaymentService {
         String customerName = (customer != null && customer.getFirstName() != null) 
             ? customer.getFirstName() + " " + (customer.getLastName() != null ? customer.getLastName() : "")
             : "Valued Customer";
-        String customerEmail = customer != null ? customer.getEmail() : "";
+        String customerEmail = customer != null && customer.getEmail() != null ? customer.getEmail() : "";
         
         switch (incomingPaymentStatus) {
             case SUCCESS -> {
-                // Story 5: order is CONFIRMED automatically on successful payment
+                // Story 5: order is PAID automatically on successful payment
                 transaction.setStatus(PaymentStatus.SUCCESS);
-                order.setStatus(OrderStatus.CONFIRMED);
+                order.setStatus(OrderStatus.PAID);
                 
                 // Story 1: Automatically reduce stock
                 for (com.sanaru.backend.model.OrderItem item : order.getItems()) {
